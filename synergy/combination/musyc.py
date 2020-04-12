@@ -48,23 +48,23 @@ class MuSyC:
         self.converged = False
 
         with np.errstate(divide='ignore'):
-            self.logh1_bounds = (np.log10(h1_bounds[0]), np.log10(h1_bounds[1]))
-            self.logC1_bounds = (np.log10(C1_bounds[0]), np.log10(C1_bounds[1]))
-            self.logh2_bounds = (np.log10(h2_bounds[0]), np.log10(h2_bounds[1]))
-            self.logC2_bounds = (np.log10(C2_bounds[0]), np.log10(C2_bounds[1]))
+            self.logh1_bounds = (np.log(h1_bounds[0]), np.log(h1_bounds[1]))
+            self.logC1_bounds = (np.log(C1_bounds[0]), np.log(C1_bounds[1]))
+            self.logh2_bounds = (np.log(h2_bounds[0]), np.log(h2_bounds[1]))
+            self.logC2_bounds = (np.log(C2_bounds[0]), np.log(C2_bounds[1]))
             
-            self.logalpha12_bounds = (np.log10(alpha12_bounds[0]), np.log10(alpha12_bounds[1]))
-            self.logalpha21_bounds = (np.log10(alpha21_bounds[0]), np.log10(alpha21_bounds[1]))
+            self.logalpha12_bounds = (np.log(alpha12_bounds[0]), np.log(alpha12_bounds[1]))
+            self.logalpha21_bounds = (np.log(alpha21_bounds[0]), np.log(alpha21_bounds[1]))
 
-            self.loggamma12_bounds = (np.log10(gamma12_bounds[0]), np.log10(gamma12_bounds[1]))
-            self.loggamma21_bounds = (np.log10(gamma21_bounds[0]), np.log10(gamma21_bounds[1]))
+            self.loggamma12_bounds = (np.log(gamma12_bounds[0]), np.log(gamma12_bounds[1]))
+            self.loggamma21_bounds = (np.log(gamma21_bounds[0]), np.log(gamma21_bounds[1]))
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, **kwargs):
         """
         """
-        #f = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: self._model(d[0], d[1], E0, E1, E2, E3, 10.**logh1, 10.**logh2, 10.**logC1, 10.**logC2, self.r1, self.r2, 10.**logalpha12, 10.**logalpha21, 10.**loggamma12, 10.**loggamma21)
+        #f = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1, self.r2, np.exp(logalpha12), np.exp(logalpha21), np.exp(loggamma12), np.exp(loggamma21))
 
-        f = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(d[0], d[1], E0, E1, E2, E3, 10.**logh1, 10.**logh2, 10.**logC1, 10.**logC2, self.r1, self.r2, 10.**logalpha12, 10.**logalpha21)
+        f = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1, self.r2, np.exp(logalpha12), np.exp(logalpha21))
 
         jacobian = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: musyc_jacobian.jacobian(d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1, self.r2, logalpha12, logalpha21)
 
@@ -91,12 +91,12 @@ class MuSyC:
         self.E1 = E1
         self.E2 = E2
         self.E3 = E3
-        self.h1 = 10.**logh1
-        self.h2 = 10.**logh2
-        self.C1 = 10.**logC1
-        self.C2 = 10.**logC2
-        self.alpha12 = 10.**logalpha12
-        self.alpha21 = 10.**logalpha21
+        self.h1 = np.exp(logh1)
+        self.h2 = np.exp(logh2)
+        self.C1 = np.exp(logC1)
+        self.C2 = np.exp(logC2)
+        self.alpha12 = np.exp(logalpha12)
+        self.alpha21 = np.exp(logalpha21)
         self.beta = (min(E1,E2)-E3) / (E0 - min(E1,E2))
         self.gamma12 = 1.
         self.gamma21 = 1.
@@ -107,7 +107,7 @@ class MuSyC:
             p0 = list(p0)
             # p0 = (E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21) - starting from h1 to the end, all guesses must be log-transformed
             for i in range(4,len(p0)):
-                p0[i] = np.log10(p0[i])
+                p0[i] = np.log(p0[i])
             utils.sanitize_initial_guess(p0, bounds)
             return p0
         else:
@@ -129,7 +129,7 @@ class MuSyC:
             # Could infer orientation from sign of Y=(E0-E1)+(E0-E2). Y>0 means drug causes E to decrease. Y<0 means drug causes E to increase. Or let user set it
             else: E3 = np.min(E)
             
-            p0 = [(E0_1+E0_2)/2., E1, E2, E3, np.log10(h1), np.log10(h2), np.log10(C1), np.log10(C2), 0, 0] #, 0, 0] # For gamma
+            p0 = [(E0_1+E0_2)/2., E1, E2, E3, np.log(h1), np.log(h2), np.log(C1), np.log(C2), 0, 0] #, 0, 0] # For gamma
             
             utils.sanitize_initial_guess(p0, bounds)
 
@@ -139,12 +139,6 @@ class MuSyC:
         if not self._is_parameterized():
             raise ModelNotParameterizedError()
         return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21)
-
-    def _modelgamma(self, d1, d2, E0, E1, E2, E3, h1, h2, r1, r1r, r2, r2r, alpha12, alpha21, gamma12, gamma21):
-        #U, A1, A2, A12 = self._getUA(d1, d2, h1, h2, alpha12, alpha21, r1, r1r, r2, r2r)
-
-        #return U*E0 + A1*E1 + A2*E2 + A12*E3
-        return 0
 
     def _is_parameterized(self):
         return None not in (self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21, self.r1, self.r2)

@@ -10,12 +10,12 @@ logC1, logC2 = symbols('logC1 logC2')
 r1, r2 = symbols('r1 r2')
 logalpha12, logalpha21 = symbols('logalpha12 logalpha21')
 
-C1 = 10**logC1
-C2 = 10**logC2
-h1 = 10**logh1
-h2 = 10**logh2
-alpha12 = 10**logalpha12
-alpha21 = 10**logalpha21
+C1 = exp(logC1)
+C2 = exp(logC2)
+h1 = exp(logh1)
+h2 = exp(logh2)
+alpha12 = exp(logalpha12)
+alpha21 = exp(logalpha21)
 
 r1r = r1*C1**h1
 r2r = r2*C2**h2
@@ -44,3 +44,9 @@ fE2 = A2
 fE3 = A12
 flogalpha12 = diff(f, logalpha12)
 flogalpha21 = diff(f, logalpha21)
+
+outfile = open("/home/dwooten/Documents/jacobian.txt","w")
+for name, eq in zip(["j_logh1", "j_logh2", "j_logC1", "j_logC2", "j_logalpha12", "j_logalpha21"], [flogh1, flogh2, frlogC1, frlogC2, flogalpha12, flogalpha21]):
+    outfile.write("# ********** %s ********\n\n"%name[2:])
+    outfile.write("%s = %s\n\n"%(name, repr(eq)))
+outfile.close()

@@ -70,9 +70,9 @@ print("Not using")
 
 
 # Numerically check gradient
-logh = np.log10(h)
-logC = np.log10(C)
-f = lambda logC: model._model(C*3, E0, Emax, 10.**logh, 10.**logC)
+logh = np.log(h)
+logC = np.log(C)
+f = lambda logC: model._model(C*3, E0, Emax, np.exp(logh), np.exp(logC))
 jac =  lambda logC: model._model_jacobian(C*3, E0, Emax, logh, logC)[:,3]
 
 check_grad(f, jac, np.asarray([0]))
