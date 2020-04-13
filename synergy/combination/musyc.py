@@ -33,7 +33,7 @@ class MuSyC:
             gamma12_bounds=(0,np.inf), gamma21_bounds=(0,np.inf),   \
             r1=1., r2=1., E0=None, E1=None, E2=None, E3=None,   \
             h1=None, h2=None, C1=None, C2=None, alpha12=None,       \
-            alpha21=None, gamma12=None, gamma21=None):
+            alpha21=None, gamma12=1., gamma21=1.):
         self.C1_bounds = C1_bounds
         self.C2_bounds = C2_bounds
         self.h1_bounds = h1_bounds
@@ -85,7 +85,7 @@ class MuSyC:
 
         jacobian = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: musyc_jacobian.jacobian(d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1, self.r2, logalpha12, logalpha21)
 
-        bounds = tuple(zip(self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.logalpha12_bounds, self.logalpha21_bounds))
+        bounds = tuple(zip(self.E0_bounds, self.E1_bounds, self.E2_bounds, self.E3_bounds, self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.logalpha12_bounds, self.logalpha21_bounds))
 
         p0 = self._get_intial_guess(d1, d2, E, bounds, drug1_model=drug1_model, drug2_model=drug2_model, p0=p0)
 

@@ -29,9 +29,23 @@ def sham(d, drug):
 
 def remove_zeros(d):
     d=np.array(d,copy=True)
-    dmin = np.min(d[d>0])
-    d[d==0]=dmin/100000.
+    dmin = np.min(d[d>0]) # smallest nonzero dose
+    dmax = np.max(d) # Largest dose
+    dilution = dmin/dmax # What is the total dose range tested (in logspace)
+    d[d==0]=dmin * dilution**10
+    #d[d==0] = np.nextafter(0,1) # Smallest positive float
     return d
+
+def square_error(d1, d2, E, E0, E1, E2, E3, h1, h2, alpha1, alpha2, r1, r1r, r2, r2r, logspace=False):
+    if logspace:
+        d1 = np.power(10., d1)
+        d2 = np.power(10., d2)
+
+    sum_of_squares_residuals = 0
+    for dd1, dd2, EE in zip(d1, d2, E):
+        E_model = hill_2D(dd1, dd2, E0, E1, E2, E3, h1, h2, alpha1, alpha2, r1, r1r, r2, r2r, logspace=False)
+        sum_of_squares_residuals += (EE - E_model)**2
+    return sum_of_squares_residuals
 
 def AIC(sum_of_squares_residuals, n_parameters, n_samples):
     """
