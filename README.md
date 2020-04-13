@@ -21,7 +21,7 @@ Using git
   * Parametric
     * MuSyC
     * Zimmer (effective dose model)
-  * Non-parametric (**NOTE:** this do use parametric single-drug models)
+  * Non-parametric (**NOTE:** these do use parametric single-drug models)
     * Bliss
     * Loewe
     * Schindler
@@ -45,6 +45,9 @@ Using git
 * Dose / experiment design tools
 * Monte carlo sampling to obtain error bars
 * Parallelization API for fitting high-throughput screen data
+
+## Current version
+0.0.1
 
 ## License
 GNU General Public License v3 or later (GPLv3+)
