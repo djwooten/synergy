@@ -18,11 +18,21 @@ Using git
 
 ## Current features
 * Calculate two-drug synergy using
-  * MuSyC
-  * Bliss
-  * Loewe
-  * Zimmer (effective dose model)
-  * Schindler
+  * Parametric
+    * MuSyC
+    * Zimmer (effective dose model)
+  * Non-parametric (**NOTE:** this do use parametric single-drug models)
+    * Bliss
+    * Loewe
+    * Schindler
+* Single drug models
+  * Four-parameter Hill equation
+  * Two-parameter Hill equation
+  * Median-effect equation
+* Model scoring
+  * R-squared
+  * Akaike Information Criterion
+  * Bayesian Information Criterion
 
 ## Planned features
 * Additional models
