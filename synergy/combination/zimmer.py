@@ -19,12 +19,15 @@ import numpy as np
 from scipy.optimize import curve_fit
 import synergy.utils.utils as utils
 import synergy.single.hill as hill
+from .base import *
 
-class Zimmer:
+class Zimmer(ParameterizedModel):
     """
     """
     def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
             C1_bounds=(0,np.inf), C2_bounds=(0,np.inf), a12_bounds=(-np.inf, np.inf), a21_bounds=(-np.inf, np.inf), h1=None, h2=None, C1=None, C2=None, a12=None, a21=None):
+
+        super().__init__()
         self.C1_bounds = C1_bounds
         self.C2_bounds = C2_bounds
         self.h1_bounds = h1_bounds
@@ -89,6 +92,9 @@ class Zimmer:
         self.C2 = np.exp(logC2)
         self.a12 = a12
         self.a21 = a21
+
+        self._score(d1, d2, E)
+
         return a12, a21
 
     def E(self, d1, d2):
@@ -109,9 +115,6 @@ class Zimmer:
 
     def get_parameters(self):
         return self.h1, self.h2, self.C1, self.C2, self.a12, self.a21
-
-    def _is_parameterized(self):
-        return None not in self.get_parameters()
 
     def create_fit(d1, d2, E, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf), C1_bounds=(0,np.inf), C2_bounds=(0,np.inf), a12_bounds=(-np.inf,np.inf), a21_bounds=(-np.inf,np.inf), **kwargs):
         model = Zimmer(h1_bounds=h1_bounds, h2_bounds=h2_bounds, C1_bounds=C1_bounds, C2_bounds=C2_bounds, a12_bounds=a12_bounds, a21_bounds=a21_bounds)

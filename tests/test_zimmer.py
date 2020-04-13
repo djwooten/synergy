@@ -6,7 +6,7 @@ from synergy.combination.zimmer import Zimmer
 h1, h2 = 2.3, 0.8
 C1, C2 = 1e-2, 1e-1
 a12, a21 = -1., 1.
-npoints = 20
+npoints = 10
 
 model = Zimmer(h1=h1, h2=h2, C1=C1, C2=C2, a12=a12, a21=a21)
 
@@ -17,9 +17,9 @@ D1 = D1.flatten()
 D2 = D2.flatten()
 
 E = model._model(D1, D2, h1, h2, C1, C2, a12, a21)
-Efit = E*(1+(np.random.rand(len(D1))-0.5)/5.)
+Efit = E*(1+(np.random.rand(len(D1))-0.5)/1.)
 
-model.fit(D1, D2, E)
+model.fit(D1, D2, Efit)
 print(model)
 
 fig = plt.figure(figsize=(8,3))

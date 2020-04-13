@@ -20,8 +20,9 @@ from scipy.optimize import curve_fit
 import synergy.utils.utils as utils
 import synergy.single.hill as hill
 import synergy.combination.musyc_jacobian as musyc_jacobian
+from .base import *
 
-class MuSyC:
+class MuSyC(ParameterizedModel):
     """
 
     """
@@ -34,6 +35,7 @@ class MuSyC:
             r1=1., r2=1., E0=None, E1=None, E2=None, E3=None,   \
             h1=None, h2=None, C1=None, C2=None, alpha12=None,       \
             alpha21=None, gamma12=1., gamma21=1.):
+        super().__init__()
         self.C1_bounds = C1_bounds
         self.C2_bounds = C2_bounds
         self.h1_bounds = h1_bounds
@@ -119,6 +121,10 @@ class MuSyC:
         self.beta = (min(E1,E2)-E3) / (E0 - min(E1,E2))
         self.gamma12 = 1.
         self.gamma21 = 1.
+
+        if (self._is_parameterized()):
+            self._score(d1, d2, E)
+            
         return self.alpha12, self.alpha21, self.beta
 
     def _get_intial_guess(self, d1, d2, E, bounds, drug1_model=None, drug2_model=None, p0=None):
@@ -161,10 +167,9 @@ class MuSyC:
         return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21)
 
     def get_parameters(self):
-        return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21, self.r1, self.r2
+        #return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21, self.r1, self.r2
+        return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.r1, self.r2
 
-    def _is_parameterized(self):
-        return None not in self.get_parameters()
 
     def _C_to_r1r(self, C, h, r1):
         return r1*C**h
