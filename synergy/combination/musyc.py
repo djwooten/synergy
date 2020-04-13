@@ -89,6 +89,8 @@ class MuSyC:
 
         p0 = self._get_intial_guess(d1, d2, E, bounds, drug1_model=drug1_model, drug2_model=drug2_model, p0=p0)
 
+        d1 = utils.remove_zeros(d1)
+        d2 = utils.remove_zeros(d2)
         xdata = np.vstack((d1,d2))
 
         try:

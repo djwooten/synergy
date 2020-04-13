@@ -7,12 +7,13 @@ E0 = 1
 Emax = 0
 h = 2.3
 C = 1e-1
+drug = hill.Hill(E0=E0, Emax=Emax, h=h, C=C)
+
 
 npoints=8
-
 #d = np.logspace(-2,0,num=npoints)
 d = np.linspace(10e-2,1,num=npoints)
-d1, d2, E = sham(d, E0, Emax, h, C)
+d1, d2, E = sham(d, drug)
 
 loewe = Loewe()
 synergy = loewe.fit(d1, d2, E)

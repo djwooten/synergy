@@ -16,11 +16,9 @@
 """
 
 import numpy as np
-import synergy.single.hill as hill
 
 
-def sham(d, E0, Emax, h, C):
-    drug = hill.Hill(E0=E0, Emax=Emax, h=h, C=C)
+def sham(d, drug):
     if not 0 in d:
         d = np.append(0,d)
     d1, d2 = np.meshgrid(d,d)
@@ -28,6 +26,12 @@ def sham(d, E0, Emax, h, C):
     d2 = d2.flatten()
     E = drug.E(d1+d2)
     return d1, d2, E
+
+def remove_zeros(d):
+    d=np.array(d,copy=True)
+    dmin = np.min(d[d>0])
+    d[d==0]=dmin/100000.
+    return d
 
 def AIC(sum_of_squares_residuals, n_parameters, n_samples):
     """

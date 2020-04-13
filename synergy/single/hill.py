@@ -44,9 +44,8 @@ class Hill:
 
         bounds = tuple(zip(self.E0_bounds, self.Emax_bounds, self.logh_bounds, self.logC_bounds))
 
-        d=np.array(d,copy=True)
-        dmin = np.min(d[d>0])
-        d[d==0]=dmin/100000.
+        d = utils.remove_zeros(d)
+        
 
         if 'p0' in kwargs:
             p0 = list(kwargs.get('p0'))
@@ -138,6 +137,8 @@ class Hill_2P(Hill):
 
         f = lambda d, logh, logC: self._model(d, self.E0, self.Emax, np.exp(logh), np.exp(logC))
 
+        d = utils.remove_zeros(d)
+
         bounds = tuple(zip(self.logh_bounds, self.logC_bounds))
 
         if 'p0' in kwargs:
@@ -202,6 +203,8 @@ class Hill_CI(Hill_2P):
         d = d[mask]
         fU = E
         fA = 1-E
+
+        d = utils.remove_zeros(d)
 
         median_effect_line = linregress(np.log(d),np.log(fA/fU))
         self.h = median_effect_line.slope
