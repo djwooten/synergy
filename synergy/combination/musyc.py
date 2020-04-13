@@ -1,6 +1,24 @@
+"""
+    Copyright (C) 2020 David J. Wooten
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 import numpy as np
 from scipy.optimize import curve_fit
 import synergy.utils.utils as utils
+import synergy.single.hill as hill
 import synergy.combination.musyc_jacobian as musyc_jacobian
 
 class MuSyC:
@@ -13,7 +31,7 @@ class MuSyC:
             E2_bounds=(-np.inf,np.inf), E3_bounds=(-np.inf,np.inf), \
             alpha12_bounds=(0,np.inf), alpha21_bounds=(0,np.inf),   \
             gamma12_bounds=(0,np.inf), gamma21_bounds=(0,np.inf),   \
-            r1=100., r2=100., E0=None, E1=None, E2=None, E3=None,   \
+            r1=1., r2=1., E0=None, E1=None, E2=None, E3=None,   \
             h1=None, h2=None, C1=None, C2=None, alpha12=None,       \
             alpha21=None, gamma12=None, gamma21=None):
         self.C1_bounds = C1_bounds
@@ -62,7 +80,6 @@ class MuSyC:
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, **kwargs):
         """
         """
-        #f = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1, self.r2, np.exp(logalpha12), np.exp(logalpha21), np.exp(loggamma12), np.exp(loggamma21))
 
         f = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1, self.r2, np.exp(logalpha12), np.exp(logalpha21))
 
@@ -113,10 +130,10 @@ class MuSyC:
         else:
             if drug1_model is None:
                 mask = np.where(d2==min(d2))
-                drug1_model = utils.fit_single(d1[mask], E[mask], self.E0_bounds, self.E1_bounds, self.h1_bounds, self.C1_bounds)
+                drug1_model = hill.Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
             if drug2_model is None:
                 mask = np.where(d1==min(d1))
-                drug2_model = utils.fit_single(d2[mask], E[mask], self.E0_bounds, self.E2_bounds, self.h2_bounds, self.C2_bounds)
+                drug2_model = hill.Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
             
             # Get initial guesses of E0, E1, E2, h1, h2, C1, and C2 from single-drug fits
             E0_1, E1, h1, C1 = drug1_model.get_parameters()
@@ -137,11 +154,15 @@ class MuSyC:
 
     def E(self, d1, d2):
         if not self._is_parameterized():
-            raise ModelNotParameterizedError()
+            return 0
+            #raise ModelNotParameterizedError()
         return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21)
 
+    def get_parameters(self):
+        return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21, self.r1, self.r2
+
     def _is_parameterized(self):
-        return None not in (self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21, self.r1, self.r2)
+        return None not in self.get_parameters()
 
     def _C_to_r1r(self, C, h, r1):
         return r1*C**h
@@ -172,5 +193,17 @@ class MuSyC:
         
         return U*E0 + A1*E1 + A2*E2 + (1-(U+A1+A2))*E3
 
+    def create_fit(d1, d2, E, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
+            C1_bounds=(0,np.inf), C2_bounds=(0,np.inf),             \
+            E0_bounds=(-np.inf,np.inf), E1_bounds=(-np.inf,np.inf), \
+            E2_bounds=(-np.inf,np.inf), E3_bounds=(-np.inf,np.inf), \
+            alpha12_bounds=(0,np.inf), alpha21_bounds=(0,np.inf),   \
+            gamma12_bounds=(0,np.inf), gamma21_bounds=(0,np.inf),   \
+            r1=1., r2=1., **kwargs):
+        model = MuSyC(E0_bounds=E0_bounds, E1_bounds=E1_bounds, E2_bounds=E2_bounds, E3_bounds=E3_bounds, h1_bounds=h1_bounds, h2_bounds=h2_bounds, C1_bounds=C1_bounds, C2_bounds=C2_bounds, alpha12_bounds=alpha12_bounds, alpha21_bounds=alpha21_bounds, gamma12_bounds=gamma12_bounds, gamma21_bounds=gamma21_bounds, r1=r1, r2=r2)
+        model.fit(d, E, **kwargs)
+        return model
+
     def __repr__(self):
+        if not self._is_parameterized(): return "MuSyC()"
         return "MuSyC(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, r1=%0.2f, r2=%0.2f, alpha12=%0.2f, alpha21=%0.2f, beta=%0.2f, converged=%r)"%(self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21, self.beta, self.converged)

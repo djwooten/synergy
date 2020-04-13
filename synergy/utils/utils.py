@@ -1,21 +1,28 @@
+"""
+    Copyright (C) 2020 David J. Wooten
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 import numpy as np
 import synergy.single.hill as hill
 
 
-def fit_single(d, E, E0_bounds, Emax_bounds, h_bounds, C_bounds):
-    drug = hill.Hill(E0_bounds=E0_bounds, Emax_bounds=Emax_bounds, h_bounds=h_bounds, C_bounds=C_bounds)
-    drug.fit(d, E)
-    return drug
-
-def fit_single_2parameter(d, E, h_bounds, C_bounds, E0=1., Emax=0.):
-    drug = hill.Hill(h_bounds=h_bounds, C_bounds=C_bounds, E0=E0, Emax=Emax)
-    drug.fit_2parameter(d, E)
-    return drug
-
 def sham(d, E0, Emax, h, C):
     drug = hill.Hill(E0=E0, Emax=Emax, h=h, C=C)
     if not 0 in d:
-        d = np.append(d,0)
+        d = np.append(0,d)
     d1, d2 = np.meshgrid(d,d)
     d1 = d1.flatten()
     d2 = d2.flatten()

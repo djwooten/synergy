@@ -1,6 +1,23 @@
+"""
+    Copyright (C) 2020 David J. Wooten
+
+    This program is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    This program is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""
+
 from scipy.optimize import curve_fit
+from scipy.stats import linregress
 import numpy as np
-import multiprocessing
 import synergy.utils.utils as utils
 
 class Hill:
@@ -20,13 +37,16 @@ class Hill:
             self.logh_bounds = (np.log(h_bounds[0]), np.log(h_bounds[1]))
             self.logC_bounds = (np.log(C_bounds[0]), np.log(C_bounds[1]))
 
-        self.jacobian_queue = multiprocessing.Queue()
         self.converged = False
     
     def fit(self, d, E, use_jacobian=True, **kwargs):
         f = lambda d, E0, E1, logh, logC: self._model(d, E0, E1, np.exp(logh), np.exp(logC))
 
         bounds = tuple(zip(self.E0_bounds, self.Emax_bounds, self.logh_bounds, self.logC_bounds))
+
+        d=np.array(d,copy=True)
+        dmin = np.min(d[d>0])
+        d[d==0]=dmin/100000.
 
         if 'p0' in kwargs:
             p0 = list(kwargs.get('p0'))
@@ -54,44 +74,10 @@ class Hill:
             logC = np.log(np.median(d))
             self.converged = False
 
-        
-        
         self.E0 = E0
         self.Emax = E1
         self.h = np.exp(logh)
         self.C = np.exp(logC)
-
-    # TODO: Implement Jacobian
-    # TODO: Separate classes Hill2P() and Hill4P()
-    def fit_2parameter(self, d, E, use_jacobian=True, **kwargs):
-        if self.E0 is None: self.E0 = 1.
-        if self.Emax is None: self.Emax = 0.
-
-        f = lambda d, logh, logC: self._model(d, self.E0, self.Emax, np.exp(logh), np.exp(logC))
-
-        bounds = tuple(zip(self.logh_bounds, self.logC_bounds))
-
-        if 'p0' in kwargs:
-            p0 = list(kwargs.get('p0'))
-            p0[0] = np.log(p0[0])
-            p0[1] = np.log(p0[1])
-            kwargs['p0'] = p0
-            utils.sanitize_initial_guess(p0, bounds)
-        else:
-            p0 = [0, np.log(np.median(d))]
-            utils.sanitize_initial_guess(p0, bounds)
-            kwargs['p0'] = p0
-
-        
-
-        popt1, pcov = curve_fit(f, d, E, bounds=bounds, **kwargs)
-        logh, logC = popt1
-        self.h = np.exp(logh)
-        self.C = np.exp(logC)
-
-
-    def fit_CI(self, d, E):
-        pass
 
     def E(self, d):
         if not self._is_parameterized():
@@ -115,6 +101,7 @@ class Hill:
         return d
 
     def _model_jacobian(self, d, E0, Emax, logh, logC):
+        
         dh = d**(np.exp(logh))
         Ch = (np.exp(logC))**(np.exp(logh))
         logd = np.log(d)
@@ -131,5 +118,103 @@ class Hill:
     def _is_parameterized(self):
         return None not in (self.E0, self.Emax, self.h, self.C)
 
+    def create_fit(d, E, E0_bounds=(-np.inf, np.inf), Emax_bounds=(-np.inf, np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf), **kwargs):
+        drug = Hill(E0_bounds=E0_bounds, Emax_bounds=Emax_bounds, h_bounds=h_bounds, C_bounds=C_bounds)
+        drug.fit(d, E, **kwargs)
+        return drug
+
     def __repr__(self):
-        return "Hill(%0.2f, %0.2f, %0.2f, %0.2e)"%(self.E0, self.Emax, self.h, self.C)
+        if not self._is_parameterized(): return "Hill()"
+        
+        return "Hill(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e, converged=%r)"%(self.E0, self.Emax, self.h, self.C, self.converged)
+
+class Hill_2P(Hill):
+    def __init__(self, h=None, C=None, h_bounds=(0,np.inf), C_bounds=(0,np.inf), E0=1, Emax=0):
+        super().__init__(h=h, C=C, E0=E0, Emax=Emax, h_bounds=h_bounds, C_bounds=C_bounds)
+
+    def fit(self, d, E, use_jacobian=True, **kwargs):
+        if self.E0 is None: self.E0 = 1.
+        if self.Emax is None: self.Emax = 0.
+
+        f = lambda d, logh, logC: self._model(d, self.E0, self.Emax, np.exp(logh), np.exp(logC))
+
+        bounds = tuple(zip(self.logh_bounds, self.logC_bounds))
+
+        if 'p0' in kwargs:
+            p0 = list(kwargs.get('p0'))
+            p0[0] = np.log(p0[0])
+            p0[1] = np.log(p0[1])
+            kwargs['p0'] = p0
+            utils.sanitize_initial_guess(p0, bounds)
+        else:
+            p0 = [0, np.log(np.median(d))]
+            utils.sanitize_initial_guess(p0, bounds)
+            kwargs['p0'] = p0
+
+        
+        try:
+            if use_jacobian:
+                popt1, pcov = curve_fit(f, d, E, bounds=bounds, jac=self._model_jacobian, **kwargs)
+            else: 
+                popt1, pcov = curve_fit(f, d, E, bounds=bounds, **kwargs)
+            logh, logC = popt1
+            self.converged = True
+        except RuntimeError:
+            #print("\n\n*********\nFailed to fit single drug\n*********\n\n")
+            logh = 0
+            logC = np.log(np.median(d))
+            self.converged = False
+
+        self.h = np.exp(logh)
+        self.C = np.exp(logC)
+
+    def _model_jacobian(self, d, logh, logC):
+        dh = d**(np.exp(logh))
+        Ch = (np.exp(logC))**(np.exp(logh))
+        logd = np.log(d)
+        E0 = self.E0
+        Emax = self.Emax
+
+        jC = (E0-Emax)*dh*np.exp(logh+logC)*(np.exp(logC))**(np.exp(logh)-1) / ((Ch+dh)*(Ch+dh))
+
+        jh = (Emax-E0)*dh*np.exp(logh) * ((Ch+dh)*logd - (logC*Ch + logd*dh)) / ((Ch+dh)*(Ch+dh))
+        
+        return np.hstack((jh.reshape(-1,1), jC.reshape(-1,1)))
+
+    def create_fit(d, E, E0=1, Emax=0, h_bounds=(0,np.inf), C_bounds=(0,np.inf), **kwargs):
+        drug = Hill_2P(E0=E0, Emax=Emax, h_bounds=h_bounds, C_bounds=C_bounds)
+        drug.fit(d, E, **kwargs)
+        return drug
+
+    def __repr__(self):
+        if not self._is_parameterized(): return "Hill()"
+        
+        return "Hill2P(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e, converged=%r)"%(self.E0, self.Emax, self.h, self.C)
+    
+    
+class Hill_CI(Hill_2P):
+    def __init__(self, h=None, C=None):
+        super().__init__(h=h, C=C, E0=1., Emax=0.)
+
+    def fit(self, d, E):
+        mask = (E < 1) & (E > 0)
+        E = E[mask]
+        d = d[mask]
+        fU = E
+        fA = 1-E
+
+        median_effect_line = linregress(np.log(d),np.log(fA/fU))
+        self.h = median_effect_line.slope
+        self.C = np.exp(-median_effect_line.intercept / self.h)
+
+    def create_fit(d, E):
+        drug = Hill_CI()
+        drug.fit(d, E)
+        return drug
+
+    def __repr__(self):
+        if not self._is_parameterized(): return "Hill_CI()"
+        
+        return "Hill_CI(%0.2f, %0.2e)"%(self.h, self.C)
+    
+    

@@ -1,13 +1,17 @@
 import numpy as np
 from synergy.utils.utils import sham
-from synergy.combination.models import *
+from synergy.combination.loewe import Loewe
+from synergy.combination.bliss import Bliss
 
 E0 = 1
 Emax = 0
 h = 2.3
 C = 1e-1
 
-d = np.logspace(-2,0,num=10)
+npoints=8
+
+#d = np.logspace(-2,0,num=npoints)
+d = np.linspace(10e-2,1,num=npoints)
 d1, d2, E = sham(d, E0, Emax, h, C)
 
 loewe = Loewe()
