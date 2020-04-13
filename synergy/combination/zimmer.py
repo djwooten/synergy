@@ -16,6 +16,7 @@
 """
 
 import numpy as np
+import warnings
 from scipy.optimize import curve_fit
 import synergy.utils.utils as utils
 import synergy.single.hill as hill
@@ -48,11 +49,13 @@ class Zimmer(ParameterizedModel):
         self.a12 = a12
         self.a21 = a21
 
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian=False, **kwargs):
+    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian=True, **kwargs):
         """
         TODO: Add support for Jacobian
         """
 
+        if (use_jacobian):
+            warnings.warn(FeatureNotImplemented("Jacobian has not been implemented for Zimmer synergy model, but will still be used for single-drug fits"))
         bounds = tuple(zip(self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.a12_bounds, self.a21_bounds))
 
         if 'p0' in kwargs:
@@ -64,11 +67,11 @@ class Zimmer(ParameterizedModel):
         else:
             if drug1_model is None:
                 mask = np.where(d2==min(d2))
-                drug1_model = hill.Hill_2P.create_fit(d1[mask], E[mask], h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+                drug1_model = hill.Hill_2P.create_fit(d1[mask], E[mask], h_bounds=self.h1_bounds, C_bounds=self.C1_bounds, use_jacobian=use_jacobian)
                 
             if drug2_model is None:
                 mask = np.where(d1==min(d1))
-                drug2_model = hill.Hill_2P.create_fit(d2[mask], E[mask], h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+                drug2_model = hill.Hill_2P.create_fit(d2[mask], E[mask], h_bounds=self.h2_bounds, C_bounds=self.C2_bounds, use_jacobian=use_jacobian)
             
             E0_1, E1, h1, C1 = drug1_model.get_parameters()
             E0_2, E2, h2, C2 = drug2_model.get_parameters()
@@ -83,7 +86,8 @@ class Zimmer(ParameterizedModel):
         
         f = lambda d, logh1, logh2, logC1, logC2, a12, a21: self._model(d[0], d[1], np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), a12, a21)
         
-        popt1, pcov = curve_fit(f, xdata, E, bounds=bounds, **kwargs)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            popt1, pcov = curve_fit(f, xdata, E, bounds=bounds, **kwargs)
 
         logh1, logh2, logC1, logC2, a12, a21 = popt1
         self.h1 = np.exp(logh1)

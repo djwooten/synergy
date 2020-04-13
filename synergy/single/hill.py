@@ -58,20 +58,21 @@ class Hill:
             utils.sanitize_initial_guess(p0, bounds)
             kwargs['p0'] = p0
 
-        try:
-            if use_jacobian:
-                popt1, pcov = curve_fit(f, d, E, bounds=bounds, jac=self._model_jacobian, **kwargs)
-            else: 
-                popt1, pcov = curve_fit(f, d, E, bounds=bounds, **kwargs)
-            E0, E1, logh, logC = popt1
-            self.converged = True
-        except RuntimeError:
-            #print("\n\n*********\nFailed to fit single drug\n*********\n\n")
-            E0 = np.max(E)
-            E1 = np.min(E)
-            logh = 0
-            logC = np.log(np.median(d))
-            self.converged = False
+        with np.errstate(divide='ignore', invalid='ignore'):
+            try:
+                if use_jacobian:
+                    popt1, pcov = curve_fit(f, d, E, bounds=bounds, jac=self._model_jacobian, **kwargs)
+                else: 
+                    popt1, pcov = curve_fit(f, d, E, bounds=bounds, **kwargs)
+                E0, E1, logh, logC = popt1
+                self.converged = True
+            except RuntimeError:
+                #print("\n\n*********\nFailed to fit single drug\n*********\n\n")
+                E0 = np.max(E)
+                E1 = np.min(E)
+                logh = 0
+                logC = np.log(np.median(d))
+                self.converged = False
 
         self.E0 = E0
         self.Emax = E1
@@ -152,19 +153,19 @@ class Hill_2P(Hill):
             utils.sanitize_initial_guess(p0, bounds)
             kwargs['p0'] = p0
 
-        
-        try:
-            if use_jacobian:
-                popt1, pcov = curve_fit(f, d, E, bounds=bounds, jac=self._model_jacobian, **kwargs)
-            else: 
-                popt1, pcov = curve_fit(f, d, E, bounds=bounds, **kwargs)
-            logh, logC = popt1
-            self.converged = True
-        except RuntimeError:
-            #print("\n\n*********\nFailed to fit single drug\n*********\n\n")
-            logh = 0
-            logC = np.log(np.median(d))
-            self.converged = False
+        with np.errstate(divide='ignore', invalid='ignore'):
+            try:
+                if use_jacobian:
+                    popt1, pcov = curve_fit(f, d, E, bounds=bounds, jac=self._model_jacobian, **kwargs)
+                else: 
+                    popt1, pcov = curve_fit(f, d, E, bounds=bounds, **kwargs)
+                logh, logC = popt1
+                self.converged = True
+            except RuntimeError:
+                #print("\n\n*********\nFailed to fit single drug\n*********\n\n")
+                logh = 0
+                logC = np.log(np.median(d))
+                self.converged = False
 
         self.h = np.exp(logh)
         self.C = np.exp(logC)

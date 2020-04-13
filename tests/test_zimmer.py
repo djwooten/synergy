@@ -17,7 +17,7 @@ D1 = D1.flatten()
 D2 = D2.flatten()
 
 E = model._model(D1, D2, h1, h2, C1, C2, a12, a21)
-Efit = E*(1+(np.random.rand(len(D1))-0.5)/1.)
+Efit = E*(1+(np.random.rand(len(D1))-0.5)/3.)
 
 model.fit(D1, D2, Efit)
 print(model)
