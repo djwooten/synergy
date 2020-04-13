@@ -67,6 +67,11 @@ def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel=""
 
 
 def square_log_axes(ax, nx, ny):
+    """
+    Transform log-scaled axes into a square aspect ratio.
+    The axes will be resized so that each cell in the heatmap is square.
+    TODO: This will work, but only if tight_layout() is not called
+    """
     ratio = ny / nx
 
     pos1 = ax.get_position()
