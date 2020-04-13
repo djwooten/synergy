@@ -1,6 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 from synergy.combination.zimmer import Zimmer
+import synergy.utils.plots as plots
 
 
 h1, h2 = 2.3, 0.8
@@ -22,21 +23,16 @@ Efit = E*(1+(np.random.rand(len(D1))-0.5)/3.)
 model.fit(D1, D2, Efit)
 print(model)
 
-fig = plt.figure(figsize=(8,3))
+fig = plt.figure(figsize=(10,3))
 
 ax=fig.add_subplot(131)
-ax.set_title("True")
-ax.pcolor(E.reshape((npoints,npoints)))
-ax.set_aspect('equal')
+plots.plot_colormap(D1, D2, E, ax=ax, title="True")
 
 ax=fig.add_subplot(132)
-ax.set_title("Noisy")
-ax.pcolor(Efit.reshape((npoints,npoints)))
-ax.set_aspect('equal')
+plots.plot_colormap(D1, D2, Efit, ax=ax, title="Noisy")
 
 ax=fig.add_subplot(133)
-ax.set_title("Fit")
-ax.pcolor(model.E(D1, D2).reshape((npoints,npoints)))
-ax.set_aspect('equal')
+model.plot_colormap(D1, D2, ax=ax, title="Fit")
 
+plt.tight_layout()
 plt.show()

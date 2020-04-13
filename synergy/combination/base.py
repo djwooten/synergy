@@ -17,6 +17,7 @@
 
 import numpy as np
 import synergy.utils.utils as utils
+import synergy.utils.plots as plots
 
 class ParameterizedModel:
     """
@@ -43,8 +44,20 @@ class ParameterizedModel:
     def get_parameters():
         return []
 
+    def E(self, d1, d2):
+        return 0
+
     def _is_parameterized(self):
         return not (None in self.get_parameters() or True in np.isnan(np.asarray(self.get_parameters())))
+
+    def plot_colormap(self, d1, d2, **kwargs):
+        if not self._is_parameterized():
+            #raise ModelNotParameterizedError()
+            return
+        
+        E = self.E(d1, d2)
+        plots.plot_colormap(d1, d2, E, **kwargs)
+
 
 class ModelNotParameterizedError(Exception):
     """

@@ -1,7 +1,7 @@
 from matplotlib import pyplot as plt
 import numpy as np
 import synergy.combination.musyc as musyc
-import synergy.combination.musyc_jacobian as mj
+import synergy.utils.plots as plots
 
 
 E0, E1, E2, E3 = 1, 0.2, 0.1, 0.4
@@ -15,9 +15,10 @@ r1 = model.r1
 r2 = model.r2
 
 npoints = 8
+npoints2 = 12
 
-d1 = np.logspace(-3,0,num=npoints)
-d2 = np.logspace(-2,1,num=npoints)
+d1 = np.logspace(-3,0,num=npoints)/3.
+d2 = np.logspace(-2,1,num=npoints2)
 D1, D2 = np.meshgrid(d1,d2)
 D1 = D1.flatten()
 D2 = D2.flatten()
@@ -46,24 +47,17 @@ model.fit(D1, D2, Efit)
 #%timeit model.fit(D1, D2, Efit, use_jacobian=False)
 
 print(model)
-#model.fit(D1, D2, Efit, use_jacobian=False)
-#print(model)
 
 fig = plt.figure(figsize=(8,3))
 
 ax=fig.add_subplot(131)
-ax.set_title("True")
-ax.pcolor(E.reshape((npoints,npoints)))
-ax.set_aspect('equal')
+plots.plot_colormap(D1, D2, E, ax=ax, title="True")
 
 ax=fig.add_subplot(132)
-ax.set_title("Noisy")
-ax.pcolor(Efit.reshape((npoints,npoints)))
-ax.set_aspect('equal')
+plots.plot_colormap(D1, D2, Efit, ax=ax, title="Noisy")
 
 ax=fig.add_subplot(133)
-ax.set_title("Fit")
-ax.pcolor(model.E(D1, D2).reshape((npoints,npoints)))
-ax.set_aspect('equal')
+model.plot_colormap(D1, D2, ax=ax, title="Fit")
 
+plt.tight_layout()
 plt.show()
