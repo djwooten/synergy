@@ -1,6 +1,6 @@
 # synergy
 
-# Installation
+## Installation
 
 Using PIP
 `not yet`
@@ -10,6 +10,11 @@ Using conda
 
 Using git
 `git clone ...`
+
+## Requirements
+* python 3
+* numpy
+* scipy
 
 ## Current features
 * Calculate two-drug synergy using
