@@ -21,9 +21,47 @@ import numpy as np
 import synergy.utils.utils as utils
 
 class Hill:
-    """
+    """The four-parameter Hill equation
+
+                            d^h
+    E = E0 + (Emax-E0) * ---------
+                         C^h + d^h
+
+    The Hill equation is a standard model for single-drug dose-response curves.
+    This is the base model for Hill_2P and Hill_CI.
     """
     def __init__(self, E0=None, Emax=None, h=None, C=None, E0_bounds=(-np.inf, np.inf), Emax_bounds=(-np.inf, np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf)):
+        """
+        Parameters
+        ----------
+        E0 : float, optional
+            Effect at 0 dose. Set this if you are creating a synthetic Hill
+            model, rather than fitting from data
+        
+        Emax : float, optional
+            Effect at 0 dose. Set this if you are creating a synthetic Hill
+            model, rather than fitting from data
+        
+        h : float, optional
+            The Hill-slope. Set this if you are creating a synthetic Hill
+            model, rather than fitting from data
+        
+        C : float, optional
+            EC50, the dose for which E = (E0+Emax)/2. Set this if you are
+            creating a synthetic Hill model, rather than fitting from data
+        
+        E0_bounds: tuple, default=(-np.inf, np.inf)
+            Bounds to use for E0 when fitting this model to data
+        
+        Emax_bounds: tuple, default=(-np.inf, np.inf)
+            Bounds to use for Emax when fitting this model to data
+        
+        h_bounds: tuple, default=(0, np.inf)
+            Bounds to use for h when fitting this model to data
+        
+        C_bounds: tuple, default=(0, np.inf)
+            Bounds to use for C when fitting this model to data
+        """
         self.E0 = E0
         self.Emax = Emax
         self.h = h
@@ -40,6 +78,26 @@ class Hill:
         self.converged = False
     
     def fit(self, d, E, use_jacobian=True, **kwargs):
+        """Fit the Hill equation to data. Fitting algorithm searches for h and C in a log-scale, but all bounds and guesses should be provided in a linear scale.
+
+        Parameters
+        ----------
+        d : array-like
+            Array of doses measured
+        
+        E : array-like
+            Array of effects measured at doses d
+        
+        use_jacobian : bool, default=True
+            If True, will use the Jacobian to help guide fit. When the number
+            of data points is less than a few hundred, this makes the fitting
+            slower. However, it also improves the reliability with which a fit
+            can be found.
+        
+        kwargs
+            kwargs to pass to scipy.optimize.curve_fit()
+
+        """
         f = lambda d, E0, E1, logh, logC: self._model(d, E0, E1, np.exp(logh), np.exp(logC))
 
         bounds = tuple(zip(self.E0_bounds, self.Emax_bounds, self.logh_bounds, self.logC_bounds))
@@ -80,16 +138,47 @@ class Hill:
         self.C = np.exp(logC)
 
     def E(self, d):
+        """Evaluate this model at dose d. If the model is not parameterized, returns 0.
+
+        Parameters
+        ----------
+        d : array-like
+            Doses to calculate effect at
+        
+        Returns
+        ----------
+        effect : array-like
+            Evaluate's the model at dose in d
+        """
         if not self._is_parameterized():
             return 0
         return self._model(d, self.E0, self.Emax, self.h, self.C)
 
     def E_inv(self, E):
+        """Inverse of the Hill equation
+
+        Parameters
+        ----------
+        E : array-like
+            Effects to get the doses for
+        
+        Returns
+        ----------
+        doses : array-like
+            Doses which achieve effects E using this model. Effects that are
+            outside the range [E0, Emax] will return np.nan for the dose
+        """
         if not self._is_parameterized():
             return 0
         return self._model_inv(E, self.E0, self.Emax, self.h, self.C)
 
     def get_parameters(self):
+        """
+        Returns
+        ----------
+        parameters : tuple
+            (E0, Emax, h, C)
+        """
         return (self.E0, self.Emax, self.h, self.C)
         
     def _model(self, d, E0, Emax, h, C):
@@ -101,6 +190,13 @@ class Hill:
         return d
 
     def _model_jacobian(self, d, E0, Emax, logh, logC):
+        """
+        Returns
+        ----------
+        jacobian : array-like
+            Derivatives of the Hill equation with respect to E0, Emax, logh,
+            and logC
+        """
         
         dh = d**(np.exp(logh))
         Ch = (np.exp(logC))**(np.exp(logh))
@@ -119,6 +215,9 @@ class Hill:
         return None not in (self.E0, self.Emax, self.h, self.C)
 
     def create_fit(d, E, E0_bounds=(-np.inf, np.inf), Emax_bounds=(-np.inf, np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf), **kwargs):
+        """Courtesy function to build a Hill model directly from data.
+        Initializes a model using the provided bounds, then fits.
+        """
         drug = Hill(E0_bounds=E0_bounds, Emax_bounds=Emax_bounds, h_bounds=h_bounds, C_bounds=C_bounds)
         drug.fit(d, E, **kwargs)
         return drug

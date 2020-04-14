@@ -42,8 +42,10 @@ class ParameterizedModel:
         ----------
         d1 : array-like
             Doses of drug 1
+        
         d2 : array-like
             Doses of drug 2
+        
         E : array-like
             Observed effects
         """
@@ -71,6 +73,7 @@ class ParameterizedModel:
         ----------
         d1 : array-like
             Doses of drug 1
+        
         d2 : array-like
             Doses of drug 2
         
@@ -98,8 +101,10 @@ class ParameterizedModel:
         ----------
         d1 : array-like
             Doses of drug 1
+        
         d2 : array-like
             Doses of drug 2
+        
         kwargs
             kwargs passed to synergy.utils.plots.plot_colormap()
         """
