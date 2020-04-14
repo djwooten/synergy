@@ -1,6 +1,8 @@
 # synergy
 
-Note, this package was not used to calculate MuSyC or others' synergy in "Quantifying Drug Combination Synergy along Potency and Efficacy Axes" ([https://doi.org/10.1016/j.cels.2019.01.003]), nor "A Consensus Framework Unifies Multi-Drug Synergy Metrics" ([https://doi.org/10.1101/683433]). It is a standalone implementation.
+A python package to calculate, analyze, and visualize drug combination synergy and antagonism. Currently supports multiple models of synergy, inclding MuSyC, Bliss, Loewe, ZIP, Zimmer, Schindler, and HSA.
+
+Note, this package was not used to calculate MuSyC or others' synergy in "Quantifying Drug Combination Synergy along Potency and Efficacy Axes" (https://doi.org/10.1016/j.cels.2019.01.003), nor "A Consensus Framework Unifies Multi-Drug Synergy Metrics" (https://doi.org/10.1101/683433). It is a standalone implementation.
 
 ## Installation
 
