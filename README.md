@@ -21,10 +21,12 @@ Using git
   * Parametric
     * MuSyC
     * Zimmer (effective dose model)
-  * Non-parametric (**NOTE:** these do use parametric single-drug models)
+  * Dose-dependent
     * Bliss
     * Loewe
     * Schindler
+    * ZIP
+    * HSA
 * Single drug models
   * Four-parameter Hill equation
   * Two-parameter Hill equation
@@ -36,10 +38,11 @@ Using git
 
 ## Planned features
 * Additional models
-  * GPDI
-  * ZIP
-  * BRAID
-  * Combination Index
+  * Parametric
+    * GPDI
+    * BRAID
+  * Dose-dependent
+    * Combination Index
 * Three+ drug combinations (when possible)
 * Plotting functions
 * Dose / experiment design tools

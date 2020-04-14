@@ -1,4 +1,5 @@
 import numpy as np
+import synergy.utils.utils as utils
 
 matplotlib_import = False
 try:
@@ -21,6 +22,9 @@ def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel=""
         if (not pandas_import):
             raise ImportError("pandas must be installed to plot")
         
+        d1 = utils.remove_zeros_onestep(d1)
+        d2 = utils.remove_zeros_onestep(d2)
+
         df = pd.DataFrame(dict({'d1':d1, 'd2':d2, 'E':E}))
         df.sort_values(by=['d2','d1'],ascending=True, inplace=True)
         

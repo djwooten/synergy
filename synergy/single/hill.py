@@ -126,7 +126,7 @@ class Hill:
     def __repr__(self):
         if not self._is_parameterized(): return "Hill()"
         
-        return "Hill(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e, converged=%r)"%(self.E0, self.Emax, self.h, self.C, self.converged)
+        return "Hill(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)"%(self.E0, self.Emax, self.h, self.C)
 
 class Hill_2P(Hill):
     def __init__(self, h=None, C=None, h_bounds=(0,np.inf), C_bounds=(0,np.inf), E0=1, Emax=0):

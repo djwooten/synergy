@@ -36,6 +36,14 @@ def remove_zeros(d):
     #d[d==0] = np.nextafter(0,1) # Smallest positive float
     return d
 
+def remove_zeros_onestep(d):
+    d=np.array(d,copy=True)
+    dmin = np.min(d[d>0]) # smallest nonzero dose
+    dmin2 = np.min(d[d>dmin])
+    dilution = dmin/dmin2
+    d[d==0]=dmin * dilution
+    return d
+
 def residual_ss(d1, d2, E, model):
     E_model = model(d1, d2)
     return np.sum((E-E_model)**2)
