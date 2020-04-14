@@ -21,7 +21,7 @@ import synergy.utils.plots as plots
 
 class ParameterizedModel:
     """
-
+    This is the base class for paramterized synergy models, including MuSyC, Zimmer, GPDI, and BRAID.
     """
     def __init__(self):
 
@@ -32,6 +32,21 @@ class ParameterizedModel:
 #        self.converged = False
 
     def _score(self, d1, d2, E):
+        """Calculate goodness of fit and model quality scores, including sum-of-squares residuals, R^2, Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC).
+
+        If model is not yet paramterized, does nothing
+
+        Called automatically during model.fit(d1, d2, E)
+
+        Parameters
+        ----------
+        d1 : array-like
+            Doses of drug 1
+        d2 : array-like
+            Doses of drug 2
+        E : array-like
+            Observed effects
+        """
         if (self._is_parameterized()):
 
             n_parameters = len(self.get_parameters())
@@ -42,15 +57,52 @@ class ParameterizedModel:
             self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
 
     def get_parameters():
+        """
+        Returns
+        ----------
+        parameters : list or tuple
+            Model's parameters
+        """
         return []
 
     def E(self, d1, d2):
+        """
+        Parameters
+        ----------
+        d1 : array-like
+            Doses of drug 1
+        d2 : array-like
+            Doses of drug 2
+        
+        Returns
+        ----------
+        effect : array-like
+            Evaluate's the model at doses d1 and d2
+        """
         return 0
 
     def _is_parameterized(self):
+        """
+        Returns
+        ----------
+        is_parameterzed : bool
+            True if all of the parameters are set. False if any are None or nan.
+        """
         return not (None in self.get_parameters() or True in np.isnan(np.asarray(self.get_parameters())))
 
     def plot_colormap(self, d1, d2, **kwargs):
+        """
+        Plots the model's effect, E(d1, d2) as a heatmap
+
+        Parameters
+        ----------
+        d1 : array-like
+            Doses of drug 1
+        d2 : array-like
+            Doses of drug 2
+        kwargs
+            kwargs passed to synergy.utils.plots.plot_colormap()
+        """
         if not self._is_parameterized():
             #raise ModelNotParameterizedError()
             return
