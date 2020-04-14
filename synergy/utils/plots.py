@@ -16,6 +16,14 @@ try:
 except ImportError as e:
     pass
 
+plotly_import = False
+try:
+    import plotly.graph_objects as go
+    from plotly import offline
+    plotly_import = True
+except ImportError as e:
+    pass
+
 def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel="", figsize=None, cmap=None, aspect='equal', **kwargs):
         if (not matplotlib_import):
             raise ImportError("matplotlib must be installed to plot")
@@ -164,3 +172,40 @@ def relabel_log_ticks(ax, d1, d2):
 
 def interp(x, x0, x1, y0, y1):
     return (np.asarray(x)-x0)*(y1-y0)/(x1-x0)+y0
+
+def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
+                 elev=20, azim=19, fname=None, zlim=None, cmap='bwr',          \
+                 xlabel="x", ylabel="y", zlabel="z", \
+                 vmin=None, vmax=None, auto_open=True, opacity=0.8):
+    if (not plotly_import):
+        raise ImportError("plot_surface_plotly() requires plotly to be installed.")
+    
+    d1 = utils.remove_zeros_onestep(d1)
+    d2 = utils.remove_zeros_onestep(d2)
+
+    if (len(d1.shape)==1):
+        n_d1 = len(np.unique(d1))
+        n_d2 = len(np.unique(d2))
+        d1 = d1.reshape(n_d2,n_d1)
+        d2 = d2.reshape(n_d2,n_d1)
+        E = E.reshape(n_d2,n_d1)
+
+    data_to_plot = [go.Surface(x=np.log10(d1), y=np.log10(d2), z=E, cmin=vmin, cmax=vmax, opacity=opacity, contours_z=dict(show=True, usecolormap=True, highlightcolor="limegreen", project_z=False), colorscale="RdBu", reversescale=True, colorbar=dict(lenmode='fraction', len=0.65, title=zlabel)),]
+
+    if scatter_points is not None:
+        d1scatter = utils.remove_zeros_onestep(np.asarray(scatter_points['drug1.conc']))
+        d2scatter = utils.remove_zeros_onestep(np.asarray(scatter_points['drug2.conc']))
+        
+        data_to_plot.append(go.Scatter3d(x=np.log10(d1scatter), y=np.log10(d2scatter), z=scatter_points['effect'], mode="markers", marker=dict(size=1.5, color=scatter_points['effect'], colorscale="RdBu", reversescale=True, cmin=vmin, cmax=vmax, line=dict(width=0.5, color='DarkSlateGrey'))))
+
+    fig = go.Figure(data=data_to_plot)
+
+    #fig.update_traces(contours_z=dict(show=True, usecolormap=True, highlightcolor="limegreen", project_z=True))
+
+    fig.update_layout(title=fname, autosize=False,scene_camera_eye=dict(x=1.87, y=0.88, z=0.64), width=1000, height=800, margin=dict(l=100, r=100, b=90, t=90), xaxis_type="log", yaxis_type="log", scene=dict(xaxis_title=xlabel, yaxis_title=ylabel, zaxis_title=zlabel, aspectmode="cube"))
+
+    if zlim is not None:
+        fig.update_layout(scene = dict(zaxis = dict(range=zlim,)))
+
+
+    offline.plot(fig, filename=fname, auto_open=auto_open)

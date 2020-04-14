@@ -35,6 +35,9 @@ Using git
   * R-squared
   * Akaike Information Criterion
   * Bayesian Information Criterion
+* Visualization
+  * Heatmaps
+  * 3D Plotly Surfaces
 
 ## Planned features
 * Additional models
@@ -44,9 +47,13 @@ Using git
   * Dose-dependent
     * Combination Index
 * Three+ drug combinations (when possible)
-* Plotting functions
+* Visualization
+  * Add single-drug responses to 3D surface plots
+  * matplotlib 3D surface plotting
+  * Contour plots for heatmaps
+  * Isobolgrams
 * Dose / experiment design tools
-* Monte carlo sampling to obtain error bars
+* Monte carlo sampling to obtain confidence intervals for parameters
 * Parallelization API for fitting high-throughput screen data
 
 ## Current version
