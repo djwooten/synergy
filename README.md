@@ -1,4 +1,4 @@
-<p align="left"><img src="logo.png" width="400" align="left" /></p>  
+<img src="logo.png" width="400" />
 
 # synergy
 
