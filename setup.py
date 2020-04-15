@@ -42,9 +42,8 @@ setuptools.setup(
 #    package_dir={'synergy': 'src/'},
     packages=setuptools.find_packages(where='synergy'),
     install_requires=[
-        "scipy>=0.18.0",
-        "numpy"
-#        "numpy>=1.6.0", #Python 3 version
+        "scipy", # 0.18.0 introduced curve_fit(jac=)
+        "numpy" # 1.6.0 is first version compatible with python 3
     ],
     # package_data VS data_files VS ???
     
