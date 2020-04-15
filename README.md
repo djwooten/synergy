@@ -1,6 +1,4 @@
-<img src="logo.png" width="400" align="left" />  
-
-<br />  
+![synergy](https://github.com/djwooten/synergy/raw/master/logo.png)
 
 # synergy
 
