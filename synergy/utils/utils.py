@@ -19,6 +19,10 @@ import numpy as np
 
 
 def sham(d, drug):
+    """Simulates a sham combination experiment. In a sham experiment, the two drugs combined are (secretly) the same drug. For example, a sham combination may add 10uM drugA + 20uM drugB. But because drugA and drugB are the same (drugX), the combination is really just equivalent to 30uM of the drug.
+
+    
+    """
     if not 0 in d:
         d = np.append(0,d)
     d1, d2 = np.meshgrid(d,d)

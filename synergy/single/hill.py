@@ -96,7 +96,6 @@ class Hill:
         
         kwargs
             kwargs to pass to scipy.optimize.curve_fit()
-
         """
         f = lambda d, E0, E1, logh, logC: self._model(d, E0, E1, np.exp(logh), np.exp(logC))
 
@@ -228,6 +227,14 @@ class Hill:
         return "Hill(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)"%(self.E0, self.Emax, self.h, self.C)
 
 class Hill_2P(Hill):
+    """The two-parameter Hill equation
+
+                            d^h
+    E = E0 + (Emax-E0) * ---------
+                         C^h + d^h
+
+    Mathematically equivalent to the four-parameter Hill equation, but E0 and Emax are held constant (not fit to data).
+    """
     def __init__(self, h=None, C=None, h_bounds=(0,np.inf), C_bounds=(0,np.inf), E0=1, Emax=0):
         super().__init__(h=h, C=C, E0=E0, Emax=Emax, h_bounds=h_bounds, C_bounds=C_bounds)
 
@@ -294,6 +301,8 @@ class Hill_2P(Hill):
     
     
 class Hill_CI(Hill_2P):
+    """Mathematically equivalent two-parameter Hill equation with E0=1 and Emax=0. However, Hill_CI.fit() uses the log-linearization approach to dose-response fitting used by the Combination Index.
+    """
     def __init__(self, h=None, C=None):
         super().__init__(h=h, C=C, E0=1., Emax=0.)
 

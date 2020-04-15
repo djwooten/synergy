@@ -24,6 +24,8 @@ class ParameterizedModel:
     This is the base class for paramterized synergy models, including MuSyC, Zimmer, GPDI, and BRAID.
     """
     def __init__(self):
+        """Bounds for drug response parameters (for instance, given percent viability data, one might expect E to be bounded within (0,1)) can be set, or parameters can be explicitly set.
+        """
 
         self.sum_of_squares_residuals = None
         self.r_squared = None
@@ -47,7 +49,7 @@ class ParameterizedModel:
             Doses of drug 2
         
         E : array-like
-            Observed effects
+            Dose-response at doses d1 and d2
         """
         if (self._is_parameterized()):
 
@@ -66,6 +68,44 @@ class ParameterizedModel:
             Model's parameters
         """
         return []
+
+    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, **kwargs):
+        """Fit the synergy model to data using scipy.optimize.curve_fit().
+
+        Parameters
+        ----------
+        d1 : array-like
+            Doses of drug 1
+        
+        d2 : array-like
+            Doses of drug 2
+
+        E : array-like
+            Dose-response at doses d1 and d2
+
+        drug1_model : single-drug-model, default=None
+            Only used when p0 is None. Pre-defined, or fit, model (e.g., Hill()) of drug 1 alone. Parameters from this model are used to provide an initial guess of E0, E1, h1, and C1 for the 2D-model fit. If None (and p0 is None), then d1 and E will be masked where d2==min(d2), and used to fit a model for drug 1.
+
+        drug2_model : single-drug-model, default=None
+            Same as drug1_model, for drug 2.
+        
+        use_jacobian : bool, default=True
+            If True, will use the Jacobian to help guide fit (ONLY MuSyC, Hill, and Hill_2P have Jacobian implemented yet). When the number
+            of data points is less than a few hundred, this makes the fitting
+            slower. However, it also improves the reliability with which a fit
+            can be found. If drug1_model or drug2_model are None, use_jacobian will also be applied for their fits.
+
+        p0 : tuple, default=None
+            Initial guess for the parameters. If p0 is None (default), drug1_model and drug2_model will be used to obtain an initial guess. If they are also None, they will be fit to the data. If they fail to fit, the initial guess will be E0=max(E), Emax=min(E), h=1, C=median(d), and all synergy parameters are additive (i.e., at the boundary between antagonistic and synergistic)
+        
+        kwargs
+            kwargs to pass to scipy.optimize.curve_fit()
+
+        Returns
+        ----------
+        synergy_parameters : array-like
+            The fit parameters describing the synergy in the data
+        """
 
     def E(self, d1, d2):
         """
@@ -94,8 +134,7 @@ class ParameterizedModel:
         return not (None in self.get_parameters() or True in np.isnan(np.asarray(self.get_parameters())))
 
     def plot_colormap(self, d1, d2, **kwargs):
-        """
-        Plots the model's effect, E(d1, d2) as a heatmap
+        """Plots the model's effect, E(d1, d2) as a heatmap
 
         Parameters
         ----------
@@ -115,6 +154,58 @@ class ParameterizedModel:
         E = self.E(d1, d2)
         plots.plot_colormap(d1, d2, E, **kwargs)
 
+    def plot_surface_plotly(self, d1, d2, **kwargs):
+        """Plots the model's effect, E(d1, d2) as a surface using synergy.utils.plots.plot_surface_plotly()
+
+        Parameters
+        ----------
+        d1 : array-like
+            Doses of drug 1
+        
+        d2 : array-like
+            Doses of drug 2
+        
+        kwargs
+            kwargs passed to synergy.utils.plots.plot_colormap()
+        """
+        if not self._is_parameterized():
+            #raise ModelNotParameterizedError()
+            return
+        
+        E = self.E(d1, d2)
+        plots.plot_surface_plotly(d1, d2, E, **kwargs)
+
+    def create_fit(d1, d2, E, **kwargs):
+        """Courtesy one-liner method to create a model and fit it to data. Appropriate (see model __init__() for details) bounds may be set for curve_fit.
+
+        Parameters
+        ----------
+        d1 : array-like
+            Doses of drug 1
+        
+        d2 : array-like
+            Doses of drug 2
+        
+        E : array-like
+            Dose-response at doses d1 and d2
+
+        X_bounds : tuple, 
+            Bounds for each parameter of the model to be fit. See model.__init__() for specific details.
+        
+        kwargs
+            kwargs to pass sto model.fit()
+
+        Returns
+        ----------
+        model : ParametricModel
+            Synergy model fit to the given data
+        """
+        pass
+
+
+class DoseDependentModel:
+    def __init__(self):
+        self.synergy=None
 
 class ModelNotParameterizedError(Exception):
     """

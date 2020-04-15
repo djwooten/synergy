@@ -23,7 +23,27 @@ import synergy.combination.musyc_jacobian as musyc_jacobian
 from .base import *
 
 class MuSyC(ParameterizedModel):
-    """
+    """Multidimensional Synergy of Combinations (MuSyC) is a drug synergy framework based on the law of mass action (doi: 10.1016/j.cels.2019.01.003, doi: 10.1101/683433). In MuSyC, synergy is parametrically defined as shifts in potency, efficacy, or cooperativity.
+
+    Synergy Parameters
+    ------------------
+
+    alpha21 : Synergistic potency ([0,1) = antagonism, (1,inf) = synergism)
+        At large concentrations of drug 2, the "effective dose" of drug 1 = alpha21*d1.
+    
+    alpha12 : Synergistic potency ([0,1) = antagonism, (1,inf) = synergism)
+        At large concentrations of drug 1, the "effective dose" of drug 2 = alpha12*d2.
+
+    beta : Synergistic efficacy ((-inf,0) = antagonism, (0,inf) = synergism)
+        At large concentrations of both drugs, the combination achieves an effect beta-% stronger (or weaker) than the stronger single-drug.
+
+    NOTE: The current implementation does not yet fit gamma21 or gamma12, but fixes them at 1.
+
+    gamma21 : Synergistic cooperativity ([0,1) = antagonism, (1,inf) = synergism)
+        At large concentrations of drug 2, the Hill slope of drug 1 = gamma21*h1
+
+    gamma12 : Synergistic cooperativity ([0,1) = antagonism, (1,inf) = synergism)
+        At large concentrations of drug 1, the Hill slope of drug 2 = gamma12*h2
 
     """
     def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
@@ -80,9 +100,7 @@ class MuSyC(ParameterizedModel):
             self.loggamma21_bounds = (np.log(gamma21_bounds[0]), np.log(gamma21_bounds[1]))
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, **kwargs):
-        """
-        """
-
+        
         f = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1, self.r2, np.exp(logalpha12), np.exp(logalpha21))
 
         jacobian = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: musyc_jacobian.jacobian(d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1, self.r2, logalpha12, logalpha21)
@@ -178,8 +196,6 @@ class MuSyC(ParameterizedModel):
         return (r1r/r1)**(1./h)
 
     def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, r1, r2, alpha12, alpha21):
-        """
-        """
 
         d1h1 = d1**h1
         d2h2 = d2**h2
@@ -207,6 +223,7 @@ class MuSyC(ParameterizedModel):
             alpha12_bounds=(0,np.inf), alpha21_bounds=(0,np.inf),   \
             gamma12_bounds=(0,np.inf), gamma21_bounds=(0,np.inf),   \
             r1=1., r2=1., **kwargs):
+
         model = MuSyC(E0_bounds=E0_bounds, E1_bounds=E1_bounds, E2_bounds=E2_bounds, E3_bounds=E3_bounds, h1_bounds=h1_bounds, h2_bounds=h2_bounds, C1_bounds=C1_bounds, C2_bounds=C2_bounds, alpha12_bounds=alpha12_bounds, alpha21_bounds=alpha21_bounds, gamma12_bounds=gamma12_bounds, gamma21_bounds=gamma21_bounds, r1=r1, r2=r2)
         model.fit(d, E, **kwargs)
         return model

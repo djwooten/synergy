@@ -23,7 +23,26 @@ import synergy.single.hill as hill
 from .base import *
 
 class ZIP:
-    """
+    """The Zero Interaction Potency (ZIP) model (doi: 10.1016/j.csbj.2015.09.001). This model is based on the multiplicative survival principal (i.e., Bliss). All across the dose-response surface, it fits Hill-equations either holding d1==constant or d2==constant.
+    
+    ZIP quantifies changes in the EC50 (C) and Hill-slope (h) of each drug, as the other is increased. For instance, at a given d1==D1, d2==D2, ZIP fits two Hill equations: one for drug1 (fixing d2==D2), and one for drug2 (fixing d1==D1). These Hill equations are averaged to get a fit value of E (y_c in their paper) at these doses. This is then subtracted from the expected result (y_zip in their paper) obtained by assuming these Hill equations have equivalent h and C to their single-drug counterparts. This difference (delta in their paper) becomes the metric of synergy.
+
+    ZIP models store these delta values as model._synergy, but also store the Hill equation fits for drug1 and drug2 across the whole surface, allowing investigation of how h and C change across the surface
+
+    _synergy : array-like, (-inf,0)=antagonism, (0,inf)=synergism
+        The "delta" synergy score from ZIP
+
+    _h_21 : array-like
+        The hill slope of drug 1 obtained by holding D2==constant
+
+    _h_12 : array-like
+        The hill slope of drug 2 obtained by holding D1==constant
+
+    _C_21 : array-like
+        The EC50 of drug 1 obtained by holding D2==constant
+
+    _C_12 : array-like
+        The EC50 of drug 2 obtained by holding D1==constant
     """
     def __init__(self, E0_bounds=(-np.inf,np.inf), Emax_bounds=(-np.inf,np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf)):
 
@@ -109,7 +128,7 @@ class ZIP:
         
         AA = ((E0 + Emax*dCh2)/(1.+dCh2) + Emax*dCh1_prime) / (1+dCh1_prime)
         BB = ((E0 + Emax*dCh1)/(1.+dCh1) + Emax*dCh2_prime) / (1+dCh2_prime)
-        #CC = (E0 + Emax*dCh1)/(1+dCh1) + (E0 + Emax*dCh2)/(1+dCh2) - (E0 + Emax*dCh1)/(1+dCh1)*(E0 + Emax*dCh2)/(1+dCh2)
+        #CC = (E0 + Emax*dCh1)/(1+dCh1) + (E0 + Emax*dCh2)/(1+dCh2) - (E0 + Emax*dCh1)/(1+dCh1)*(E0 + Emax*dCh2)/(1+dCh2) # This form expects E0==0, Emax=1
         CC = (E0 + Emax*dCh1)/(1+dCh1)*(E0 + Emax*dCh2)/(1+dCh2)
 
         return CC - (AA+BB)/2.

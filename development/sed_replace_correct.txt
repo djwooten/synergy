@@ -23,6 +23,8 @@ sed -e 's/log(d2\*alpha12)/logd2alpha12/g' \
 
 
 
+Replacements
+-------------
 exp(logh1) -> h1
 
 (d1*alpha21)**h1 -> alpha21d1h1
@@ -33,9 +35,6 @@ d2**h2 -> d2h2
 
 C1**(2*h1) -> C12h1
 C2**(2*h2) -> C22h2
-
-
-
 
 
 log(C1) -> logC1

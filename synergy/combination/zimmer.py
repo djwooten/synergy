@@ -23,7 +23,24 @@ import synergy.single.hill as hill
 from .base import *
 
 class Zimmer(ParameterizedModel):
-    """
+    """The Effective Dose Model from Zimmer et al (doi: 10.1073/pnas.1606301113). This model uses the multiplicative survival principle (i.e., Bliss), but adds a parameter for each drug describing how it affects the potency of the other. Specifically, given doses d1 and d2, this model translates them to "effective" doses using the following system of equations
+
+                            d1
+    d1_eff =  --------------------------------
+              1 + a12*(1/(1+(d2_eff/C2)^(-1)))
+
+                            d2
+    d2_eff =  --------------------------------
+              1 + a21*(1/(1+(d1_eff/C1)^(-1)))
+
+    Synergy Parameters
+    ------------------
+
+    a12 : (-(1+(d2_eff/C2))/(d2_eff/C2),0)=synergism, (0,inf)=antagonism
+        Describes how drug 2 affects the effective dose of drug 1.
+
+    a21 : (-(1+(d1_eff/C1))/(d1_eff/C1),0)=synergism, (0,inf)=antagonism
+        Describes how drug 1 affects the effective dose of drug 2.
     """
     def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
             C1_bounds=(0,np.inf), C2_bounds=(0,np.inf), a12_bounds=(-np.inf, np.inf), a21_bounds=(-np.inf, np.inf), h1=None, h2=None, C1=None, C2=None, a12=None, a21=None):
@@ -50,10 +67,6 @@ class Zimmer(ParameterizedModel):
         self.a21 = a21
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian=True, **kwargs):
-        """
-        TODO: Add support for Jacobian
-        """
-
         if (use_jacobian):
             warnings.warn(FeatureNotImplemented("Jacobian has not been implemented for Zimmer synergy model, but will still be used for single-drug fits"))
         bounds = tuple(zip(self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.a12_bounds, self.a21_bounds))
