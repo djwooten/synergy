@@ -1,6 +1,7 @@
-<img src="logo.png" width="400" align="left" />
+<img src="logo.png" width="400" align="left" />  
 
-<br />
+<br />  
+
 # synergy
 
 A python package to calculate, analyze, and visualize drug combination synergy and antagonism. Currently supports multiple models of synergy, inclding MuSyC, Bliss, Loewe, ZIP, Zimmer, Schindler, and HSA.
