@@ -24,7 +24,7 @@ D1, D2 = dose_tools.grid(1e-3, 1, 1e-2, 10, npoints, npoints2, replicates=replic
 D1 = D1/3.
 
 E = model._model(D1, D2, E0, E1, E2, E3, h1, h2, C1, C2, r1, r2, alpha12, alpha21)
-Efit = E*(1+(np.random.rand(len(D1))-0.5)/3.)
+Efit = E*(1+(np.random.rand(len(D1))-0.5)/5.)
 
 scatter_points = pd.DataFrame({'drug1.conc':D1, 'drug2.conc':D2, 'effect':Efit})
 model.fit(D1, D2, Efit)

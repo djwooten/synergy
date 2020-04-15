@@ -16,36 +16,40 @@
 """
 
 import numpy as np
+from synergy.single.marginal import MarginalLinear
+from .base import DoseDependentModel
 
-class HSA:
+class HSA(DoseDependentModel):
     """
     """
-    def __init__(self):
-        self._synergy = []
 
-    def fit(self, d1, d2, E, **kwargs):
+    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
         
-        self._synergy = []
+        super().fit(d1, d2, E)
+
+        #self.synergy = []
         d1_min = np.min(d1)
         d2_min = np.min(d2)
 
         if (d1_min > 0 or d2_min > 0):
             print("WARNING: HSA expects single-drug information")
         
-        for (D1, D2, EX) in zip(d1, d2, E):
-            if D1==d1_min or D2==d2_min:
-                self._synergy.append(0)
-                continue
-            d1_alone_mask = np.where((d2==d2_min) & (d1==D1))
-            d2_alone_mask = np.where((d1==d1_min) & (d2==D2))
-            
-            E1_alone = np.mean(E[d1_alone_mask])
-            E2_alone = np.mean(E[d2_alone_mask])
+        d1_alone_mask = np.where(d2==d2_min)
+        d2_alone_mask = np.where(d1==d1_min)
 
-            delta_E1 = E1_alone - EX
-            delta_E2 = E2_alone - EX
+        if drug1_model is None:
+            drug1_model = MarginalLinear(d=d1[d1_alone_mask], E=E[d1_alone_mask])
 
-            self._synergy.append(min(delta_E1, delta_E2))
+        if drug2_model is None:
+            drug2_model = MarginalLinear(d=d2[d2_alone_mask], E=E[d2_alone_mask])
 
-        self._synergy = np.asarray(self._synergy)
-        return self._synergy
+        self.drug1_model = drug1_model
+        self.drug2_model = drug2_model
+
+        E1_alone = drug1_model.E(d1)
+        E2_alone = drug2_model.E(d2)
+        self.synergy = np.minimum(E1_alone-E, E2_alone-E)
+        
+        self.synergy[d1_alone_mask] = 0
+        self.synergy[d2_alone_mask] = 0
+        return self.synergy

@@ -22,14 +22,16 @@ import synergy.utils.utils as utils
 import synergy.single.hill as hill
 from .base import *
 
-class ZIP:
+class ZIP(DoseDependentModel):
     """The Zero Interaction Potency (ZIP) model (doi: 10.1016/j.csbj.2015.09.001). This model is based on the multiplicative survival principal (i.e., Bliss). All across the dose-response surface, it fits Hill-equations either holding d1==constant or d2==constant.
     
     ZIP quantifies changes in the EC50 (C) and Hill-slope (h) of each drug, as the other is increased. For instance, at a given d1==D1, d2==D2, ZIP fits two Hill equations: one for drug1 (fixing d2==D2), and one for drug2 (fixing d1==D1). These Hill equations are averaged to get a fit value of E (y_c in their paper) at these doses. This is then subtracted from the expected result (y_zip in their paper) obtained by assuming these Hill equations have equivalent h and C to their single-drug counterparts. This difference (delta in their paper) becomes the metric of synergy.
 
     ZIP models store these delta values as model._synergy, but also store the Hill equation fits for drug1 and drug2 across the whole surface, allowing investigation of how h and C change across the surface
 
-    _synergy : array-like, (-inf,0)=antagonism, (0,inf)=synergism
+    --------
+
+    synergy : array-like, (-inf,0)=antagonism, (0,inf)=synergism
         The "delta" synergy score from ZIP
 
     _h_21 : array-like
@@ -46,21 +48,22 @@ class ZIP:
     """
     def __init__(self, E0_bounds=(-np.inf,np.inf), Emax_bounds=(-np.inf,np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf)):
 
+        super().__init__(h1_bounds=h_bounds, h2_bounds=h_bounds, C1_bounds=C_bounds, C2_bounds=C_bounds, E0_bounds=E0_bounds, E1_bounds=Emax_bounds, E2_bounds=Emax_bounds)
+
         self.E0_bounds = E0_bounds
         self.Emax_bounds = Emax_bounds
         self.C_bounds = C_bounds
         self.h_bounds = h_bounds
 
-        self.drug1_model = None
-        self.drug2_model = None
         self._h_21 = []
         self._h_12 = []
         self._C_21 = []
         self._C_12 = []
-        self._synergy = []
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian=True, **kwargs):
     
+        super().fit(d1, d2, E)
+        
         if drug1_model is None:
             mask = np.where(d2==min(d2))
             drug1_model = hill.Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.Emax_bounds, h_bounds=self.h_bounds, C_bounds=self.C_bounds, use_jacobian=use_jacobian)
@@ -82,6 +85,15 @@ class ZIP:
             drug1_model.Emax = E0_1
             drug2_model.Emax = E0_2
 
+            tmp = E0
+            E0 = Emax
+            Emax = tmp
+
+
+            # Should I do E = (E-E0)/(E0-Emax) + 1
+            # This puts E on the range 1 to 0.
+            # But it also kills info about drugs that don't reach 0% viability
+
         
         logh1 = np.log(h1)
         logh2 = np.log(h2)
@@ -92,6 +104,7 @@ class ZIP:
         self._h_12 = [] # Hill slope of drug 2, after treated by drug 1
         self._C_21 = [] # EC50 of drug 1, after treated by drug 2
         self._C_12 = [] # EC50 of drug 2, after treated by drug 1
+        
         zip_model = hill.Hill_2P(Emax=Emax, h_bounds=self.h_bounds, C_bounds=self.C_bounds)
 
         for D1, D2 in zip(d1, d2):
@@ -116,9 +129,9 @@ class ZIP:
         self._C_21 = np.asarray(self._C_21)
         self._C_12 = np.asarray(self._C_12)
 
-        self._synergy = self._delta_score(d1, d2, E0, Emax, h1, h2, C1, C2, self._h_21, self._h_12, self._C_21, self._C_12)
+        self.synergy = self._delta_score(d1, d2, E0, Emax, h1, h2, C1, C2, self._h_21, self._h_12, self._C_21, self._C_12)
 
-        return self._synergy
+        return self.synergy
 
     def _delta_score(self, d1, d2, E0, Emax, h1, h2, C1, C2, h_21, h_12, C_21, C_12):
         dCh1 = (d1/C1)**h1

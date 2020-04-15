@@ -16,7 +16,7 @@ drug = Hill(E0=E0, Emax=Emax, h=h, C=C)
 
 
 npoints=8
-dmax = 0.2
+dmax = 0.02
 d = np.linspace(dmax/npoints,dmax,num=npoints)
 d1, d2, E = sham(d, drug)
 
@@ -24,31 +24,30 @@ loewe = Loewe()
 synergy = loewe.fit(d1, d2, E)
 
 schindler = Schindler()
-s_synergy = schindler.fit(d1, d2, E, drug1_model=loewe._drug1_model, drug2_model=loewe._drug2_model)
+s_synergy = schindler.fit(d1, d2, E, drug1_model=loewe.drug1_model, drug2_model=loewe.drug2_model)
 
 bliss = Bliss()
-bsynergy = bliss.fit(d1, d2, E, drug1_model=loewe._drug1_model, drug2_model=loewe._drug2_model)
+bsynergy = bliss.fit(d1, d2, E, drug1_model=loewe.drug1_model, drug2_model=loewe.drug2_model)
 
 musyc = MuSyC()
 musyc.fit(d1, d2, E)
 
-fig = plt.figure(figsize=(7,3))
-ax = fig.add_subplot(1,3,1)
-ax.pcolormesh(d1.reshape(npoints+1,npoints+1),d2.reshape(npoints+1,npoints+1),E.reshape(npoints+1,npoints+1))
-ax.set_aspect('equal')
-ax.set_title("Sham Surface")
+fig = plt.figure(figsize=(12,3))
 
-ax = fig.add_subplot(1,3,2)
-ax.pcolormesh(d1.reshape(npoints+1,npoints+1),d2.reshape(npoints+1,npoints+1),synergy.reshape(npoints+1,npoints+1), vmin=0.99, vmax=1.01)
-ax.set_aspect('equal')
-ax.set_yticks([])
-ax.set_title("Loewe Synergy")
+ax = fig.add_subplot(1,4,1)
+musyc.plot_colormap(d1, d2, ax=ax, logscale=False, title="Sham Surface")
 
-ax = fig.add_subplot(1,3,3)
-ax.pcolormesh(d1.reshape(npoints+1,npoints+1),d2.reshape(npoints+1,npoints+1),s_synergy.reshape(npoints+1,npoints+1), vmin=-0.01, vmax=0.01)
-ax.set_aspect('equal')
+ax = fig.add_subplot(1,4,2)
+loewe.plot_colormap(ax=ax, title="-log(Loewe)", vmin=-0.01, vmax=0.01, logscale=False, neglog=True)
 ax.set_yticks([])
-ax.set_title("Schindler Synergy")
+
+ax = fig.add_subplot(1,4,3)
+schindler.plot_colormap(ax=ax, title="Schindler", vmin=-0.01, vmax=0.01, logscale=False)
+ax.set_yticks([])
+
+ax = fig.add_subplot(1,4,4)
+bliss.plot_colormap(ax=ax, title="Bliss", center_on_zero=True, logscale=False)
+ax.set_yticks([])
 
 plt.tight_layout()
 plt.show()

@@ -33,10 +33,12 @@ Using git
     * Schindler
     * ZIP
     * HSA
+    * Combination Index
 * Single drug models
   * Four-parameter Hill equation
   * Two-parameter Hill equation
   * Median-effect equation
+  * Piecewise linear
 * Model scoring
   * R-squared
   * Akaike Information Criterion
@@ -44,21 +46,23 @@ Using git
 * Visualization
   * Heatmaps
   * 3D Plotly Surfaces
+* Synthetic data tools
+  * Drug dilutions using grid-based sampling
+  * "Sham experiment" simulation
 
 ## Planned features
 * Additional models
   * Parametric
     * GPDI
     * BRAID
-  * Dose-dependent
-    * Combination Index
 * Three+ drug combinations (when possible)
 * Visualization
-  * Add single-drug responses to 3D surface plots
+  * Highlight single-drug curves on 3D surface plots
   * matplotlib 3D surface plotting
   * Contour plots for heatmaps
   * Isobolgrams
-* Dose / experiment design tools
+* Additional dose / experiment design tools
+  * Alternative dosing strategies
 * Monte carlo sampling to obtain confidence intervals for parameters
 * Parallelization API for fitting high-throughput screen data
 

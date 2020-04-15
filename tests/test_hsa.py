@@ -9,8 +9,8 @@ import synergy.utils.plots as plots
 
 
 hsa = HSA()
-d1 = np.asarray([0,1,1])
-d2 = np.asarray([1,0,1])
+d1 = np.asarray([0,1,1], dtype=np.float64)
+d2 = np.asarray([1,0,1], dtype=np.float64)
 E = np.asarray([0.5, 0.4, 0.1])
 synergy = hsa.fit(d1, d2, E)
 print(synergy)
@@ -35,7 +35,7 @@ ax = fig.add_subplot(121)
 plots.plot_colormap(d1, d2, E, ax=ax, title="Data")
 
 ax = fig.add_subplot(122)
-plots.plot_colormap(d1, d2, synergy, ax=ax, title="HSA")
+hsa.plot_colormap(ax=ax, title="HSA")
 
 plt.tight_layout()
 plt.show()

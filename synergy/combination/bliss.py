@@ -18,63 +18,58 @@
 import numpy as np
 import synergy.utils.utils as utils
 import synergy.single.hill as hill
+from .base import DoseDependentModel
 
-class Bliss:
+class Bliss(DoseDependentModel):
     """
+    Synergy is simply defined as the difference between the observed E and the E predicted by the Bliss Independence assumption (E_pred = E_drug1_alone * E_drug2_alone).
+
+    -------
+
+    synergy : (-inf,0)=antagonism, (0,inf)=synergism
     """
-    def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
-            C1_bounds=(0,np.inf), C2_bounds=(0,np.inf),             \
-            E0_bounds=(-np.inf,np.inf), E1_bounds=(-np.inf,np.inf), \
-            E2_bounds=(-np.inf,np.inf)):
-        self.C1_bounds = C1_bounds
-        self.C2_bounds = C2_bounds
-        self.h1_bounds = h1_bounds
-        self.h2_bounds = h2_bounds
-        self.E0_bounds = E0_bounds
-        self.E1_bounds = E1_bounds
-        self.E2_bounds = E2_bounds
-        self._synergy = None
-        self._drug1_model = None
-        self._drug2_model = None
-        
     
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None):
-        """
-        TODO: Add options for fitting ONLY using marginal points, not fits
-        """
+    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
+        super().fit(d1, d2, E)
+
         if drug1_model is None:
             mask = np.where(d2==min(d2))
             drug1_model = hill.Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+
         if drug2_model is None:
             mask = np.where(d1==min(d1))
             drug2_model = hill.Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
         
-        self._drug1_model = drug1_model
-        self._drug2_model = drug2_model
+        self.drug1_model = drug1_model
+        self.drug2_model = drug2_model
 
         E1_alone = drug1_model.E(d1)
         E2_alone = drug2_model.E(d2)
-        self._synergy = E1_alone*E2_alone - E
 
-        self._synergy[(d1==0) | (d2==0)] = 0
+        self.synergy = E1_alone*E2_alone - E
+        self.synergy[(d1==0) | (d2==0)] = 0
 
-        return self._synergy
+        return self.synergy
 
     def null_E(self, d1, d2, drug1_model=None, drug2_model=None):
-        if self._drug1_model is None or drug1_model is not None: self._drug1_model = drug1_model
+        """Returns E from the Bliss null model (E = E1*E2)
+        """
+        if self.drug1_model is None or drug1_model is not None: self.drug1_model = drug1_model
 
-        if self._drug2_model is None or drug2_model is not None: self._drug2_model = drug2_model
+        if self.drug2_model is None or drug2_model is not None: self.drug2_model = drug2_model
 
-        if None in [self._drug1_model, self._drug2_model]:
+        if None in [self.drug1_model, self.drug2_model]:
             # Raise model not set error
-            return 0
+            ret = 0*d1
+            ret[:] = np.nan
+            return ret
 
         D1, D2 = np.meshgrid(d1, d2)
         D1 = D1.flatten()
         D2 = D2.flatten()
 
-        E1_alone = self._drug1_model.E(D1)
-        E2_alone = self._drug2_model.E(D2)
+        E1_alone = self.drug1_model.E(D1)
+        E2_alone = self.drug2_model.E(D2)
 
         return D1, D2, E1_alone*E2_alone
 

@@ -307,13 +307,11 @@ class Hill_CI(Hill_2P):
         super().__init__(h=h, C=C, E0=1., Emax=0.)
 
     def fit(self, d, E):
-        mask = (E < 1) & (E > 0)
+        mask = np.where((E < 1) & (E > 0) & (d > 0))
         E = E[mask]
         d = d[mask]
         fU = E
         fA = 1-E
-
-        d = utils.remove_zeros(d)
 
         median_effect_line = linregress(np.log(d),np.log(fA/fU))
         self.h = median_effect_line.slope
@@ -327,6 +325,6 @@ class Hill_CI(Hill_2P):
     def __repr__(self):
         if not self._is_parameterized(): return "Hill_CI()"
         
-        return "Hill_CI(%0.2f, %0.2e)"%(self.h, self.C)
+        return "Hill_CI(h=%0.2f, C=%0.2e)"%(self.h, self.C)
     
     

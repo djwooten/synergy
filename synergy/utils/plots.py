@@ -5,7 +5,10 @@ matplotlib_import = False
 try:
     from matplotlib import pyplot as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
+    from matplotlib.cm import get_cmap
+    
     matplotlib_import = True
+    
 except ImportError as e:
     pass
 
@@ -24,14 +27,15 @@ try:
 except ImportError as e:
     pass
 
-def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel="", figsize=None, cmap=None, aspect='equal', **kwargs):
+def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel="", figsize=None, cmap="PRGn_r", aspect='equal', vmin=None, vmax=None, center_on_zero=False, logscale=True, nancolor="#BBBBBB", **kwargs):
         if (not matplotlib_import):
             raise ImportError("matplotlib must be installed to plot")
         if (not pandas_import):
             raise ImportError("pandas must be installed to plot")
         
-        d1 = utils.remove_zeros_onestep(d1)
-        d2 = utils.remove_zeros_onestep(d2)
+        if logscale:
+            d1 = utils.remove_zeros_onestep(d1)
+            d2 = utils.remove_zeros_onestep(d2)
 
         df = pd.DataFrame(dict({'d1':d1, 'd2':d2, 'E':E}))
         df.sort_values(by=['d2','d1'],ascending=True, inplace=True)
@@ -52,21 +56,35 @@ def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel=""
             ax = fig.add_subplot(111)
             created_ax=True
 
-        #ax.pcolormesh(np.log10(D1.values.reshape(n_d2,n_d1)), np.log10(D2.values.reshape(n_d2, n_d1)), E.values.reshape(n_d2, n_d1))
-        pco = ax.pcolormesh(E.values.reshape(n_d2, n_d1), cmap=cmap)
-        #plt.colorbar(pco)
+
+        if center_on_zero:
+            if vmin is None or vmax is None:
+                zmax = max(abs(min(E)), abs(max(E)))
+                vmin = -zmax
+                vmax = zmax
+            else:
+                zmax = max(abs(vmin), abs(vmax))
+                vmin = -zmax
+                vmax = zmax
+
+
+        current_cmap = get_cmap(name=cmap)
+        current_cmap.set_bad(color=nancolor)
+
+        if not logscale:
+            pco = ax.pcolormesh(D1.values.reshape(n_d2,n_d1), D2.values.reshape(n_d2, n_d1), E.values.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=cmap)
+        else:
+            pco = ax.pcolormesh(E.values.reshape(n_d2, n_d1), cmap=cmap, vmin=vmin, vmax=vmax)
+            relabel_log_ticks(ax, D1.unique(), D2.unique())
 
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size=max(2/n_d1, 2/n_d2, 0.05), pad=0.1)
         plt.colorbar(pco, cax=cax)
     
-        #square_log_axes(ax, n_d1, n_d2)
         ax.set_aspect(aspect)
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
         ax.set_title(title)
-
-        relabel_log_ticks(ax, D1.unique(), D2.unique())
         
         if (fname is not None):
             plt.tight_layout()
@@ -174,7 +192,7 @@ def interp(x, x0, x1, y0, y1):
     return (np.asarray(x)-x0)*(y1-y0)/(x1-x0)+y0
 
 def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
-                 elev=20, azim=19, fname=None, zlim=None, cmap='bwr',          \
+                 elev=20, azim=19, fname=None, zlim=None, cmap='viridis',          \
                  xlabel="x", ylabel="y", zlabel="z", \
                  vmin=None, vmax=None, auto_open=True, opacity=0.8):
     if (not plotly_import):
@@ -190,7 +208,7 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
         d2 = d2.reshape(n_d2,n_d1)
         E = E.reshape(n_d2,n_d1)
 
-    data_to_plot = [go.Surface(x=np.log10(d1), y=np.log10(d2), z=E, cmin=vmin, cmax=vmax, opacity=opacity, contours_z=dict(show=True, usecolormap=True, highlightcolor="limegreen", project_z=False), colorscale="RdBu", reversescale=True, colorbar=dict(lenmode='fraction', len=0.65, title=zlabel)),]
+    data_to_plot = [go.Surface(x=np.log10(d1), y=np.log10(d2), z=E, cmin=vmin, cmax=vmax, opacity=opacity, contours_z=dict(show=True, usecolormap=True, highlightcolor="limegreen", project_z=False), colorscale=cmap, reversescale=True, colorbar=dict(lenmode='fraction', len=0.65, title=zlabel)),]
 
     if scatter_points is not None:
         d1scatter = utils.remove_zeros_onestep(np.asarray(scatter_points['drug1.conc']))
