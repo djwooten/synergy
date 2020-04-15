@@ -1,4 +1,4 @@
-![synergy](https://github.com/djwooten/synergy/raw/master/logo.png)
+![synergy](https://github.com/djwooten/synergy/raw/master/logo.png =x250x)
 
 # synergy
 
