@@ -6,6 +6,7 @@ from synergy.combination.musyc import MuSyC
 from synergy.single.hill import Hill
 
 import synergy.utils.plots as plots
+from synergy.utils.data_exchange import to_synergyfinder
 
 
 E0, E1, E2, E3 = 1., 0., 0., 0.
@@ -31,8 +32,12 @@ model = ZIP()
 #Efit = E*(1+(np.random.rand(len(D1))-0.5)/10.)
 Efit = E
 
+# Output data to test in synergyfinder R package
+df = to_synergyfinder(D1, D2, Efit)
+df.to_csv("zip_test_data.csv", index=None)
+
 synergy = model.fit(D1, D2, Efit, drug1_model=Hill(E0,E1,h1,C1), drug2_model=Hill(E0,E2,h2,C2))
-#synergy = model.fit(D1, D2, Efit)
+
 print(model.drug1_model, model.drug2_model)
 
 fig = plt.figure(figsize=(7,3))
@@ -41,7 +46,7 @@ ax=fig.add_subplot(121)
 musyc.plot_colormap(D1, D2, ax=ax, title="Data")
 
 ax=fig.add_subplot(122)
-plots.plot_colormap(D1, D2, 100*synergy, ax=ax, title="ZIP")
+model.plot_colormap(ax=ax, title="ZIP")
 
 plt.tight_layout()
 plt.show()

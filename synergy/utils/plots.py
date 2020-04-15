@@ -192,7 +192,7 @@ def interp(x, x0, x1, y0, y1):
     return (np.asarray(x)-x0)*(y1-y0)/(x1-x0)+y0
 
 def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
-                 elev=20, azim=19, fname=None, zlim=None, cmap='viridis',          \
+                 elev=20, azim=19, fname="plot.html", zlim=None, cmap='viridis',          \
                  xlabel="x", ylabel="y", zlabel="z", \
                  vmin=None, vmax=None, auto_open=True, opacity=0.8):
     if (not plotly_import):
