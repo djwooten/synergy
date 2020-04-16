@@ -16,7 +16,7 @@
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
 import numpy as np
-import synergy.utils.utils as utils
+from .. import utils
 
 class Hill:
     """The four-parameter Hill equation

@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import synergy.utils.utils as utils
+from . import base as utils
 
 matplotlib_import = False
 try:
