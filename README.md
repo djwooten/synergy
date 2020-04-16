@@ -18,9 +18,9 @@ Using git
 `git clone ...`
 
 ## Requirements
-* python 3
-* numpy
-* scipy
+* python >= 3.5
+* numpy >= 1.6.0
+* scipy >= 0.18.0
 * Optional for full plotting functionality
   * matplotlib
   * plotly
