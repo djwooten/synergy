@@ -1,19 +1,18 @@
-"""
-    Copyright (C) 2020 David J. Wooten
+#    Copyright (C) 2020 David J. Wooten
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
 
 import numpy as np
 from .. import utils
@@ -21,8 +20,7 @@ from ..utils import plots
 
 
 class ParameterizedModel:
-    """
-    This is the base class for paramterized synergy models, including MuSyC, Zimmer, GPDI, and BRAID.
+    """Base class for paramterized synergy models, including MuSyC, Zimmer, GPDI, and BRAID.
     """
     def __init__(self):
         """Bounds for drug response parameters (for instance, given percent viability data, one might expect E to be bounded within (0,1)) can be set, or parameters can be explicitly set.
@@ -43,13 +41,13 @@ class ParameterizedModel:
 
         Parameters
         ----------
-        d1 : array-like
+        d1 : array_like
             Doses of drug 1
         
-        d2 : array-like
+        d2 : array_like
             Doses of drug 2
         
-        E : array-like
+        E : array_like
             Dose-response at doses d1 and d2
         """
         if (self._is_parameterized()):
@@ -62,7 +60,8 @@ class ParameterizedModel:
             self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
 
     def get_parameters():
-        """
+        """Returns all of the model's fit parameters
+
         Returns
         ----------
         parameters : list or tuple
@@ -75,13 +74,13 @@ class ParameterizedModel:
 
         Parameters
         ----------
-        d1 : array-like
+        d1 : array_like
             Doses of drug 1
         
-        d2 : array-like
+        d2 : array_like
             Doses of drug 2
 
-        E : array-like
+        E : array_like
             Dose-response at doses d1 and d2
 
         drug1_model : single-drug-model, default=None
@@ -104,29 +103,31 @@ class ParameterizedModel:
 
         Returns
         ----------
-        synergy_parameters : array-like
+        synergy_parameters : array_like
             The fit parameters describing the synergy in the data
         """
 
     def E(self, d1, d2):
-        """
+        """Returns drug effect E at dose d1,d2 for a pre-defined or fitted model.
+
         Parameters
         ----------
-        d1 : array-like
+        d1 : array_like
             Doses of drug 1
         
-        d2 : array-like
+        d2 : array_like
             Doses of drug 2
         
         Returns
         ----------
-        effect : array-like
+        effect : array_like
             Evaluate's the model at doses d1 and d2
         """
         return 0
 
     def _is_parameterized(self):
-        """
+        """Returns False if any parameters are None or nan.
+
         Returns
         ----------
         is_parameterzed : bool
@@ -139,10 +140,10 @@ class ParameterizedModel:
 
         Parameters
         ----------
-        d1 : array-like
+        d1 : array_like
             Doses of drug 1
         
-        d2 : array-like
+        d2 : array_like
             Doses of drug 2
         
         kwargs
@@ -160,10 +161,10 @@ class ParameterizedModel:
 
         Parameters
         ----------
-        d1 : array-like
+        d1 : array_like
             Doses of drug 1
         
-        d2 : array-like
+        d2 : array_like
             Doses of drug 2
         
         kwargs
@@ -181,13 +182,13 @@ class ParameterizedModel:
 
         Parameters
         ----------
-        d1 : array-like
+        d1 : array_like
             Doses of drug 1
         
-        d2 : array-like
+        d2 : array_like
             Doses of drug 2
         
-        E : array-like
+        E : array_like
             Dose-response at doses d1 and d2
 
         X_bounds : tuple, 
@@ -205,11 +206,14 @@ class ParameterizedModel:
 
 
 class DoseDependentModel:
+    """These are models for which synergy is defined independently at each individual dose.
+    """
     def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
             C1_bounds=(0,np.inf), C2_bounds=(0,np.inf),             \
             E0_bounds=(-np.inf,np.inf), E1_bounds=(-np.inf,np.inf), \
             E2_bounds=(-np.inf,np.inf)):
-        """
+        """Creates a DoseDependentModel
+
         Parameters
         ----------
         E0_bounds: tuple, default=(-np.inf, np.inf)
@@ -244,13 +248,13 @@ class DoseDependentModel:
 
         Parameters
         ----------
-        d1 : array-like
+        d1 : array_like
             Doses of drug 1
         
-        d2 : array-like
+        d2 : array_like
             Doses of drug 2
 
-        E : array-like
+        E : array_like
             Dose-response at doses d1 and d2
 
         drug1_model : single-drug-model, default=None
@@ -264,7 +268,7 @@ class DoseDependentModel:
 
         Returns
         ----------
-        synergy : array-like
+        synergy : array_like
             The synergy calculated at all doses d1, d2
         """
         self.d1 = d1
@@ -312,7 +316,5 @@ class ModelNotParameterizedError(Exception):
         super().__init__(msg, *args, **kwargs)
 
 class FeatureNotImplemented(Warning):
-    """
-    """
     def __init__(self, msg="This feature is not yet implemented", *args, **kwargs):
         super().__init__(msg, *args, **kwargs)

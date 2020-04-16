@@ -1,19 +1,17 @@
-"""
-    Copyright (C) 2020 David J. Wooten
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
+#    Copyright (C) 2020 David J. Wooten
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -25,25 +23,22 @@ from ..single import hill as hill
 class MuSyC(ParameterizedModel):
     """Multidimensional Synergy of Combinations (MuSyC) is a drug synergy framework based on the law of mass action (doi: 10.1016/j.cels.2019.01.003, doi: 10.1101/683433). In MuSyC, synergy is parametrically defined as shifts in potency, efficacy, or cooperativity.
 
-    Synergy Parameters
-    ------------------
-
-    alpha21 : Synergistic potency ([0,1) = antagonism, (1,inf) = synergism)
-        At large concentrations of drug 2, the "effective dose" of drug 1 = alpha21*d1.
+    alpha21 : float
+        Synergistic potency ([0,1) = antagonism, (1,inf) = synergism).        At large concentrations of drug 2, the "effective dose" of drug 1 = alpha21*d1.
     
-    alpha12 : Synergistic potency ([0,1) = antagonism, (1,inf) = synergism)
-        At large concentrations of drug 1, the "effective dose" of drug 2 = alpha12*d2.
+    alpha12 : float
+        Synergistic potency ([0,1) = antagonism, (1,inf) = synergism).         At large concentrations of drug 1, the "effective dose" of drug 2 = alpha12*d2.
 
-    beta : Synergistic efficacy ((-inf,0) = antagonism, (0,inf) = synergism)
-        At large concentrations of both drugs, the combination achieves an effect beta-% stronger (or weaker) than the stronger single-drug.
+    beta : float
+        Synergistic efficacy ((-inf,0) = antagonism, (0,inf) = synergism). At large concentrations of both drugs, the combination achieves an effect beta-% stronger (or weaker) than the stronger single-drug.
 
     NOTE: The current implementation does not yet fit gamma21 or gamma12, but fixes them at 1.
 
-    gamma21 : Synergistic cooperativity ([0,1) = antagonism, (1,inf) = synergism)
-        At large concentrations of drug 2, the Hill slope of drug 1 = gamma21*h1
+    gamma21 : float
+        Synergistic cooperativity ([0,1) = antagonism, (1,inf) = synergism). At large concentrations of drug 2, the Hill slope of drug 1 = gamma21*h1
 
-    gamma12 : Synergistic cooperativity ([0,1) = antagonism, (1,inf) = synergism)
-        At large concentrations of drug 1, the Hill slope of drug 2 = gamma12*h2
+    gamma12 : float
+        Synergistic cooperativity ([0,1) = antagonism, (1,inf) = synergism). At large concentrations of drug 1, the Hill slope of drug 2 = gamma12*h2
 
     """
     def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \

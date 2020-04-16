@@ -1,0 +1,3 @@
+sphinx-apidoc -f -o . ../src/synergy
+
+make html

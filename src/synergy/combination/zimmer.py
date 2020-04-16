@@ -1,19 +1,17 @@
-"""
-    Copyright (C) 2020 David J. Wooten
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
+#    Copyright (C) 2020 David J. Wooten
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import warnings
@@ -33,14 +31,14 @@ class Zimmer(ParameterizedModel):
     d2_eff =  --------------------------------
               1 + a21*(1/(1+(d1_eff/C1)^(-1)))
 
-    Synergy Parameters
-    ------------------
+    Synergy by Zimmer is described by these parameters
 
-    a12 : (-(1+(d2_eff/C2))/(d2_eff/C2),0)=synergism, (0,inf)=antagonism
-        Describes how drug 2 affects the effective dose of drug 1.
+    a12 : float
+        (-(1+(d2_eff/C2))/(d2_eff/C2),0)=synergism, (0,inf)=antagonism.         Describes how drug 2 affects the effective dose of drug 1.
 
-    a21 : (-(1+(d1_eff/C1))/(d1_eff/C1),0)=synergism, (0,inf)=antagonism
-        Describes how drug 1 affects the effective dose of drug 2.
+    a21 : float
+        (-(1+(d1_eff/C1))/(d1_eff/C1),0)=synergism, (0,inf)=antagonism. Describes how drug 1 affects the effective dose of drug 2.
+        
     """
     def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
             C1_bounds=(0,np.inf), C2_bounds=(0,np.inf), a12_bounds=(-np.inf, np.inf), a21_bounds=(-np.inf, np.inf), h1=None, h2=None, C1=None, C2=None, a12=None, a21=None):

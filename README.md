@@ -24,7 +24,6 @@ Using git
 * Optional for full plotting functionality
   * matplotlib
   * plotly
-  * pandas
 
 ## Current features
 * Calculate two-drug synergy using

@@ -1,19 +1,17 @@
-"""
-    Copyright (C) 2020 David J. Wooten
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
+#    Copyright (C) 2020 David J. Wooten
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from scipy.optimize import curve_fit
 from scipy.stats import linregress
@@ -29,6 +27,7 @@ class Hill:
 
     The Hill equation is a standard model for single-drug dose-response curves.
     This is the base model for Hill_2P and Hill_CI.
+
     """
     def __init__(self, E0=None, Emax=None, h=None, C=None, E0_bounds=(-np.inf, np.inf), Emax_bounds=(-np.inf, np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf)):
         """
@@ -82,10 +81,10 @@ class Hill:
 
         Parameters
         ----------
-        d : array-like
+        d : array_like
             Array of doses measured
         
-        E : array-like
+        E : array_like
             Array of effects measured at doses d
         
         use_jacobian : bool, default=True
@@ -141,12 +140,12 @@ class Hill:
 
         Parameters
         ----------
-        d : array-like
+        d : array_like
             Doses to calculate effect at
         
         Returns
         ----------
-        effect : array-like
+        effect : array_like
             Evaluate's the model at dose in d
         """
         if not self._is_parameterized():
@@ -158,12 +157,12 @@ class Hill:
 
         Parameters
         ----------
-        E : array-like
+        E : array_like
             Effects to get the doses for
         
         Returns
         ----------
-        doses : array-like
+        doses : array_like
             Doses which achieve effects E using this model. Effects that are
             outside the range [E0, Emax] will return np.nan for the dose
         """
@@ -192,7 +191,7 @@ class Hill:
         """
         Returns
         ----------
-        jacobian : array-like
+        jacobian : array_like
             Derivatives of the Hill equation with respect to E0, Emax, logh,
             and logC
         """
@@ -234,6 +233,7 @@ class Hill_2P(Hill):
                          C^h + d^h
 
     Mathematically equivalent to the four-parameter Hill equation, but E0 and Emax are held constant (not fit to data).
+    
     """
     def __init__(self, h=None, C=None, h_bounds=(0,np.inf), C_bounds=(0,np.inf), E0=1, Emax=0):
         super().__init__(h=h, C=C, E0=E0, Emax=Emax, h_bounds=h_bounds, C_bounds=C_bounds)

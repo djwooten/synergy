@@ -1,19 +1,17 @@
-"""
-    Copyright (C) 2020 David J. Wooten
-
-    This program is free software: you can redistribute it and/or modify
-    it under the terms of the GNU General Public License as published by
-    the Free Software Foundation, either version 3 of the License, or
-    (at your option) any later version.
-
-    This program is distributed in the hope that it will be useful,
-    but WITHOUT ANY WARRANTY; without even the implied warranty of
-    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-    GNU General Public License for more details.
-
-    You should have received a copy of the GNU General Public License
-    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-"""
+#    Copyright (C) 2020 David J. Wooten
+#
+#    This program is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    This program is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
 import warnings
@@ -29,21 +27,19 @@ class ZIP(DoseDependentModel):
 
     ZIP models store these delta values as model._synergy, but also store the Hill equation fits for drug1 and drug2 across the whole surface, allowing investigation of how h and C change across the surface
 
-    --------
+    synergy : array_like
+        (-inf,0)=antagonism, (0,inf)=synergism. The "delta" synergy score from ZIP
 
-    synergy : array-like, (-inf,0)=antagonism, (0,inf)=synergism
-        The "delta" synergy score from ZIP
-
-    _h_21 : array-like
+    _h_21 : array_like
         The hill slope of drug 1 obtained by holding D2==constant
 
-    _h_12 : array-like
+    _h_12 : array_like
         The hill slope of drug 2 obtained by holding D1==constant
 
-    _C_21 : array-like
+    _C_21 : array_like
         The EC50 of drug 1 obtained by holding D2==constant
 
-    _C_12 : array-like
+    _C_12 : array_like
         The EC50 of drug 2 obtained by holding D1==constant
     """
     def __init__(self, E0_bounds=(-np.inf,np.inf), Emax_bounds=(-np.inf,np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf)):
