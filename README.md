@@ -70,8 +70,5 @@ Using git
 * Monte carlo sampling to obtain confidence intervals for parameters
 * Parallelization API for fitting high-throughput screen data
 
-## Current version
-0.0.1
-
 ## License
 GNU General Public License v3 or later (GPLv3+)

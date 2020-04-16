@@ -12,13 +12,6 @@ try:
 except ImportError as e:
     pass
 
-pandas_import = False
-try:
-    import pandas as pd
-    pandas_import = True
-except ImportError as e:
-    pass
-
 plotly_import = False
 try:
     import plotly.graph_objects as go
@@ -30,22 +23,19 @@ except ImportError as e:
 def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel="", figsize=None, cmap="PRGn_r", aspect='equal', vmin=None, vmax=None, center_on_zero=False, logscale=True, nancolor="#BBBBBB", **kwargs):
         if (not matplotlib_import):
             raise ImportError("matplotlib must be installed to plot")
-        if (not pandas_import):
-            raise ImportError("pandas must be installed to plot")
         
         if logscale:
             d1 = utils.remove_zeros_onestep(d1)
             d2 = utils.remove_zeros_onestep(d2)
 
-        df = pd.DataFrame(dict({'d1':d1, 'd2':d2, 'E':E}))
-        df.sort_values(by=['d2','d1'],ascending=True, inplace=True)
+        sorted_indices = np.lexsort((d1,d2))
+        D1 = d1[sorted_indices]
+        D2 = d2[sorted_indices]
+        E = E[sorted_indices]
         
-        D1 = df['d1']
-        D2 = df['d2']
-        E = df['E']
-
-        n_d1 = len(D1.unique())
-        n_d2 = len(D2.unique())
+        n_d1 = len(np.unique(D1))
+        n_d2 = len(np.unique(D2))
+        
 
         if len(d1) != n_d1*n_d2:
             raise ValueError("plot_colormap() requires d1, d2 to represent a dose grid")
@@ -72,10 +62,10 @@ def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel=""
         current_cmap.set_bad(color=nancolor)
 
         if not logscale:
-            pco = ax.pcolormesh(D1.values.reshape(n_d2,n_d1), D2.values.reshape(n_d2, n_d1), E.values.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=cmap)
+            pco = ax.pcolormesh(D1.reshape(n_d2,n_d1), D2.reshape(n_d2, n_d1), E.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=cmap)
         else:
-            pco = ax.pcolormesh(E.values.reshape(n_d2, n_d1), cmap=cmap, vmin=vmin, vmax=vmax)
-            relabel_log_ticks(ax, D1.unique(), D2.unique())
+            pco = ax.pcolormesh(E.reshape(n_d2, n_d1), cmap=cmap, vmin=vmin, vmax=vmax)
+            relabel_log_ticks(ax, np.unique(D1), np.unique(D2))
 
         divider = make_axes_locatable(ax)
         cax = divider.append_axes("right", size=max(2/n_d1, 2/n_d2, 0.05), pad=0.1)
