@@ -9,7 +9,7 @@ Note, this package was not used to calculate MuSyC or others' synergy in "Quanti
 ## Installation
 
 Using PIP
-`not yet`
+`pip install synergy`
 
 Using conda
 `not yet`
