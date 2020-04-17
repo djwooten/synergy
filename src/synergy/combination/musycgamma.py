@@ -32,8 +32,6 @@ class MuSyCG(ParameterizedModel):
     beta : float
         Synergistic efficacy ((-inf,0) = antagonism, (0,inf) = synergism). At large concentrations of both drugs, the combination achieves an effect beta-% stronger (or weaker) than the stronger single-drug.
 
-    NOTE: The current implementation does not yet fit gamma21 or gamma12, but fixes them at 1.
-
     gamma21 : float
         Synergistic cooperativity ([0,1) = antagonism, (1,inf) = synergism). At large concentrations of drug 2, the Hill slope of drug 1 = gamma21*h1
 
@@ -48,8 +46,8 @@ class MuSyCG(ParameterizedModel):
             alpha12_bounds=(0,np.inf), alpha21_bounds=(0,np.inf),   \
             gamma12_bounds=(0,np.inf), gamma21_bounds=(0,np.inf),   \
             r1=1., r2=1., E0=None, E1=None, E2=None, E3=None,   \
-            h1=None, h2=None, C1=None, C2=None, alpha12=None,       \
-            alpha21=None, gamma12=None, gamma21=None):
+            h1=None, h2=None, C1=None, C2=None, oalpha12=None,       \
+            oalpha21=None, gamma12=None, gamma21=None):
         super().__init__()
         self.C1_bounds = C1_bounds
         self.C2_bounds = C2_bounds
@@ -74,11 +72,15 @@ class MuSyCG(ParameterizedModel):
         self.h2 = h2
         self.C1 = C1
         self.C2 = C2
-        self.alpha12 = alpha12
-        self.alpha21 = alpha21
+        #self.alpha12 = alpha12
+        #self.alpha21 = alpha21
+        self.alpha12 = MuSyCG._prime_to_alpha(oalpha12, C2, gamma12)
+        self.alpha21 = MuSyCG._prime_to_alpha(oalpha21, C1, gamma21)
+        #self.oalpha12 = MuSyCG._alpha_to_prime(alpha12, C2, gamma12)
+        #self.oalpha21 = MuSyCG._alpha_to_prime(alpha21, C1, gamma21)
         self.gamma12 = gamma12
         self.gamma21 = gamma21
-        self.beta = None
+        self.beta = (min(E1,E2)-E3) / (E0 - min(E1,E2))
 
         self.converged = False
 
@@ -93,6 +95,12 @@ class MuSyCG(ParameterizedModel):
 
             self.loggamma12_bounds = (np.log(gamma12_bounds[0]), np.log(gamma12_bounds[1]))
             self.loggamma21_bounds = (np.log(gamma21_bounds[0]), np.log(gamma21_bounds[1]))
+
+    def _alpha_to_prime(alpha, C, gamma):
+        return alpha*C**((gamma-1)/gamma)
+    
+    def _prime_to_alpha(prime, C, gamma):
+        return prime*C**((1-gamma)/gamma)
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, **kwargs):
         
@@ -131,10 +139,16 @@ class MuSyCG(ParameterizedModel):
         self.C2 = np.exp(logC2)
         self.alpha12 = np.exp(logalpha12)
         self.alpha21 = np.exp(logalpha21)
+        alpha12 = np.exp(logalpha12)
+        alpha21 = np.exp(logalpha21)
+        
         self.beta = (min(E1,E2)-E3) / (E0 - min(E1,E2))
         #TODO: beta_obs uses E1_obs, E2_obs, E3_obs, E0_obs
         self.gamma12 = np.exp(loggamma12)
         self.gamma21 = np.exp(loggamma21)
+
+        #self.oalpha12 = MuSyCG._alpha_to_prime(alpha12, self.C2, self.gamma12)
+        #self.oalpha21 = MuSyCG._alpha_to_prime(alpha12, self.C2, self.gamma12)
 
         if (self._is_parameterized()):
             self._score(d1, d2, E)
@@ -169,7 +183,12 @@ class MuSyCG(ParameterizedModel):
             # Otherwise guess E3 is the minimum E observed
             else: E3 = np.min(E)
             
-            p0 = [(E0_1+E0_2)/2., E1, E2, E3, np.log(h1), np.log(h2), np.log(C1), np.log(C2), 0, 0, 0, 0]
+            _oalpha12 = 1.
+            _oalpha21 = 1.
+            _alpha12 = MuSyCG._prime_to_alpha(_oalpha12, C2, 1)
+            _alpha21 = MuSyCG._prime_to_alpha(_oalpha21, C1, 1)
+
+            p0 = [(E0_1+E0_2)/2., E1, E2, E3, np.log(h1), np.log(h2), np.log(C1), np.log(C2), np.log(_alpha12), np.log(_alpha21), 0, 0]
             
             utils.sanitize_initial_guess(p0, bounds)
 
@@ -232,4 +251,6 @@ class MuSyCG(ParameterizedModel):
 
     def __repr__(self):
         if not self._is_parameterized(): return "MuSyC()"
-        return "MuSyC(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, alpha12=%0.2f, alpha21=%0.2f, beta=%0.2f, gamma12=%0.2f, gamma21=%0.2f)"%(self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.beta, self.gamma12, self.gamma21)
+        #return "MuSyC(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, alpha12=%0.2f, alpha21=%0.2f, beta=%0.2f, gamma12=%0.2f, gamma21=%0.2f)"%(self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.beta, self.gamma12, self.gamma21)
+
+        return "MuSyC(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, oalpha12=%0.2f, oalpha21=%0.2f, beta=%0.2f, gamma12=%0.2f, gamma21=%0.2f)"%(self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, MuSyCG._alpha_to_prime(self.alpha12, self.C2, self.gamma12), MuSyCG._alpha_to_prime(self.alpha21, self.C1, self.gamma21), self.beta, self.gamma12, self.gamma21)
