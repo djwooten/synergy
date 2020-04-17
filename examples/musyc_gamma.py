@@ -23,7 +23,7 @@ model_no_gamma = MuSyC()
 npoints = 8
 npoints2 = 12
 
-D1, D2 = grid(1e-5, 1, 1e-4, 10, npoints, npoints2)
+D1, D2 = grid(C1/1e3, C1*1e3, C2/1e3, C2*1e3, npoints, npoints2)
 
 E = model.E(D1, D2)
 Efit = E*(1+(np.random.rand(len(D1))-0.5)/5.)
