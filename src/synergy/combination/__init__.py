@@ -1,4 +1,5 @@
 from .musyc import MuSyC
+from .musycgamma import MuSyCG
 from .bliss import Bliss
 from .combination_index import CombinationIndex
 from .hsa import HSA
