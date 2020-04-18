@@ -39,3 +39,22 @@ def grid(d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=1, logspac
     D2 = np.hstack([D2,]*replicates)
 
     return D1, D2
+
+def get_num_replicates(d1, d2):
+    """Given 1d dose arrays d1 and d2, determine how many replicates of each unique combination are present
+
+    Parameters:
+    -----------
+    d1 : array_like, float
+        Doses of drug 1
+
+    d2 : array_like, float
+        Doses of drug 2
+
+    Returns:
+    -----------
+    replicates : numpy.array
+        Counts of each unique dose combination
+
+    """
+    return np.unique(np.asarray([d1,d2]), axis=1, return_counts=True)[1]

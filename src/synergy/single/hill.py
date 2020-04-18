@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from scipy.optimize import curve_fit
-from scipy.stats import linregress
+from scipy.stats import linregress, norm
 import numpy as np
 from .. import utils
 
@@ -75,8 +75,30 @@ class Hill:
             self.logC_bounds = (np.log(C_bounds[0]), np.log(C_bounds[1]))
 
         self.converged = False
+
+        self.sum_of_squares_residuals = None
+        self.r_squared = None
+        self.aic = None
+        self.bic = None
+        self.bootstrap_parameters = None
+
+        self.fit_func = lambda d, E0, E1, logh, logC: self._model(d, E0, E1, np.exp(logh), np.exp(logC))
+
+        self.bounds = tuple(zip(self.E0_bounds, self.Emax_bounds, self.logh_bounds, self.logC_bounds))
+
+
     
-    def fit(self, d, E, use_jacobian=True, **kwargs):
+    def _internal_fit(self, d, E, use_jacobian, **kwargs):
+        try:
+            if use_jacobian:
+                popt1, pcov = curve_fit(self.fit_func, d, E, bounds=self.bounds, jac=self._model_jacobian, **kwargs)
+            else: 
+                popt1, pcov = curve_fit(self.fit_func, d, E, bounds=self.bounds, **kwargs)
+            return popt1
+        except:
+            return None
+
+    def fit(self, d, E, use_jacobian=True, bootstrap_iterations=10, **kwargs):
         """Fit the Hill equation to data. Fitting algorithm searches for h and C in a log-scale, but all bounds and guesses should be provided in a linear scale.
 
         Parameters
@@ -96,44 +118,41 @@ class Hill:
         kwargs
             kwargs to pass to scipy.optimize.curve_fit()
         """
-        f = lambda d, E0, E1, logh, logC: self._model(d, E0, E1, np.exp(logh), np.exp(logC))
-
-        bounds = tuple(zip(self.E0_bounds, self.Emax_bounds, self.logh_bounds, self.logC_bounds))
-
         d = utils.remove_zeros(d)
         
-
         if 'p0' in kwargs:
             p0 = list(kwargs.get('p0'))
             p0[2] = np.log(p0[2])
             p0[3] = np.log(p0[3])
-            utils.sanitize_initial_guess(p0, bounds)
+            utils.sanitize_initial_guess(p0, self.bounds)
             kwargs['p0'] = p0
         else:
             p0 = [max(E), min(E), 0, np.log(np.median(d))]
-            utils.sanitize_initial_guess(p0, bounds)
+            utils.sanitize_initial_guess(p0, self.bounds)
             kwargs['p0'] = p0
 
         with np.errstate(divide='ignore', invalid='ignore'):
-            try:
-                if use_jacobian:
-                    popt1, pcov = curve_fit(f, d, E, bounds=bounds, jac=self._model_jacobian, **kwargs)
-                else: 
-                    popt1, pcov = curve_fit(f, d, E, bounds=bounds, **kwargs)
-                E0, E1, logh, logC = popt1
-                self.converged = True
-            except RuntimeError:
-                #print("\n\n*********\nFailed to fit single drug\n*********\n\n")
-                E0 = np.max(E)
-                E1 = np.min(E)
-                logh = 0
-                logC = np.log(np.median(d))
-                self.converged = False
+            popt = self._internal_fit(d, E, use_jacobian, **kwargs)
+
+        if popt is None:
+            E0 = np.max(E)
+            E1 = np.min(E)
+            logh = 0
+            logC = np.log(np.median(d))
+            self.converged = False
+        else:
+            E0, E1, logh, logC = popt
+            self.converged = True
 
         self.E0 = E0
         self.Emax = E1
         self.h = np.exp(logh)
         self.C = np.exp(logC)
+
+        if self.converged:
+            self._score(d, E)
+            kwargs['p0'] = [E0, E1, logh, logC]
+            return self._bootstrap_resample(d, E, use_jacobian, bootstrap_iterations, **kwargs)
 
     def E(self, d):
         """Evaluate this model at dose d. If the model is not parameterized, returns 0.
@@ -210,7 +229,7 @@ class Hill:
         return np.hstack((jE0.reshape(-1,1), jEmax.reshape(-1,1), jh.reshape(-1,1), jC.reshape(-1,1)))
 
     def _is_parameterized(self):
-        return None not in (self.E0, self.Emax, self.h, self.C)
+        return not (None in self.get_parameters() or True in np.isnan(np.asarray(self.get_parameters())))
 
     def create_fit(d, E, E0_bounds=(-np.inf, np.inf), Emax_bounds=(-np.inf, np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf), **kwargs):
         """Courtesy function to build a Hill model directly from data.
@@ -224,6 +243,69 @@ class Hill:
         if not self._is_parameterized(): return "Hill()"
         
         return "Hill(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)"%(self.E0, self.Emax, self.h, self.C)
+
+    def _score(self, d, E):
+        """Calculate goodness of fit and model quality scores, including sum-of-squares residuals, R^2, Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC).
+
+        If model is not yet paramterized, does nothing
+
+        Called automatically during model.fit(d1, d2, E)
+
+        Parameters
+        ----------
+        d : array_like
+            Doses
+        
+        E : array_like
+            Measured dose-response at doses d
+        """
+        if (self._is_parameterized()):
+
+            n_parameters = len(self.get_parameters())
+
+            self.sum_of_squares_residuals = utils.residual_ss_1d(d, E, self.E)
+            self.r_squared = utils.r_squared(E, self.sum_of_squares_residuals)
+            self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, len(E))
+            self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
+
+    def _bootstrap_resample(self, d, E, use_jacobian, bootstrap_iterations, confidence_interval=95, **kwargs):
+
+        if not self._is_parameterized(): return
+        
+        p0 = kwargs.get('p0')
+        
+
+        n_data_points = len(E)
+        n_parameters = len(p0)
+        
+        sigma_residuals = np.sqrt(self.sum_of_squares_residuals / (n_data_points - n_parameters))
+
+        E_model = self.E(d)
+        bootstrap_parameters = []
+        for iteration in range(bootstrap_iterations):
+            residuals_step = norm.rvs(loc=0, scale=sigma_residuals, size=n_data_points)
+
+            # Add random noise to model prediction
+            E_iteration = E_model + residuals_step
+
+            # Fit noisy data
+            with np.errstate(divide='ignore', invalid='ignore'):
+                popt1 = self._internal_fit(d, E_iteration, use_jacobian=use_jacobian, **kwargs)
+            
+            if popt1 is not None:
+                E0, E1, logh, logC = popt1
+                h = np.exp(logh)
+                C = np.exp(logC)
+                bootstrap_parameters.append((E0, E1, h, C))
+            
+        
+        self.bootstrap_parameters = np.vstack(bootstrap_parameters)
+        lower_bounds = (100-confidence_interval)/2.
+        upper_bounds = 100-lower_bounds
+        return np.percentile(self.bootstrap_parameters, [lower_bounds, upper_bounds], axis=0)
+
+
+
 
 class Hill_2P(Hill):
     """The two-parameter Hill equation
@@ -293,6 +375,16 @@ class Hill_2P(Hill):
         drug = Hill_2P(E0=E0, Emax=Emax, h_bounds=h_bounds, C_bounds=C_bounds)
         drug.fit(d, E, **kwargs)
         return drug
+
+    def get_parameters(self):
+        """Gets the model's fitted parameters
+        
+        Returns
+        ----------
+        parameters : tuple
+            (h, C)
+        """
+        return (self.h, self.C)
 
     def __repr__(self):
         if not self._is_parameterized(): return "Hill()"

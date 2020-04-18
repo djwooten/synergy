@@ -57,7 +57,8 @@ setuptools.setup(
     package_dir={'': 'src'},
     install_requires=[
         "scipy >= 0.18.0", # 0.18.0 introduced curve_fit(jac=)
-        "numpy >= 1.6.0" # 1.6.0 is first version compatible with python 3
+        "numpy >= 1.13.0" # 1.6.0 is first version compatible with python 3
+        # 1.13.0 introduces np.unique(axis=) for dose_tools.get_num_replicates
     ],
     # package_data VS data_files VS ???
 )

@@ -50,6 +50,11 @@ def residual_ss(d1, d2, E, model):
     E_model = model(d1, d2)
     return np.sum((E-E_model)**2)
 
+# TODO: replace with single residual_ss
+def residual_ss_1d(d, E, model):
+    E_model = model(d)
+    return np.sum((E-E_model)**2)
+
 def AIC(sum_of_squares_residuals, n_parameters, n_samples):
     """
     SOURCE: AIC under the Framework of Least Squares Estimation, HT Banks, Michele L Joyner, 2017

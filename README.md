@@ -66,7 +66,8 @@ Using git
   * Isobolgrams
 * Additional dose / experiment design tools
   * Alternative dosing strategies
-* Monte carlo sampling to obtain confidence intervals for parameters
+* Residual bootstrap re-sampling to obtain confidence intervals for parameters
+  * Heteroskedastic re-sampling for datasets with >= 3 replicates at each dose
 * Parallelization API for fitting high-throughput screen data
 
 ## License
