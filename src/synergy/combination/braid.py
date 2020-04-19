@@ -20,24 +20,11 @@ from ..single import Hill
 from .basenew import *
 
 class BRAID(ParameterizedModelNew):
-    """The Effective Dose Model from Zimmer et al (doi: 10.1073/pnas.1606301113). This model uses the multiplicative survival principle (i.e., Bliss), but adds a parameter for each drug describing how it affects the potency of the other. Specifically, given doses d1 and d2, this model translates them to "effective" doses using the following system of equations
+    """BRAID synergy (doi:10.1038/srep25523).
+    
+    The version implemented here is the "extended" BRAID model with 10 parameters, E0, E1, E2, E3, h1, h2, C1, C2, kappa, and delta.
 
-                            d1
-    d1_eff =  --------------------------------
-              1 + a12*(1/(1+(d2_eff/C2)^(-1)))
-
-                            d2
-    d2_eff =  --------------------------------
-              1 + a21*(1/(1+(d1_eff/C1)^(-1)))
-
-    Synergy by Zimmer is described by these parameters
-
-    a12 : float
-        (-(1+(d2_eff/C2))/(d2_eff/C2),0)=synergism, (0,inf)=antagonism.         Describes how drug 2 affects the effective dose of drug 1.
-
-    a21 : float
-        (-(1+(d1_eff/C1))/(d1_eff/C1),0)=synergism, (0,inf)=antagonism. Describes how drug 1 affects the effective dose of drug 2.
-        
+    kappa and delta are the BRAID synergy parameters, though E3 is related to how much more effective the combination is than either drug alone.
     """
     def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
             E0_bounds=(-np.inf,np.inf), E1_bounds=(-np.inf,np.inf), \
@@ -138,20 +125,26 @@ class BRAID(ParameterizedModelNew):
 
     def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, kappa, delta):
 
-        D1 = (E1-E0)/(E3-E0) * (d1/C1)**h1 / (1+(1-(E1-E0)/(E3-E0))*(d1/C1)**h1)
-        D2 = (E2-E0)/(E3-E0) * (d2/C2)**h2 / (1+(1-(E2-E0)/(E3-E0))*(d2/C2)**h2)
+        delta_Es = [E1-E0, E2-E0, E3-E0]
+        max_delta_E_index = np.argmax(np.abs(delta_Es))
+        max_delta_E = delta_Es[max_delta_E_index]
+
+        D1 = (E1-E0)/(max_delta_E) * (d1/C1)**h1 / (1+(1-(E1-E0)/(max_delta_E))*(d1/C1)**h1)
+        D2 = (E2-E0)/(max_delta_E) * (d2/C2)**h2 / (1+(1-(E2-E0)/(max_delta_E))*(d2/C2)**h2)
 
         power = 1 / (delta * np.sqrt(h1*h2))
+        
         D = D1**power + D2**power + kappa*np.sqrt(D1**power * D2**power)
 
-        return E0 + (E3-E0) / (1+D**(-1/power))
+        return E0 + max_delta_E / (1+D**(-1/power))
 
     def get_parameters(self):
         return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.kappa, self.delta
 
-    def create_fit(d1, d2, E, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf), C1_bounds=(0,np.inf), C2_bounds=(0,np.inf), a12_bounds=(-np.inf,np.inf), a21_bounds=(-np.inf,np.inf), **kwargs):
+    def create_fit(d1, d2, E, h_bounds=(1e-3,1e3), C_bounds=(0,np.inf),     \
+            E_bounds=(-np.inf,np.inf), kappa_bounds=(-1e5,1e5), delta_bounds=(1e-5,1e5), **kwargs):
 
-        model = ZimmerNew(h1_bounds=h1_bounds, h2_bounds=h2_bounds, C1_bounds=C1_bounds, C2_bounds=C2_bounds, a12_bounds=a12_bounds, a21_bounds=a21_bounds)
+        model = BRAID(E0_bounds=E_bounds, E1_bounds=E_bounds, E2_bounds=E_bounds, E3_bounds=E_bounds, h1_bounds=h_bounds, h2_bounds=h_bounds, C1_bounds=C_bounds, C2_bounds=C_bounds, kappa_bounds=kappa_bounds, delta_bounds=delta_bounds)
         
         model.fit(d, E, **kwargs)
         return model
