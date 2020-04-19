@@ -2,9 +2,7 @@
 
 # synergy
 
-A python package to calculate, analyze, and visualize drug combination synergy and antagonism. Currently supports multiple models of synergy, inclding MuSyC, Bliss, Loewe, Combination Index, ZIP, Zimmer, Schindler, and HSA.
-
-Note, this package was not used to calculate MuSyC or others' synergy in "Quantifying Drug Combination Synergy along Potency and Efficacy Axes" (https://doi.org/10.1016/j.cels.2019.01.003), nor "A Consensus Framework Unifies Multi-Drug Synergy Metrics" (https://doi.org/10.1101/683433). It is a standalone implementation.
+A python package to calculate, analyze, and visualize drug combination synergy and antagonism. Currently supports multiple models of synergy, including MuSyC, Bliss, Loewe, Combination Index, ZIP, Zimmer, Schindler, and HSA.
 
 ## Installation
 
@@ -19,7 +17,7 @@ Using git
 
 ## Requirements
 * python >= 3.5
-* numpy >= 1.6.0
+* numpy >= 1.13.0
 * scipy >= 0.18.0
 * Optional for full plotting functionality
   * matplotlib
@@ -30,6 +28,7 @@ Using git
   * Parametric
     * MuSyC
     * Zimmer (effective dose model)
+    * BRAID
   * Dose-dependent
     * Bliss
     * Loewe
@@ -37,11 +36,14 @@ Using git
     * ZIP
     * HSA
     * Combination Index
+* Residual bootstrap re-sampling to obtain confidence intervals for parameters of parametric models
 * Single drug models
-  * Four-parameter Hill equation
-  * Two-parameter Hill equation
-  * Median-effect equation
-  * Piecewise linear
+  * Parametric
+    * Four-parameter Hill equation
+    * Two-parameter Hill equation
+    * Median-effect equation
+  * Non-parametric
+    * Piecewise linear
 * Model scoring
   * R-squared
   * Akaike Information Criterion
@@ -57,7 +59,6 @@ Using git
 * Additional models
   * Parametric
     * GPDI
-    * BRAID
 * Three+ drug combinations (when possible)
 * Visualization
   * Highlight single-drug curves on 3D surface plots
@@ -66,8 +67,7 @@ Using git
   * Isobolgrams
 * Additional dose / experiment design tools
   * Alternative dosing strategies
-* Residual bootstrap re-sampling to obtain confidence intervals for parameters
-  * Heteroskedastic re-sampling for datasets with >= 3 replicates at each dose
+* Heteroskedastic re-sampling for datasets with >= 3 replicates at each dose
 * Parallelization API for fitting high-throughput screen data
 
 ## License
