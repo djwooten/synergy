@@ -111,7 +111,7 @@ class MuSyCGNew(ParameterizedModelNew):
         if None in [prime, C, gamma]: return None
         return prime*C**((1-gamma)/gamma)
 
-    def _get_intial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
+    def _get_initial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
         
         if p0 is None:
             if drug1_model is None:
@@ -135,15 +135,12 @@ class MuSyCGNew(ParameterizedModelNew):
             
             p0 = [(E0_1+E0_2)/2., E1, E2, E3, h1, h2, C1, C2, 1, 1, 1, 1]
             
-        p0 = self._transform_params_to_fit(p0)
+        p0 = list(self._transform_params_to_fit(p0))
         utils.sanitize_initial_guess(p0, self.bounds)
         return p0
 
     def _transform_params_from_fit(self, params):
-        """Internal method to transform parameterss as needed.
-
-        For instance, models that fit logh and logC must transform those to h and C
-        """
+        
         E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21 = params
         h1 = np.exp(logh1)
         h2 = np.exp(logh2)
@@ -157,10 +154,7 @@ class MuSyCGNew(ParameterizedModelNew):
         return E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21
 
     def _transform_params_to_fit(self, params):
-        """Internal method to transform parameterss as needed.
-
-        For instance, models that fit logh and logC must transform from h and C
-        """
+        
         E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21 = params
 
         logh1 = np.log(h1)
@@ -221,16 +215,21 @@ class MuSyCGNew(ParameterizedModelNew):
         
         return U*E0 + A1*E1 + A2*E2 + (1-(U+A1+A2))*E3
 
-    def create_fit(d1, d2, E, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
-            C1_bounds=(0,np.inf), C2_bounds=(0,np.inf),             \
-            E0_bounds=(-np.inf,np.inf), E1_bounds=(-np.inf,np.inf), \
-            E2_bounds=(-np.inf,np.inf), E3_bounds=(-np.inf,np.inf), \
-            alpha12_bounds=(0,np.inf), alpha21_bounds=(0,np.inf),   \
-            gamma12_bounds=(0,np.inf), gamma21_bounds=(0,np.inf),   \
-            r1=1., r2=1., **kwargs):
+    def create_fit(d1, d2, E, h_bounds=(1e-3,1e3), C_bounds=(0,np.inf),     \
+            E_bounds=(-np.inf,np.inf), oalpha_bounds=(1e-5,1e5),            \
+            gamma_bounds=(1e-5,1e5), **kwargs):
 
-        model = MuSyCGNew(E0_bounds=E0_bounds, E1_bounds=E1_bounds, E2_bounds=E2_bounds, E3_bounds=E3_bounds, h1_bounds=h1_bounds, h2_bounds=h2_bounds, C1_bounds=C1_bounds, C2_bounds=C2_bounds, alpha12_bounds=alpha12_bounds, alpha21_bounds=alpha21_bounds, gamma12_bounds=gamma12_bounds, gamma21_bounds=gamma21_bounds, r1=r1, r2=r2)
-        model.fit(d, E, **kwargs)
+        dmin = min(min(d1), min(d2))
+        dmax = max(max(d1), max(d2))
+        alpha_lb = MuSyCGNew._prime_to_alpha(oalpha_bounds[0], dmin, gamma_bounds[0])
+        alpha_ub = MuSyCGNew._prime_to_alpha(oalpha_bounds[1], dmax, gamma_bounds[1])
+        alpha_bounds = (alpha_lb, alpha_ub)
+
+        print(alpha_bounds)
+        
+        model = MuSyCGNew(E0_bounds=E_bounds, E1_bounds=E_bounds, E2_bounds=E_bounds, E3_bounds=E_bounds, h1_bounds=h_bounds, h2_bounds=h_bounds, C1_bounds=C_bounds, C2_bounds=C_bounds, alpha12_bounds=alpha_bounds, alpha21_bounds=alpha_bounds, gamma12_bounds=gamma_bounds, gamma21_bounds=gamma_bounds)
+
+        model.fit(d1, d2, E, **kwargs)
         return model
 
     def __repr__(self):

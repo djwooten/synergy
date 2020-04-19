@@ -54,7 +54,7 @@ class ParameterizedModel1D:
         """
         pass
 
-    def fit(self, d, E, use_jacobian=True, bootstrap_iterations=10, bootstrap_confidence_interval=95, **kwargs):
+    def fit(self, d, E, use_jacobian=True, bootstrap_iterations=0, bootstrap_confidence_interval=95, **kwargs):
         """Fit the Hill equation to data. Fitting algorithm searches for h and C in a log-scale, but all bounds and guesses should be provided in a linear scale.
 
         Parameters

@@ -91,7 +91,7 @@ class ParameterizedModelNew:
         except:
             return None
 
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, bootstrap_iterations=10, bootstrap_confidence_interval=95, **kwargs):
+    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, bootstrap_iterations=0, bootstrap_confidence_interval=95, **kwargs):
         """Fit the model to data.
 
         Parameters
@@ -133,7 +133,7 @@ class ParameterizedModelNew:
         else:
             p0 = None
         
-        p0 = self._get_intial_guess(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, p0=p0)
+        p0 = self._get_initial_guess(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, p0=p0)
 
         kwargs['p0']=p0
         
@@ -325,16 +325,3 @@ class ParameterizedModelNew:
             Synergy model fit to the given data
         """
         return
-
-
-class ModelNotParameterizedError(Exception):
-    """
-    The model must be parameterized prior to use. This can be done by calling
-    fit(), or setParameters().
-    """
-    def __init__(self, msg='The model must be parameterized prior to use. This can be done by calling fit(), or setParameters().', *args, **kwargs):
-        super().__init__(msg, *args, **kwargs)
-
-class FeatureNotImplemented(Warning):
-    def __init__(self, msg="This feature is not yet implemented", *args, **kwargs):
-        super().__init__(msg, *args, **kwargs)
