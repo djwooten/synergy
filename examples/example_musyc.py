@@ -7,12 +7,10 @@ from synergy.utils import plots
 E0, E1, E2, E3 = 1, 0.2, 0.1, 0.4
 h1, h2 = 2.3, 0.8
 C1, C2 = 1e-2, 1e-1
-alpha12, alpha21 = 3.2, 1.1
+oalpha12, oalpha21 = 3.2, 1.1
+gamma12, gamma21 = 1, 1
 
-model = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, alpha12=alpha12, alpha21=alpha21, r1=100., r2=100.)
-
-r1 = model.r1
-r2 = model.r2
+model = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, oalpha12=oalpha12, oalpha21=oalpha21, gamma12=gamma12, gamma21=gamma21)
 
 npoints = 8
 npoints2 = 12
@@ -24,7 +22,7 @@ D1 = D1.flatten()
 D2 = D2.flatten()
 
 
-E = model._model(D1, D2, E0, E1, E2, E3, h1, h2, C1, C2, r1, r2, alpha12, alpha21)
+E = model.E(D1, D2)
 Efit = E*(1+(np.random.rand(len(D1))-0.5)/5.)
 
 model.fit(D1, D2, Efit)
@@ -51,10 +49,10 @@ print(model)
 fig = plt.figure(figsize=(8,3))
 
 ax=fig.add_subplot(131)
-plots.plot_colormap(D1, D2, E, ax=ax, title="True")
+plots.plot_colormap(D1, D2, E, ax=ax, title="True", cmap="viridis")
 
 ax=fig.add_subplot(132)
-plots.plot_colormap(D1, D2, Efit, ax=ax, title="Noisy")
+plots.plot_colormap(D1, D2, Efit, ax=ax, title="Noisy", cmap="viridis")
 
 ax=fig.add_subplot(133)
 model.plot_colormap(D1, D2, ax=ax, title="Fit")

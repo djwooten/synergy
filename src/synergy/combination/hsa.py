@@ -14,11 +14,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from .. import utils
+
 from ..single import MarginalLinear
-from .base import DoseDependentModel
+from .nonparametric_base import DoseDependentModel
 
 class HSA(DoseDependentModel):
+    """Highest single agent (HSA)
+
+    HSA says that any improvement a combination gives over the strongest single agent counts as synergy.
+    """
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
         
         super().fit(d1, d2, E)

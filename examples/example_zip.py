@@ -13,9 +13,10 @@ from synergy.utils.data_exchange import to_synergyfinder
 E0, E1, E2, E3 = 1., 0., 0., 0.
 h1, h2 = 1., 1.
 C1, C2 = 1e-2, 1e-1
-alpha12, alpha21 = 10., 1.
+oalpha12, oalpha21 = 10., 1.
+gamma12, gamma21 = 1, 1
 
-musyc = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, alpha12=alpha12, alpha21=alpha21)
+musyc = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, oalpha12=oalpha12, oalpha21=oalpha21, gamma12=gamma12, gamma21=gamma21)
 
 npoints1 = 8
 npoints2 = 10

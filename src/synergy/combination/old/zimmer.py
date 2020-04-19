@@ -18,9 +18,9 @@ import warnings
 from scipy.optimize import curve_fit
 from .. import utils
 from ..single import hill as hill
-from .basenew import *
+from .base import *
 
-class ZimmerNew(ParameterizedModelNew):
+class Zimmer(ParameterizedModel):
     """The Effective Dose Model from Zimmer et al (doi: 10.1073/pnas.1606301113). This model uses the multiplicative survival principle (i.e., Bliss), but adds a parameter for each drug describing how it affects the potency of the other. Specifically, given doses d1 and d2, this model translates them to "effective" doses using the following system of equations
 
                             d1
@@ -64,53 +64,53 @@ class ZimmerNew(ParameterizedModelNew):
         self.a12 = a12
         self.a21 = a21
 
-        self.fit_function = lambda d, logh1, logh2, logC1, logC2, a12, a21: self._model(d[0], d[1], np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), a12, a21)
+    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian=True, **kwargs):
+        if (use_jacobian):
+            warnings.warn(FeatureNotImplemented("Jacobian has not been implemented for Zimmer synergy model, but will still be used for single-drug fits"))
+        bounds = tuple(zip(self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.a12_bounds, self.a21_bounds))
 
-        self.bounds = tuple(zip(self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.a12_bounds, self.a21_bounds))
-
-
-    def _get_initial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
-        
-        if p0 is None:
+        if 'p0' in kwargs:
+            p0 = list(kwargs.get('p0'))
+            for i in range(4):
+                p0[i] = np.log(p0[i])
+            utils.sanitize_initial_guess(p0, bounds)
+            kwargs['p0'] = p0
+        else:
             if drug1_model is None:
                 mask = np.where(d2==min(d2))
-                drug1_model = hill.Hill_2P.create_fit(d1[mask], E[mask], h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+                drug1_model = hill.Hill_2P.create_fit(d1[mask], E[mask], h_bounds=self.h1_bounds, C_bounds=self.C1_bounds, use_jacobian=use_jacobian)
+                
             if drug2_model is None:
                 mask = np.where(d1==min(d1))
-                drug2_model = hill.Hill_2P.create_fit(d2[mask], E[mask], h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+                drug2_model = hill.Hill_2P.create_fit(d2[mask], E[mask], h_bounds=self.h2_bounds, C_bounds=self.C2_bounds, use_jacobian=use_jacobian)
             
-            # Get initial guesses of E0, E1, E2, h1, h2, C1, and C2 from single-drug fits
-            h1, C1 = drug1_model.get_parameters()
-            h2, C2 = drug2_model.get_parameters()
-                        
+            E0_1, E1, h1, C1 = drug1_model.get_parameters()
+            E0_2, E2, h2, C2 = drug2_model.get_parameters()
             p0 = [h1, h2, C1, C2, 0, 0]
-            
-        p0 = list(self._transform_params_to_fit(p0))
-        utils.sanitize_initial_guess(p0, self.bounds)
-        return p0
+            for i in range(4):
+                p0[i] = np.log(p0[i])
+            utils.sanitize_initial_guess(p0, bounds)
+            kwargs['p0']  = p0
 
-    def _transform_params_from_fit(self, params):
-        logh1, logh2, logC1, logC2, a12, a21 = params
-        h1 = np.exp(logh1)
-        h2 = np.exp(logh2)
-        C1 = np.exp(logC1)
-        C2 = np.exp(logC2)
 
-        return h1, h2, C1, C2, a12, a21
-
-    def _transform_params_to_fit(self, params):
-        h1, h2, C1, C2, a12, a21 = params
-
-        logh1 = np.log(h1)
-        logh2 = np.log(h2)
-        logC1 = np.log(C1)
-        logC2 = np.log(C2)
+        xdata = np.vstack((d1,d2))
         
-        return logh1, logh2, logC1, logC2, a12, a21
+        f = lambda d, logh1, logh2, logC1, logC2, a12, a21: self._model(d[0], d[1], np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), a12, a21)
         
+        with np.errstate(divide='ignore', invalid='ignore'):
+            popt1, pcov = curve_fit(f, xdata, E, bounds=bounds, **kwargs)
 
-    def _set_parameters(self, popt):
-        self.h1, self.h2, self.C1, self.C2, self.a12, self.a21 = popt
+        logh1, logh2, logC1, logC2, a12, a21 = popt1
+        self.h1 = np.exp(logh1)
+        self.h2 = np.exp(logh2)
+        self.C1 = np.exp(logC1)
+        self.C2 = np.exp(logC2)
+        self.a12 = a12
+        self.a21 = a21
+
+        self._score(d1, d2, E)
+
+        return a12, a21
 
     def E(self, d1, d2):
         if not self._is_parameterized():
@@ -132,8 +132,7 @@ class ZimmerNew(ParameterizedModelNew):
         return self.h1, self.h2, self.C1, self.C2, self.a12, self.a21
 
     def create_fit(d1, d2, E, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf), C1_bounds=(0,np.inf), C2_bounds=(0,np.inf), a12_bounds=(-np.inf,np.inf), a21_bounds=(-np.inf,np.inf), **kwargs):
-
-        model = ZimmerNew(h1_bounds=h1_bounds, h2_bounds=h2_bounds, C1_bounds=C1_bounds, C2_bounds=C2_bounds, a12_bounds=a12_bounds, a21_bounds=a21_bounds)
+        model = Zimmer(h1_bounds=h1_bounds, h2_bounds=h2_bounds, C1_bounds=C1_bounds, C2_bounds=C2_bounds, a12_bounds=a12_bounds, a21_bounds=a21_bounds)
         
         model.fit(d, E, **kwargs)
         return model

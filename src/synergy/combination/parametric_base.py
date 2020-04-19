@@ -15,22 +15,32 @@
 
 
 import numpy as np
+from scipy.optimize import curve_fit
+from scipy.stats import norm
+
 from .. import utils
 from ..utils import plots
 
 
-class ParameterizedModel:
+
+class ParametricModel:
     """Base class for paramterized synergy models, including MuSyC, Zimmer, GPDI, and BRAID.
     """
     def __init__(self):
         """Bounds for drug response parameters (for instance, given percent viability data, one might expect E to be bounded within (0,1)) can be set, or parameters can be explicitly set.
         """
 
+        self.bounds = None
+        self.fit_function = None
+        self.jacobian_function = None
+        
+        self.converged = False
+
         self.sum_of_squares_residuals = None
         self.r_squared = None
         self.aic = None
         self.bic = None
-#        self.converged = False
+        self.bootstrap_parameters = None
 
     def _score(self, d1, d2, E):
         """Calculate goodness of fit and model quality scores, including sum-of-squares residuals, R^2, Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC).
@@ -69,8 +79,20 @@ class ParameterizedModel:
         """
         return []
 
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, **kwargs):
-        """Fit the synergy model to data using scipy.optimize.curve_fit().
+    def _internal_fit(self, d, E, use_jacobian, **kwargs):
+        """Internal method to fit the model to data (d,E)
+        """
+        try:
+            if use_jacobian and self.jacobian_function is not None:
+                popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, jac=self.jacobian_function, **kwargs)
+            else: 
+                popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, **kwargs)
+            return self._transform_params_from_fit(popt)
+        except:
+            return None
+
+    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, bootstrap_iterations=0, bootstrap_confidence_interval=95, **kwargs):
+        """Fit the model to data.
 
         Parameters
         ----------
@@ -100,13 +122,34 @@ class ParameterizedModel:
         
         kwargs
             kwargs to pass to scipy.optimize.curve_fit()
-
-        Returns
-        ----------
-        synergy_parameters : array_like
-            The fit parameters describing the synergy in the data
         """
+        d1 = utils.remove_zeros(d1)
+        d2 = utils.remove_zeros(d2)
 
+        xdata = np.vstack((d1,d2))
+        
+        if 'p0' in kwargs:
+            p0 = list(kwargs.get('p0'))
+        else:
+            p0 = None
+        
+        p0 = self._get_initial_guess(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, p0=p0)
+
+        kwargs['p0']=p0
+        
+        with np.errstate(divide='ignore', invalid='ignore'):
+            popt = self._internal_fit(xdata, E, use_jacobian, **kwargs)
+
+        if popt is None:
+            self._set_parameters(p0)
+            self.converged = False
+        else:
+            self.converged = True
+            self._set_parameters(popt)
+            self._score(d1, d2, E)
+            kwargs['p0'] = self._transform_params_to_fit(popt)
+            self._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, bootstrap_confidence_interval, **kwargs)
+    
     def E(self, d1, d2):
         """Returns drug effect E at dose d1,d2 for a pre-defined or fitted model.
 
@@ -134,6 +177,85 @@ class ParameterizedModel:
             True if all of the parameters are set. False if any are None or nan.
         """
         return not (None in self.get_parameters() or True in np.isnan(np.asarray(self.get_parameters())))
+
+    def _set_parameters(self, popt):
+        """Internal method to set model parameters
+        """
+        pass
+
+    def _transform_params_from_fit(self, params):
+        """Internal method to transform parameterss as needed.
+
+        For instance, models that fit logh and logC must transform those to h and C
+        """
+        return params
+
+    def _transform_params_to_fit(self, params):
+        """Internal method to transform parameterss as needed.
+
+        For instance, models that fit logh and logC must transform from h and C
+        """
+        return params
+
+    def _get_initial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
+        """Internal method to format and/or guess p0
+        """
+        return p0
+
+    def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, confidence_interval, **kwargs):
+        """Internal function to identify confidence intervals for parameters
+        """
+
+        if not self._is_parameterized(): return
+        if not self.converged: return
+
+        n_data_points = len(E)
+        n_parameters = len(self.get_parameters())
+        
+        sigma_residuals = np.sqrt(self.sum_of_squares_residuals / (n_data_points - n_parameters))
+
+        E_model = self.E(d1, d2)
+        bootstrap_parameters = []
+
+        xdata = np.vstack((d1,d2))
+
+        for iteration in range(bootstrap_iterations):
+            residuals_step = norm.rvs(loc=0, scale=sigma_residuals, size=n_data_points)
+
+            # Add random noise to model prediction
+            E_iteration = E_model + residuals_step
+
+            # Fit noisy data
+            with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
+                popt1 = self._internal_fit(xdata, E_iteration, use_jacobian=use_jacobian, **kwargs)
+            
+            if popt1 is not None:
+                bootstrap_parameters.append(popt1)
+        if len(bootstrap_parameters) > 0:
+            self.bootstrap_parameters = np.vstack(bootstrap_parameters)
+        else:
+            self.bootstrap_parameters = None
+
+    def get_parameter_range(self, confidence_interval=95):
+        """Returns the lower bound and upper bound estimate for each parameter.
+
+        Parameters:
+        -----------
+        confidence_interval : int, float, default=95
+            % confidence interval to return. Must be between 0 and 100.
+        """
+        if not self._is_parameterized():
+            return None
+        if not self.converged:
+            return None
+        if confidence_interval < 0 or confidence_interval > 100:
+            return None
+        if self.bootstrap_parameters is None:
+            return None
+
+        lb = (100-confidence_interval)/2.
+        ub = 100-lb
+        return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0)
 
     def plot_colormap(self, d1, d2, cmap="viridis", **kwargs):
         """Plots the model's effect, E(d1, d2) as a heatmap
@@ -203,118 +325,3 @@ class ParameterizedModel:
             Synergy model fit to the given data
         """
         return
-
-
-class DoseDependentModel:
-    """These are models for which synergy is defined independently at each individual dose.
-    """
-    def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
-            C1_bounds=(0,np.inf), C2_bounds=(0,np.inf),             \
-            E0_bounds=(-np.inf,np.inf), E1_bounds=(-np.inf,np.inf), \
-            E2_bounds=(-np.inf,np.inf)):
-        """Creates a DoseDependentModel
-
-        Parameters
-        ----------
-        E0_bounds: tuple, default=(-np.inf, np.inf)
-            Bounds to use for E0 to fit drug1_model and drug2_model if they are not supplied directly in .fit()
-        
-        E{X}_bounds: tuple, default=(-np.inf, np.inf)
-            Bounds to use for Emax to fit drug{X}_model if it is not supplied directly in .fit() (e.g., E1_bounds will constrain drug 1's Emax)
-        
-        h{X}_bounds: tuple, default=(0, np.inf)
-            Bounds to use for hill slope to fit drug{X}_model if it is not supplied directly in .fit()
-        
-        C{X}_bounds: tuple, default=(0, np.inf)
-            Bounds to use for EC50 to fit drug{X}_model if it is not supplied directly in .fit()
-        """
-        self.C1_bounds = C1_bounds
-        self.C2_bounds = C2_bounds
-        self.h1_bounds = h1_bounds
-        self.h2_bounds = h2_bounds
-        self.E0_bounds = E0_bounds
-        self.E1_bounds = E1_bounds
-        self.E2_bounds = E2_bounds
-
-        self.synergy = None
-        self.d1 = None
-        self.d2 = None
-
-        self.drug1_model = None
-        self.drug2_model = None
-
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
-        """Calculates dose-dependent synergy at doses d1, d2.
-
-        Parameters
-        ----------
-        d1 : array_like
-            Doses of drug 1
-        
-        d2 : array_like
-            Doses of drug 2
-
-        E : array_like
-            Dose-response at doses d1 and d2
-
-        drug1_model : single-drug-model, default=None
-            Pre-defined, or fit, model (e.g., Hill()) of drug 1 alone. If None (default), then d1 and E will be masked where d2==min(d2), and used to fit a model (Hill, Hill_2P, or Hill_CI, depending on the synergy model) for drug 1.
-
-        drug2_model : single-drug-model, default=None
-            Same as drug1_model, for drug 2.
-        
-        kwargs
-            kwargs to pass to Hill.fit() (or whichever single-drug model is used)
-
-        Returns
-        ----------
-        synergy : array_like
-            The synergy calculated at all doses d1, d2
-        """
-        self.d1 = d1
-        self.d2 = d2
-        self.synergy = 0*d1
-        self.synergy[:] = np.nan
-        return self.synergy
-
-    def plot_colormap(self, cmap="PRGn", neglog=False, **kwargs):
-        """Plots the synergy as a heatmap
-
-        Parameters
-        ----------
-        cmap : string, default="PRGn"
-            Colorscale for the plot
-
-        neglog : bool, default=False
-            If True, will transform the synergy values by -log(synergy). Loewe and CI are synergistic between [0,1) and antagonistic between (1,inf). Thus, -log(synergy) becomes synergistic for positive values, and antagonistic for negative values. This behavior matches other synergy frameworks, and helps better visualize results. But it is never set by default.
-
-        kwargs
-            kwargs passed to synergy.utils.plots.plot_colormap()
-        """
-        if neglog:
-            with np.errstate(invalid="ignore"):
-                plots.plot_colormap(self.d1, self.d2, -np.log(self.synergy), cmap=cmap, **kwargs)
-        else:
-            plots.plot_colormap(self.d1, self.d2, self.synergy, cmap=cmap, **kwargs)
-
-    def plot_surface_plotly(self, cmap="PRGn", **kwargs):
-        """Plots the synergy as a 3D surface using synergy.utils.plots.plot_surface_plotly()
-
-        Parameters
-        ----------
-        kwargs
-            kwargs passed to synergy.utils.plots.plot_colormap()
-        """
-        plots.plot_surface_plotly(self.d1, self.d2, self.synergy, cmap=cmap, **kwargs)
-
-class ModelNotParameterizedError(Exception):
-    """
-    The model must be parameterized prior to use. This can be done by calling
-    fit(), or setParameters().
-    """
-    def __init__(self, msg='The model must be parameterized prior to use. This can be done by calling fit(), or setParameters().', *args, **kwargs):
-        super().__init__(msg, *args, **kwargs)
-
-class FeatureNotImplemented(Warning):
-    def __init__(self, msg="This feature is not yet implemented", *args, **kwargs):
-        super().__init__(msg, *args, **kwargs)

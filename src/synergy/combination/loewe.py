@@ -14,12 +14,14 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from .. import utils
-from ..single import hill as hill
-from .base import DoseDependentModel
+
+from ..single import Hill
+from .nonparametric_base import DoseDependentModel
 
 class Loewe(DoseDependentModel):
-    """Loewe's model of drug combination additivity and synergy.
+    """Loewe Additivity Synergy
+    
+    Loewe's model of drug combination additivity expects a linear tradeoff, such that withholding X parts of drug 1 can be compensated for by adding Y parts of drug 2. In Loewe's model, X and Y are constant (e.g., withholding 5X parts of drug 1 will be compensated for with 5Y parts of drug 2.)
 
     synergy : array_like, float
         [0,1)=synergism, (1,inf)=antagonism
@@ -31,10 +33,10 @@ class Loewe(DoseDependentModel):
 
         if drug1_model is None:
             mask = np.where(d2==min(d2))
-            drug1_model = hill.Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+            drug1_model = Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
         if drug2_model is None:
             mask = np.where(d1==min(d1))
-            drug2_model = hill.Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+            drug2_model = Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
         
         self.drug1_model = drug1_model
         self.drug2_model = drug2_model

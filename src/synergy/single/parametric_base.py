@@ -227,4 +227,7 @@ class ParameterizedModel1D:
             if popt1 is not None:
                 bootstrap_parameters.append(popt1)
         
-        self.bootstrap_parameters = np.vstack(bootstrap_parameters)
+        if len(bootstrap_parameters) > 0:
+            self.bootstrap_parameters = np.vstack(bootstrap_parameters)
+        else:
+            self.bootstrap_parameters = None

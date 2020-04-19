@@ -14,11 +14,9 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import warnings
-from scipy.optimize import curve_fit
-from .. import utils
-from ..single import hill as hill
-from .base import *
+
+from ..single import Hill, Hill_2P
+from .nonparametric_base import DoseDependentModel
 
 class ZIP(DoseDependentModel):
     """The Zero Interaction Potency (ZIP) model (doi: 10.1016/j.csbj.2015.09.001). This model is based on the multiplicative survival principal (i.e., Bliss). All across the dose-response surface, it fits Hill-equations either holding d1==constant or d2==constant.
@@ -62,11 +60,11 @@ class ZIP(DoseDependentModel):
         
         if drug1_model is None:
             mask = np.where(d2==min(d2))
-            drug1_model = hill.Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.Emax_bounds, h_bounds=self.h_bounds, C_bounds=self.C_bounds, use_jacobian=use_jacobian)
+            drug1_model = Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.Emax_bounds, h_bounds=self.h_bounds, C_bounds=self.C_bounds, use_jacobian=use_jacobian)
             
         if drug2_model is None:
             mask = np.where(d1==min(d1))
-            drug2_model = hill.Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.Emax_bounds,h_bounds=self.h_bounds, C_bounds=self.C_bounds, use_jacobian=use_jacobian)
+            drug2_model = Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.Emax_bounds,h_bounds=self.h_bounds, C_bounds=self.C_bounds, use_jacobian=use_jacobian)
 
         self.drug1_model = drug1_model
         self.drug2_model = drug2_model
@@ -101,7 +99,7 @@ class ZIP(DoseDependentModel):
         self._C_21 = [] # EC50 of drug 1, after treated by drug 2
         self._C_12 = [] # EC50 of drug 2, after treated by drug 1
         
-        zip_model = hill.Hill_2P(Emax=Emax, h_bounds=self.h_bounds, C_bounds=self.C_bounds)
+        zip_model = Hill_2P(Emax=Emax, h_bounds=self.h_bounds, C_bounds=self.C_bounds)
 
         for D1, D2 in zip(d1, d2):
             # Fix d2==D2, and fit hill for D1

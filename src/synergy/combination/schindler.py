@@ -14,12 +14,14 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from .. import utils
-from ..single import hill as hill
-from .base import DoseDependentModel
+
+from ..single import Hill
+from .nonparametric_base import DoseDependentModel
 
 class Schindler(DoseDependentModel):
-    """From "Theory of synergistic effects: Hill-type response surfaces as 'null-interaction' models for mixtures" - Michael Schindler. This model is built to satisfy the Loewe additivity criterion, 
+    """Schindler's multidimensional Hill equation model.
+    
+    From "Theory of synergistic effects: Hill-type response surfaces as 'null-interaction' models for mixtures" - Michael Schindler. This model is built to satisfy the Loewe additivity criterion, 
 
     Schindler assumes each drug has a Hill dose response, and defines a multidimensional Hill equation that satisfies Loewe additivity. Unlike Loewe, Schindler can be defined for combinations whose effect exceeds Emax of either drug (Loewe is limited by Emax of the *weaker* drug).
 
@@ -35,10 +37,10 @@ class Schindler(DoseDependentModel):
         
         if drug1_model is None:
             mask = np.where(d2==min(d2))
-            drug1_model = hill.Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+            drug1_model = Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
         if drug2_model is None:
             mask = np.where(d1==min(d1))
-            drug2_model = hill.Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+            drug2_model = Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
         
         self.drug1_model = drug1_model
         self.drug2_model = drug2_model

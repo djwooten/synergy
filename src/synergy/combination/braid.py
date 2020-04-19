@@ -14,12 +14,13 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import warnings
-from .. import utils
-from ..single import Hill
-from .basenew import *
 
-class BRAID(ParameterizedModelNew):
+from .. import utils
+
+from ..single import Hill
+from .parametric_base import ParametricModel
+
+class BRAID(ParametricModel):
     """BRAID synergy (doi:10.1038/srep25523).
     
     The version implemented here is the "extended" BRAID model with 10 parameters, E0, E1, E2, E3, h1, h2, C1, C2, kappa, and delta.

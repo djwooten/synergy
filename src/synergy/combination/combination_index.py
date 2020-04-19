@@ -14,12 +14,14 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from .. import utils
-from ..single import hill as hill
-from .base import DoseDependentModel
+
+from ..single import Hill_CI
+from .nonparametric_base import DoseDependentModel
 
 class CombinationIndex(DoseDependentModel):
-    """The Combination Index (CI) is a mass-action-derived model of drug combination synergy. In the original 1984 paper (XXX), CI was derived with two forms: (1) mutually-exclusive drugs, and (2) mutually non-exclustive drugs. Since then, model (1) has been preferred, and is the one implemented here.
+    """Combination Index (CI).
+    
+    CI is a mass-action-derived model of drug combination synergy. In the original 1984 paper (XXX), CI was derived with two forms: (1) mutually-exclusive drugs, and (2) mutually non-exclustive drugs. Since then, model (1) has been preferred, and is the one implemented here.
 
     CI fits single-drug responses using a log-linearization scatchard-like regression, that implicitly assumes E0=1 and Emax=0, so should only be applied in those cases. If this assumption is not met, users may wish to use Loewe(), which is here calculated identically to CI, but without the E0 and Emax assumptions, and fits drugs to a 4-parameter Hill equation using nonlinear optimization.
 
@@ -31,12 +33,12 @@ class CombinationIndex(DoseDependentModel):
 
         super().fit(d1,d2,E)
 
-        if drug1_model is None or not isinstance(drug1_model, hill.Hill_CI):
+        if drug1_model is None or not isinstance(drug1_model, Hill_CI):
             mask = np.where(d2==min(d2))
-            drug1_model = hill.Hill_CI.create_fit(d1[mask], E[mask])
-        if drug2_model is None or not isinstance(drug2_model, hill.Hill_CI):
+            drug1_model = Hill_CI.create_fit(d1[mask], E[mask])
+        if drug2_model is None or not isinstance(drug2_model, Hill_CI):
             mask = np.where(d1==min(d1))
-            drug2_model = hill.Hill_CI.create_fit(d2[mask], E[mask])
+            drug2_model = Hill_CI.create_fit(d2[mask], E[mask])
         
         self.drug1_model = drug1_model
         self.drug2_model = drug2_model

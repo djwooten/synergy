@@ -9,15 +9,12 @@ C = 1e-2
 
 model = Hill(E0, Emax, h, C)
 
-d = np.logspace(-3,0,num=10)
+d = np.logspace(-2.1,0,num=10)
 E = model.E(d)
 #E_fit = E*(1+(np.random.rand(len(E))-0.5)/3)
-E_fit = E + 0.1*(2*np.random.rand(len(E))-1)
+E_fit = E + 0.08*(2*np.random.rand(len(E))-1)
 
-print(model.fit(d, E_fit, bootstrap_iterations=100))
-
-print("\n")
-
+model.fit(d, E_fit, bootstrap_iterations=100)
 print(model)
 
 fig = plt.figure()

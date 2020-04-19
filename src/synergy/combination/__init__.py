@@ -1,12 +1,12 @@
+# Parametric Models
 from .musyc import MuSyC
-from .musycgamma import MuSyCG
-from .musycgnew import MuSyCGNew
-from .zimmernew import ZimmerNew
+from .zimmer import Zimmer
 from .braid import BRAID
+
+# Nonparametric models
 from .bliss import Bliss
-from .combination_index import CombinationIndex
 from .hsa import HSA
 from .loewe import Loewe
+from .combination_index import CombinationIndex
 from .schindler import Schindler
 from .zero_interaction_potency import ZIP
-from .zimmer import Zimmer
