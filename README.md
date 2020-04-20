@@ -2,7 +2,7 @@
 
 # synergy
 
-A python package to calculate, analyze, and visualize drug combination synergy and antagonism. Currently supports multiple models of synergy, including MuSyC, Bliss, Loewe, Combination Index, ZIP, Zimmer, Schindler, and HSA.
+A python package to calculate, analyze, and visualize drug combination synergy and antagonism. Currently supports multiple models of synergy, including MuSyC, Bliss, Loewe, Combination Index, ZIP, Zimmer, BRAID, Schindler, and HSA.
 
 ## Installation
 
@@ -67,7 +67,7 @@ npoints1, npoints2 = 8, 8
 d1, d2 = grid(d1min, d1max, d2min, d2max, npoints1, npoints2)
 
 E = model.E(d1, d2)
-E_noisy = E + 0.1*(2*np.random.rand(len(E))-1)
+E_noisy = E + 0.1*(2*np.random.rand(len(E))-1) # Add random value from -0.1 to 0.1 to every datapoint
 ```
 
 ### Nonparametric (dose dependent) synergy models
@@ -107,6 +107,7 @@ model.plot_surface_plotly(df['drug1.conc'], df['drug2.conc'], xlabel="Drug1", yl
 * Optional for full plotting functionality
   * matplotlib
   * plotly
+  * pandas
 
 ## Current features
 * Calculate two-drug synergy using
