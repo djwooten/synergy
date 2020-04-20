@@ -1,5 +1,16 @@
+Commit new version to github:
+
+update version in __init__.py
+git add
+git commit
+git tag vX.X.X
+git push origin vX.X.X
+
+
+
+
+Deploy to pypi:
+
 python3 setup.py sdist bdist_wheel
-
-python3 -m pip install --user --upgrade twine
-
+pip install --upgrade twine
 twine upload dist/*
