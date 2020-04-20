@@ -36,7 +36,7 @@ setuptools.setup(
     url="https://github.com/djwooten/synergy",
 
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 4 - Beta',
         'Intended Audience :: Science/Research',
         'Intended Audience :: Education',
         'License :: OSI Approved :: GNU General Public License v3 or later (GPLv3+)',
