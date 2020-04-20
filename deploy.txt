@@ -5,6 +5,7 @@ git add
 git commit
 git tag vX.X.X
 git push origin vX.X.X
+git push (to put it on master)
 
 
 
