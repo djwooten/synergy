@@ -60,6 +60,12 @@ Using git
   * Parametric
     * GPDI
 * Three+ drug combinations (when possible)
+  * MuSyC
+  * Bliss
+  * Loewe / CI
+  * HSA
+  * Schindler
+  * Zimmer (at least incorporating pairwise synergies)
 * Visualization
   * Highlight single-drug curves on 3D surface plots
   * matplotlib 3D surface plotting

@@ -278,6 +278,27 @@ class ParametricModel:
         E = self.E(d1, d2)
         plots.plot_colormap(d1, d2, E, cmap=cmap, **kwargs)
 
+    def plot_residual_colormap(self, d1, d2, E, cmap="RdBu", **kwargs):
+        """Plots the model's effect, E(d1, d2) as a heatmap
+
+        Parameters
+        ----------
+        d1 : array_like
+            Doses of drug 1
+        
+        d2 : array_like
+            Doses of drug 2
+        
+        kwargs
+            kwargs passed to synergy.utils.plots.plot_colormap()
+        """
+        if not self._is_parameterized():
+            #raise ModelNotParameterizedError()
+            return
+        
+        Emodel = self.E(d1, d2)
+        plots.plot_colormap(d1, d2, E-Emodel, cmap=cmap, **kwargs)
+
     def plot_surface_plotly(self, d1, d2, cmap="RdBu", **kwargs):
         """Plots the model's effect, E(d1, d2) as a surface using synergy.utils.plots.plot_surface_plotly()
 
