@@ -152,16 +152,21 @@ class MuSyC(ParametricModel):
         gamma12 = np.exp(loggamma12)
         gamma21 = np.exp(loggamma21)
 
-        return E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21
+        oalpha12 = MuSyC._alpha_to_prime(alpha12, C2, gamma12)
+        oalpha21 = MuSyC._alpha_to_prime(alpha21, C1, gamma21)
+
+        return E0, E1, E2, E3, h1, h2, C1, C2, oalpha12, oalpha21, gamma12, gamma21
 
     def _transform_params_to_fit(self, params):
         
-        E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21 = params
+        E0, E1, E2, E3, h1, h2, C1, C2, oalpha12, oalpha21, gamma12, gamma21 = params
 
         logh1 = np.log(h1)
         logh2 = np.log(h2)
         logC1 = np.log(C1)
         logC2 = np.log(C2)
+        alpha12 = MuSyC._prime_to_alpha(oalpha12, C2, gamma12)
+        alpha21 = MuSyC._prime_to_alpha(oalpha21, C1, gamma21)
         logalpha12 = np.log(alpha12)
         logalpha21 = np.log(alpha21)
         loggamma12 = np.log(gamma12)
@@ -176,10 +181,17 @@ class MuSyC(ParametricModel):
         return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21, self.gamma12, self.gamma21)
 
     def get_parameters(self):
-        return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21
+        oalpha12 = MuSyC._alpha_to_prime(self.alpha12, self.C2, self.gamma12)
+        oalpha21 = MuSyC._alpha_to_prime(self.alpha21, self.C1, self.gamma21)
+
+        return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, oalpha12, oalpha21, self.gamma12, self.gamma21
     
     def _set_parameters(self, popt):
-        self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21 = popt
+        self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, oalpha12, oalpha21, self.gamma12, self.gamma21 = popt
+
+        self.alpha12 = MuSyC._prime_to_alpha(oalpha12, self.C2, self.gamma12)
+        self.alpha21 = MuSyC._prime_to_alpha(oalpha21, self.C1, self.gamma21)
+
         
 
     def _C_to_r1r(self, C, h, r1):
@@ -215,7 +227,7 @@ class MuSyC(ParametricModel):
         A2 = r1*r2*(d1h1*r1*alpha12d2gamma12h2 + d2h2*r1*C1h1 + d2h2*r2*alpha12d2gamma12h2 + d2h2*r2*C2h2)*C1h1/(d1h1*r1**2*r2*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**2*r2*alpha21d1gamma21h1*C2h2 + d1h1*r1**2*r2*alpha12d2gamma12h2*C1h1 + d1h1*r1**2*r2*C1h1*C2h2 + d1h1*r1*r2**2*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**2*C22h2 + d2h2*r1**2*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**2*r2*C12h1 + d2h2*r1*r2**2*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r1*r2**2*alpha21d1gamma21h1*C2h2 + d2h2*r1*r2**2*alpha12d2gamma12h2*C1h1 + d2h2*r1*r2**2*C1h1*C2h2 + r1**2*r2*alpha21d1gamma21h1*C1h1*C2h2 + r1**2*r2*C12h1*C2h2 + r1*r2**2*alpha12d2gamma12h2*C1h1*C2h2 + r1*r2**2*C1h1*C22h2)
         
         return U*E0 + A1*E1 + A2*E2 + (1-(U+A1+A2))*E3
-
+    
     def create_fit(d1, d2, E, h_bounds=(1e-3,1e3), C_bounds=(0,np.inf),     \
             E_bounds=(-np.inf,np.inf), oalpha_bounds=(1e-5,1e5),            \
             gamma_bounds=(1e-5,1e5), **kwargs):
@@ -226,12 +238,32 @@ class MuSyC(ParametricModel):
         alpha_ub = MuSyC._prime_to_alpha(oalpha_bounds[1], dmax, gamma_bounds[1])
         alpha_bounds = (alpha_lb, alpha_ub)
 
-        print(alpha_bounds)
-        
         model = MuSyC(E0_bounds=E_bounds, E1_bounds=E_bounds, E2_bounds=E_bounds, E3_bounds=E_bounds, h1_bounds=h_bounds, h2_bounds=h_bounds, C1_bounds=C_bounds, C2_bounds=C_bounds, alpha12_bounds=alpha_bounds, alpha21_bounds=alpha_bounds, gamma12_bounds=gamma_bounds, gamma21_bounds=gamma_bounds)
 
         model.fit(d1, d2, E, **kwargs)
         return model
+
+    def get_parameter_range(self, confidence_interval=95):
+        if not self._is_parameterized():
+            return None
+        if not self.converged:
+            return None
+        if confidence_interval < 0 or confidence_interval > 100:
+            return None
+        if self.bootstrap_parameters is None:
+            return None
+
+        lb = (100-confidence_interval)/2.
+        ub = 100-lb
+        bp = np.array(self.bootstrap_parameters, copy=True)
+        E0 = self.bootstrap_parameters[:,0]
+        E1 = self.bootstrap_parameters[:,1]
+        E2 = self.bootstrap_parameters[:,2]
+        E3 = self.bootstrap_parameters[:,3]
+        
+        beta = (np.minimum(E1,E2)-E3) / (E0 - np.minimum(E1,E2))
+        bp = np.insert(self.bootstrap_parameters, 10, values=beta, axis=1)
+        return np.percentile(bp, [lb, ub], axis=0)
 
     def __repr__(self):
         if not self._is_parameterized(): return "MuSyC()"
