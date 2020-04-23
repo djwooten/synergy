@@ -1,21 +1,29 @@
 synergy.combination package
 ===========================
 
+Subpackages
+-----------
+
+.. toctree::
+   :maxdepth: 4
+
+   synergy.combination.jacobians
+
 Submodules
 ----------
-
-synergy.combination.base module
--------------------------------
-
-.. automodule:: synergy.combination.base
-   :members:
-   :undoc-members:
-   :show-inheritance:
 
 synergy.combination.bliss module
 --------------------------------
 
 .. automodule:: synergy.combination.bliss
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+synergy.combination.braid module
+--------------------------------
+
+.. automodule:: synergy.combination.braid
    :members:
    :undoc-members:
    :show-inheritance:
@@ -52,10 +60,18 @@ synergy.combination.musyc module
    :undoc-members:
    :show-inheritance:
 
-synergy.combination.musyc\_jacobian module
-------------------------------------------
+synergy.combination.nonparametric\_base module
+----------------------------------------------
 
-.. automodule:: synergy.combination.musyc_jacobian
+.. automodule:: synergy.combination.nonparametric_base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+synergy.combination.parametric\_base module
+-------------------------------------------
+
+.. automodule:: synergy.combination.parametric_base
    :members:
    :undoc-members:
    :show-inheritance:

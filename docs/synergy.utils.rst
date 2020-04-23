@@ -4,6 +4,14 @@ synergy.utils package
 Submodules
 ----------
 
+synergy.utils.base module
+-------------------------
+
+.. automodule:: synergy.utils.base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 synergy.utils.data\_exchange module
 -----------------------------------
 
@@ -32,14 +40,6 @@ synergy.utils.plots module
 --------------------------
 
 .. automodule:: synergy.utils.plots
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
-synergy.utils.utils module
---------------------------
-
-.. automodule:: synergy.utils.utils
    :members:
    :undoc-members:
    :show-inheritance:

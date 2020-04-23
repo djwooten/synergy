@@ -38,17 +38,25 @@ def jacobian(d1, d2, E0, E1, E2, E3, logh1, logh2, logC1, logC2, r1, r2, logalph
     logd1alpha21 = np.log(d1*alpha21)
     logd2alpha12 = np.log(d2*alpha12)
 
-    d1h1 = d1**h1
-    d2h2 = d2**h2
+    #d1h1 = d1**h1
+    #d2h2 = d2**h2
+    d1h1 = np.power(d1,h1)
+    d2h2 = np.power(d2,h2)
 
-    C1h1 = C1**h1
-    C2h2 = C2**h2
+    #C1h1 = C1**h1
+    #C2h2 = C2**h2
+    C1h1 = np.power(C1,h1)
+    C2h2 = np.power(C2,h2)
 
-    alpha21d1gamma21h1 = (alpha21*d1)**(gamma21*h1)
-    alpha12d2gamma12h2 = (alpha12*d2)**(gamma12*h2)
+    #alpha21d1gamma21h1 = (alpha21*d1)**(gamma21*h1)
+    #alpha12d2gamma12h2 = (alpha12*d2)**(gamma12*h2)
+    alpha21d1gamma21h1 = np.power(alpha21*d1, gamma21*h1)
+    alpha12d2gamma12h2 = np.power(alpha12*d2, gamma12*h2)
 
-    C12h1 = C1**(2*h1)
-    C22h2 = C2**(2*h2)
+    #C12h1 = C1**(2*h1)
+    #C22h2 = C2**(2*h2)
+    C12h1 = np.power(C1,2*h1)
+    C22h2 = np.power(C2,2*h2)
 
     exp = np.exp
     log = np.log

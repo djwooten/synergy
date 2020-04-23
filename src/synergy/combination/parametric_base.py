@@ -123,17 +123,22 @@ class ParametricModel:
         kwargs
             kwargs to pass to scipy.optimize.curve_fit()
         """
-        d1 = utils.remove_zeros(d1)
-        d2 = utils.remove_zeros(d2)
+        #d1 = np.asarray(d1)
+        #d2 = np.asarray(d2)
 
-        xdata = np.vstack((d1,d2))
+        D1 = utils.remove_zeros(d1)
+        D2 = utils.remove_zeros(d2)
+
+        E = np.asarray(E)
+
+        xdata = np.vstack((D1,D2))
         
         if 'p0' in kwargs:
             p0 = list(kwargs.get('p0'))
         else:
             p0 = None
         
-        p0 = self._get_initial_guess(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, p0=p0)
+        p0 = self._get_initial_guess(D1, D2, E, drug1_model=drug1_model, drug2_model=drug2_model, p0=p0)
 
         kwargs['p0']=p0
         
@@ -148,7 +153,7 @@ class ParametricModel:
             self._set_parameters(popt)
             self._score(d1, d2, E)
             kwargs['p0'] = self._transform_params_to_fit(popt)
-            self._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, bootstrap_confidence_interval, **kwargs)
+            self._bootstrap_resample(D1, D2, E, use_jacobian, bootstrap_iterations, bootstrap_confidence_interval, **kwargs)
     
     def E(self, d1, d2):
         """Returns drug effect E at dose d1,d2 for a pre-defined or fitted model.

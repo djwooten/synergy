@@ -11,6 +11,18 @@ Subpackages
    synergy.single
    synergy.utils
 
+Submodules
+----------
+
+synergy.synergy\_exceptions module
+----------------------------------
+
+.. automodule:: synergy.synergy_exceptions
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+
 Module contents
 ---------------
 

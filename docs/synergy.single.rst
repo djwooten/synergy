@@ -20,6 +20,14 @@ synergy.single.marginal module
    :undoc-members:
    :show-inheritance:
 
+synergy.single.parametric\_base module
+--------------------------------------
+
+.. automodule:: synergy.single.parametric_base
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 
 Module contents
 ---------------

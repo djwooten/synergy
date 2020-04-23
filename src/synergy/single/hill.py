@@ -166,7 +166,7 @@ class Hill(ParameterizedModel1D):
         if p0 is None:
             p0 = [max(E), min(E), 1, np.median(d)]
 
-        p0 = self._transform_params_to_fit(p0)
+        p0 = list(self._transform_params_to_fit(p0))
         utils.sanitize_initial_guess(p0, self.bounds)
         return p0
 
@@ -237,7 +237,7 @@ class Hill_2P(Hill):
         if p0 is None:
             p0 = [1, np.median(d)]
             
-        p0 = self._transform_params_to_fit(p0)
+        p0 = list(self._transform_params_to_fit(p0))
         utils.sanitize_initial_guess(p0, self.bounds)
         
         return p0

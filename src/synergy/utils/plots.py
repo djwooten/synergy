@@ -42,6 +42,11 @@ def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel=""
         if logscale:
             d1 = utils.remove_zeros_onestep(d1)
             d2 = utils.remove_zeros_onestep(d2)
+        else:
+            d1 = np.asarray(d1)
+            d2 = np.asarray(d2)
+        E = np.asarray(E)
+
 
         sorted_indices = np.lexsort((d1,d2))
         D1 = d1[sorted_indices]
@@ -205,8 +210,15 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
     
     d1 = utils.remove_zeros_onestep(d1)
     d2 = utils.remove_zeros_onestep(d2)
+    E = np.asarray(E)
 
     if (len(d1.shape)==1):
+
+        sorted_indices = np.lexsort((d1,d2))
+        d1 = d1[sorted_indices]
+        d2 = d2[sorted_indices]
+        E = E[sorted_indices]
+
         n_d1 = len(np.unique(d1))
         n_d2 = len(np.unique(d2))
         d1 = d1.reshape(n_d2,n_d1)

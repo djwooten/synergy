@@ -106,11 +106,13 @@ class MuSyC(ParametricModel):
 
     def _alpha_to_prime(alpha, C, gamma):
         if None in [alpha, C, gamma]: return None
-        return alpha*C**((gamma-1)/gamma)
+        #return alpha*C**((gamma-1)/gamma)
+        return alpha*np.power(C,(gamma-1)/gamma)
     
     def _prime_to_alpha(prime, C, gamma):
         if None in [prime, C, gamma]: return None
-        return prime*C**((1-gamma)/gamma)
+        #return prime*C**((1-gamma)/gamma)
+        return prime*np.power(C,(1-gamma)/gamma)
 
     def _get_initial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
         
@@ -202,17 +204,25 @@ class MuSyC(ParametricModel):
 
     def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, r1, r2, alpha12, alpha21, gamma12, gamma21):
 
-        d1h1 = d1**h1
-        d2h2 = d2**h2
+        #d1h1 = d1**h1
+        #d2h2 = d2**h2
+        d1h1 = np.power(d1,h1)
+        d2h2 = np.power(d2,h2)
 
-        C1h1 = C1**h1
-        C2h2 = C2**h2
+        #C1h1 = C1**h1
+        #C2h2 = C2**h2
+        C1h1 = np.power(C1,h1)
+        C2h2 = np.power(C2,h2)
 
-        alpha21d1gamma21h1 = (alpha21*d1)**(gamma21*h1)
-        alpha12d2gamma12h2 = (alpha12*d2)**(gamma12*h2)
+        #alpha21d1gamma21h1 = (alpha21*d1)**(gamma21*h1)
+        #alpha12d2gamma12h2 = (alpha12*d2)**(gamma12*h2)
+        alpha21d1gamma21h1 = np.power(alpha21*d1, gamma21*h1)
+        alpha12d2gamma12h2 = np.power(alpha12*d2, gamma12*h2)
 
-        C12h1 = C1**(2*h1)
-        C22h2 = C2**(2*h2)
+        #C12h1 = C1**(2*h1)
+        #C22h2 = C2**(2*h2)
+        C12h1 = np.power(C1,2*h1)
+        C22h2 = np.power(C2,2*h2)
 
         # ********** U ********
 
