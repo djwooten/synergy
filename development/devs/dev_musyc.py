@@ -7,13 +7,10 @@ from synergy.utils.dose_tools import grid
 E0, E1, E2, E3 = 1, 0.6, 0.4, 0.
 h1, h2 = 2.3, 0.8
 C1, C2 = 1e-2, 1e-1
-oalpha12, oalpha21 = 2., 1.
+alpha12, alpha21 = 2., 1.
 gamma12, gamma21 = 1.3, 0.5
 
-alpha12 = MuSyC._prime_to_alpha(oalpha12, C2, gamma12)
-alpha21 = MuSyC._prime_to_alpha(oalpha21, C1, gamma21)
-
-truemodel = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, oalpha12=oalpha12, oalpha21=oalpha21, gamma12=gamma12, gamma21=gamma21)
+truemodel = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, alpha12=alpha12, alpha21=alpha21, gamma12=gamma12, gamma21=gamma21)
 
 
 npoints = 8
@@ -36,4 +33,4 @@ print(model.get_parameter_range().T)
 scatter_points = pd.DataFrame({'drug1.conc':d1, 'drug2.conc':d2, 'effect':E_fit})
 DD1, DD2 = grid(C1/1e4, C1*1e4, C2/1e4, C2*1e4, npoints*2, npoints2*2)
 
-model.plot_surface_plotly(DD1, DD2, fname="musyc_fit.html", scatter_points=scatter_points)
+model.plot_surface_plotly(DD1, DD2, fname="musyc_fit_new.html", scatter_points=scatter_points)
