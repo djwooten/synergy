@@ -14,6 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+from scipy.optimize import curve_fit
 
 #from .. import utils
 #from ..single import Hill
@@ -26,6 +27,11 @@ class MuSyC():
         # Given 3 drugs, there are 9 synergy edges, and so 9 synergistic potencies and cooperativities. Thus, alphas=[a,b,c,d,e,f,g,h,i]. _edge_index[2][6] will give the index of the alpha corresponding to going from state [010] to [110] (e.g., adding drug 3).
         self._edge_index = None
 
+    def fit(self, d, E):
+        p0 = self._get_initial_guess(d, E)
+        popt, pcov = curve_fit(self._model, d, E, p0=p0)
+        return popt
+
     def E(self, d):
         if len(d.shape) != 2:
             # d is not properly formatted
@@ -37,20 +43,85 @@ class MuSyC():
             return 0
 
         self._build_edge_indices(n)
-        return self._model(d, *self.params)
+        params = MuSyC._transform_params_to_fit(self.params)
+        return self._model(d, *params)
+
+    def set_params(self, params):
+        self.params = params
+
+    @staticmethod
+    def _transform_params_to_fit(params):
+        params = np.asarray(params)
+        n = MuSyC._get_n_drugs_from_params(params)
+        if n<2:
+            return 0
         
+        h_param_offset = 2**n
+        params[h_param_offset:] = np.log(params[h_param_offset:])
+        return params
+
+    @staticmethod
+    def _transform_params_from_fit(popt):
+        params = np.asarray(popt)
+        n = MuSyC._get_n_drugs_from_params(params)
+        if n<2:
+            return 0
+        
+        h_param_offset = 2**n
+        params[h_param_offset:] = np.exp(params[h_param_offset:])
+        return params
+
+    @staticmethod
+    def _get_n_drugs_from_params(params):
+        n = 2
+        while len(params) > 2**n + n*2**n:
+            n += 1
+        if len(params) == 2**n+n*2**n:
+            return n
+        return 0
+
+    def _get_initial_guess(self, d, E):
+        # TODO Implement bounds sanitizing, and good guesses based on single-drug and pairwise drug combinations
+        n = d.shape[1]
+
+        E_params = [0,]*(2**n)
+        
+        for idx in range(2**n):
+            # state = [0,1,1] means drug3=0, drug2=1, drug1=1
+            state = MuSyC._idx_to_state(idx, n)
+            mask = d[:,0]>0
+            for drugnum in range(1,n+1): # 1, 2, 3, ...
+                drugstate = state[n-drugnum] # 1->2, 2->1, 3->0
+                if drugstate==0:
+                    mask = mask & (d[:,drugnum-1]==np.min(d[:,drugnum-1]))
+                else:
+                    mask = mask & (d[:,drugnum-1]==np.max(d[:,drugnum-1]))
+            E_params[idx] = np.median(E[mask])
+
+        h_params = [1,]*n
+        C_params = [np.median(d[:,i]) for i in range(n)]
+        alpha_params = [1,]*(2**(n-1)*n-n)
+        gamma_params = [1,]*(2**(n-1)*n-n)
+
+        p0 = E_params + h_params + C_params + alpha_params + gamma_params
+        return MuSyC._transform_params_to_fit(p0)
+        
+    @staticmethod
     def _hamming(a,b):
         s = 0
         for A,B in zip(a,b):
             if (A!=B): s+=1
         return s
 
+    @staticmethod
     def _get_n_states(n):
         return 2**n
 
+    @staticmethod
     def _get_n_edges(n):
         return 2**(n-1)*n
 
+    @staticmethod
     def _idx_to_state(idx, n):
         """Returns state representing index=idx
 
@@ -71,6 +142,7 @@ class MuSyC():
         """
         return [int(i) for i in bin(idx)[2:].zfill(n)]
 
+    @staticmethod
     def _state_to_idx(state):
         """Converts a drug state to its index.
         See _idx_to_state() for more info.
@@ -85,6 +157,7 @@ class MuSyC():
         """
         return int(''.join([str(i) for i in state]), base=2)
 
+    @staticmethod
     def _get_neighbors(idx, n):
         """Returns neighbors of the drug.
 
@@ -142,17 +215,16 @@ class MuSyC():
         gamma_param_offset = alpha_param_offset + 2**(n-1)*n-n
 
         E_params = args[:2**n]
-        h_params = args[h_param_offset:C_param_offset]
-        C_params = args[C_param_offset:alpha_param_offset]
-        alpha_params = args[alpha_param_offset:gamma_param_offset]
-        gamma_params = args[gamma_param_offset:]
+        logh_params = np.asarray(args[h_param_offset:C_param_offset])
+        logC_params = np.asarray(args[C_param_offset:alpha_param_offset])
+        logalpha_params = np.asarray(args[alpha_param_offset:gamma_param_offset])
+        loggamma_params = np.asarray(args[gamma_param_offset:])
 
-        print(E_params)
-        print(h_params)
-        print(C_params)
-        print(alpha_params)
-        print(gamma_params)
-        
+        h_params = np.exp(logh_params)
+        C_params = np.exp(logC_params)
+        alpha_params = np.exp(logalpha_params)
+        gamma_params = np.exp(loggamma_params)
+
         # First do row 0, which corresponds to U
         # All edges are non-synergistic
 
@@ -224,89 +296,65 @@ class MuSyC():
 if __name__=="__main__":
     from matplotlib import pyplot as plt
     
-    threedrug = True
-    if threedrug:
-        E_params = [2,1,1,1,1,0,0,0]
-        h_params = [2,1,0.8]
-        C_params = [0.1,0.01,0.1]
-        #alpha_params = [2,3,1,1,0.7,0.5,2,1,1]
-        #gamma_params = [0.4,2,1,2,0.7,3,2,0.5,2]
-        alpha_params = [1,]*9
-        gamma_params = [1,]*9
+    
+    E_params = [2,1,1,1,1,0,0,0]
+    h_params = [2,1,0.8]
+    C_params = [0.1,0.01,0.1]
+    #alpha_params = [2,3,1,1,0.7,0.5,2,1,1]
+    #gamma_params = [0.4,2,1,2,0.7,3,2,0.5,2]
+    alpha_params = [1,]*9
+    gamma_params = [1,]*9
 
-        params = E_params + h_params + C_params + alpha_params + gamma_params
+    params = E_params + h_params + C_params + alpha_params + gamma_params
 
-        model = MuSyC()
-        model.params = params
+    model = MuSyC()
+    model.params = params
 
-        n_points = 10
-        D = np.logspace(-3,0,n_points)
-        d1, d2, d3 = np.meshgrid(D,D,D)
-        d1 = d1.flatten()
-        d2 = d2.flatten()
-        d3 = d3.flatten()
+    n_points = 10
+    D = np.logspace(-3,0,n_points)
+    d1, d2, d3 = np.meshgrid(D,D,D)
+    d1 = d1.flatten()
+    d2 = d2.flatten()
+    d3 = d3.flatten()
 
-        d = np.zeros((n_points**3,3))
-        d[:,0] = d1
-        d[:,1] = d2
-        d[:,2] = d3
+    d = np.zeros((n_points**3,3))
+    d[:,0] = d1
+    d[:,1] = d2
+    d[:,2] = d3
 
-        E = model.E(d)
-        for i in D:
-            for j in D:
-                mask = np.where((d2==i)&(d3==j))
-                plt.plot(d1[mask], E[mask])
-        plt.xscale('log')
-        plt.show()
-
-        from synergy.utils import plots
-        fig = plt.figure(figsize=(15,6))
-        for i,DD in enumerate(D):
-            mask = np.where(d2==DD)
-            ax = fig.add_subplot(2,5,i+1)
-            plots.plot_colormap(d1[mask], d3[mask], E[mask], ax=ax, vmin=0, vmax=2)
-        plt.show()
-
-        import plotly.graph_objects as go
-
-        fig = go.Figure(data=go.Isosurface(
-            x=np.log10(d1),
-            y=np.log10(d2),
-            z=np.log10(d3),
-            value=E,
-            isomin=0.1,
-            isomax=2,
-            opacity=0.6,
-            surface_count=10, # number of isosurfaces, 2 by default: only min and max
-            colorbar_nticks=10, # colorbar ticks correspond to isosurface values
-            caps=dict(x_show=False, y_show=False)
-            ))
-        fig.show()
-
-    else:
-        E_params = [1,0.4,0.4,0]
-        h_params = [3,0.8]
-        C_params = [0.05,0.05]
-        alpha_params = [1,1]
-        gamma_params = [1,1]
-
-        params = E_params + h_params + C_params + alpha_params + gamma_params
-
-        model = MuSyC()
-        model.params = params
-
-        n_points = 10
-        d1 = np.logspace(-3,0,n_points)
-        d2 = 0*d1
-        d = np.zeros((n_points,2))
-        d[:,0] = d2
-        d[:,1] = d1
-
-        E = model.E(d)
-        plt.plot(d1, E)
-        plt.xscale('log')
-        plt.show()
+    E = model.E(d)
+    for i in D:
+        for j in D:
+            mask = np.where((d2==i)&(d3==j))
+            plt.plot(d1[mask], E[mask])
+    plt.xscale('log')
+    plt.show()
 
 
+    import plotly.graph_objects as go
+
+    fig = go.Figure(data=go.Isosurface(
+        x=np.log10(d1),
+        y=np.log10(d2),
+        z=np.log10(d3),
+        value=E,
+        isomin=0.1,
+        isomax=2,
+        opacity=0.6,
+        colorscale='PRGn_r',
+        surface_count=10, # number of isosurfaces, 2 by default: only min and max
+        colorbar_nticks=10, # colorbar ticks correspond to isosurface values
+        caps=dict(x_show=False, y_show=False)
+        ))
+    fig.show()
 
 
+    from synergy.utils import plots
+    fig = plt.figure(figsize=(15,6))
+    for i,DD in enumerate(D):
+        mask = np.where(d2==DD)
+        ax = fig.add_subplot(2,5,i+1)
+        plots.plot_colormap(d1[mask], d3[mask], E[mask], ax=ax, vmin=0, vmax=2)
+    plt.show()
+
+    
