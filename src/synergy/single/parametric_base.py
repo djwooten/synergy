@@ -74,7 +74,6 @@ class ParameterizedModel1D:
         kwargs
             kwargs to pass to scipy.optimize.curve_fit()
         """
-        d = utils.remove_zeros(d)
         
         if 'p0' in kwargs:
             p0 = list(kwargs.get('p0'))
@@ -87,8 +86,8 @@ class ParameterizedModel1D:
             popt = self._internal_fit(d, E, use_jacobian, **kwargs)
 
         if popt is None:
-            self._set_parameters(p0)
             self.converged = False
+            self._set_parameters(self._transform_params_from_fit(p0))
         else:
             self.converged = True
             self._set_parameters(popt)

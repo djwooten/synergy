@@ -112,7 +112,7 @@ class BRAID(ParametricModel):
         logC2 = np.log(C2)
         logdelta = np.log(delta)
         
-        return E0, E1, E2, E3, logh1, logh2, logC1, logC2, kappa, delta
+        return E0, E1, E2, E3, logh1, logh2, logC1, logC2, kappa, logdelta
         
 
     def _set_parameters(self, popt):

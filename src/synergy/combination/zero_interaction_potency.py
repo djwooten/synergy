@@ -103,10 +103,13 @@ class ZIP(DoseDependentModel):
 
         for D1, D2 in zip(d1, d2):
             # Fix d2==D2, and fit hill for D1
+            print(D1,D2)
+
             mask = np.where(d2==D2)
             y2 = drug2_model.E(D2)
             zip_model.E0 = y2
             zip_model.fit(d1[mask],E[mask], use_jacobian=use_jacobian, p0=[h1,C1])
+            #print(zip_model.converged)
             self._h_21.append(zip_model.h)
             self._C_21.append(zip_model.C)
 
@@ -115,6 +118,7 @@ class ZIP(DoseDependentModel):
             y1 = drug1_model.E(D1)
             zip_model.E0 = y1
             zip_model.fit(d2[mask],E[mask], use_jacobian=use_jacobian, p0=[h2,C2])
+            #print(zip_model.converged)
             self._h_12.append(zip_model.h)
             self._C_12.append(zip_model.C)
         

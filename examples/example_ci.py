@@ -9,17 +9,17 @@ from matplotlib import pyplot as plt
 E0, E1, E2, E3 = 1, 0, 0, 0
 h1, h2 = 1., 1.
 C1, C2 = 1e-2, 1e-1
-oalpha12, oalpha21 = 0., 0.
+alpha12, alpha21 = 0., 0.
 gamma12, gamma21 = 1., 1.
 
 # Generate synthetic data with MuSyC (because h=1 and alpha=0, this model should look additive by CI)
-model = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, oalpha12=oalpha12, oalpha21=oalpha21, gamma12=gamma12, gamma21=gamma21)
+model = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, alpha12=alpha12, alpha21=alpha21, gamma12=gamma12, gamma21=gamma21)
 
 # Generate synthetic data with MuSyC (because alpha=1, this model should look synergistic by CI)
-model2 = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, oalpha12=1, oalpha21=1, gamma12=gamma12, gamma21=gamma21)
+model2 = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, alpha12=1, alpha21=1, gamma12=gamma12, gamma21=gamma21)
 
 # Generate synthetic data with MuSyC (because Emax>0, CI will have a poor model fit for the single drugs)
-model3 = MuSyC(E0=E0, E1=0.4, E2=0.4, E3=0.4, h1=h1, h2=h2, C1=C1, C2=C2, oalpha12=oalpha12, oalpha21=oalpha21, gamma12=gamma12, gamma21=gamma21)
+model3 = MuSyC(E0=E0, E1=0.4, E2=0.4, E3=0.4, h1=h1, h2=h2, C1=C1, C2=C2, alpha12=alpha12, alpha21=alpha21, gamma12=gamma12, gamma21=gamma21)
 
 npoints = 8
 

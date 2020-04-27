@@ -69,7 +69,7 @@ class ParametricModel:
             self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, len(E))
             self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
 
-    def get_parameters():
+    def get_parameters(self):
         """Returns all of the model's fit parameters
 
         Returns
@@ -91,7 +91,7 @@ class ParametricModel:
         except:
             return None
 
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, bootstrap_iterations=0, bootstrap_confidence_interval=95, **kwargs):
+    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, bootstrap_iterations=0, **kwargs):
         """Fit the model to data.
 
         Parameters
@@ -123,22 +123,20 @@ class ParametricModel:
         kwargs
             kwargs to pass to scipy.optimize.curve_fit()
         """
-        #d1 = np.asarray(d1)
-        #d2 = np.asarray(d2)
 
-        D1 = utils.remove_zeros(d1)
-        D2 = utils.remove_zeros(d2)
+        d1 = np.asarray(d1)
+        d2 = np.asarray(d2)
 
         E = np.asarray(E)
 
-        xdata = np.vstack((D1,D2))
+        xdata = np.vstack((d1,d2))
         
         if 'p0' in kwargs:
             p0 = list(kwargs.get('p0'))
         else:
             p0 = None
         
-        p0 = self._get_initial_guess(D1, D2, E, drug1_model=drug1_model, drug2_model=drug2_model, p0=p0)
+        p0 = self._get_initial_guess(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, p0=p0)
 
         kwargs['p0']=p0
         
@@ -146,14 +144,14 @@ class ParametricModel:
             popt = self._internal_fit(xdata, E, use_jacobian, **kwargs)
 
         if popt is None:
-            self._set_parameters(p0)
+            self._set_parameters(self._transform_params_from_fit(p0))
             self.converged = False
         else:
             self.converged = True
             self._set_parameters(popt)
             self._score(d1, d2, E)
             kwargs['p0'] = self._transform_params_to_fit(popt)
-            self._bootstrap_resample(D1, D2, E, use_jacobian, bootstrap_iterations, bootstrap_confidence_interval, **kwargs)
+            self._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs)
     
     def E(self, d1, d2):
         """Returns drug effect E at dose d1,d2 for a pre-defined or fitted model.
@@ -207,7 +205,7 @@ class ParametricModel:
         """
         return p0
 
-    def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, confidence_interval, **kwargs):
+    def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs):
         """Internal function to identify confidence intervals for parameters
         """
 
@@ -325,6 +323,7 @@ class ParametricModel:
         E = self.E(d1, d2)
         plots.plot_surface_plotly(d1, d2, E, cmap=cmap, **kwargs)
 
+    @staticmethod
     def create_fit(d1, d2, E, **kwargs):
         """Courtesy one-liner to create a model and fit it to data. Appropriate (see model __init__() for details) bounds may be set for curve_fit.
 

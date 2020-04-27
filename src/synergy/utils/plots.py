@@ -40,8 +40,8 @@ def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel=""
             raise ImportError("matplotlib must be installed to plot")
         
         if logscale:
-            d1 = utils.remove_zeros_onestep(d1)
-            d2 = utils.remove_zeros_onestep(d2)
+            d1 = utils.remove_zeros(d1)
+            d2 = utils.remove_zeros(d2)
         else:
             d1 = np.asarray(d1)
             d2 = np.asarray(d2)
@@ -202,45 +202,205 @@ def interp(x, x0, x1, y0, y1):
     return (np.asarray(x)-x0)*(y1-y0)/(x1-x0)+y0
 
 def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
-                 elev=20, azim=19, fname="plot.html", zlim=None, cmap='viridis',          \
+                 elev=20, azim=19, fname="plot.html", zlim=None, cmap='viridis', logscale=True,         \
                  xlabel="x", ylabel="y", zlabel="z", \
                  vmin=None, vmax=None, auto_open=True, opacity=0.8):
     if (not plotly_import):
         raise ImportError("plot_surface_plotly() requires plotly to be installed.")
     
-    d1 = utils.remove_zeros_onestep(d1)
-    d2 = utils.remove_zeros_onestep(d2)
+    d1 = np.asarray(d1)
+    d2 = np.asarray(d2)
     E = np.asarray(E)
 
-    if (len(d1.shape)==1):
+    print(np.min(d1), np.min(d2))
 
-        sorted_indices = np.lexsort((d1,d2))
-        d1 = d1[sorted_indices]
-        d2 = d2[sorted_indices]
-        E = E[sorted_indices]
+    if logscale:
+        d1 = utils.remove_zeros(d1)
+        d2 = utils.remove_zeros(d2)
+        print(np.min(d1), np.min(d2))
+        d1 = np.log10(d1)
+        d2 = np.log10(d2)
 
-        n_d1 = len(np.unique(d1))
-        n_d2 = len(np.unique(d2))
-        d1 = d1.reshape(n_d2,n_d1)
-        d2 = d2.reshape(n_d2,n_d1)
-        E = E.reshape(n_d2,n_d1)
+    sorted_indices = np.lexsort((d1,d2))
+    d1 = d1[sorted_indices]
+    d2 = d2[sorted_indices]
+    E = E[sorted_indices]
 
-    data_to_plot = [go.Surface(x=np.log10(d1), y=np.log10(d2), z=E, cmin=vmin, cmax=vmax, opacity=opacity, contours_z=dict(show=True, usecolormap=True, highlightcolor="limegreen", project_z=False), colorscale=cmap, reversescale=True, colorbar=dict(lenmode='fraction', len=0.65, title=zlabel)),]
+    n_d1 = len(np.unique(d1))
+    n_d2 = len(np.unique(d2))
+    d1 = d1.reshape(n_d2,n_d1)
+    d2 = d2.reshape(n_d2,n_d1)
+    E = E.reshape(n_d2,n_d1)
+
+    data_to_plot = [go.Surface(
+        x=d1,
+        y=d2,
+        z=E,
+        cmin=vmin,
+        cmax=vmax,
+        opacity=opacity,
+        contours_z=dict(
+            show=True,
+            usecolormap=True,
+            highlightcolor="limegreen",
+            project_z=False
+        ),
+        colorscale=cmap,
+        reversescale=True,
+        colorbar=dict(
+            lenmode='fraction',
+            len=0.65,
+            title=zlabel
+            )
+        ),
+    ]
 
     if scatter_points is not None:
-        d1scatter = utils.remove_zeros_onestep(np.asarray(scatter_points['drug1.conc']))
-        d2scatter = utils.remove_zeros_onestep(np.asarray(scatter_points['drug2.conc']))
+        d1scatter = utils.remove_zeros(np.asarray(scatter_points['drug1.conc']))
+        d2scatter = utils.remove_zeros(np.asarray(scatter_points['drug2.conc']))
         
-        data_to_plot.append(go.Scatter3d(x=np.log10(d1scatter), y=np.log10(d2scatter), z=scatter_points['effect'], mode="markers", marker=dict(size=1.5, color=scatter_points['effect'], colorscale="RdBu", reversescale=True, cmin=vmin, cmax=vmax, line=dict(width=0.5, color='DarkSlateGrey'))))
+        data_to_plot.append(go.Scatter3d(
+            x=np.log10(d1scatter),
+            y=np.log10(d2scatter),
+            z=scatter_points['effect'],
+            mode="markers",
+            marker=dict(
+                size=1.5,
+                color=scatter_points['effect'],
+                colorscale=cmap,
+                reversescale=True,
+                cmin=vmin,
+                cmax=vmax,
+                line=dict(
+                    width=0.5,
+                    color='DarkSlateGrey'
+                )
+            )
+        ))
 
     fig = go.Figure(data=data_to_plot)
 
     #fig.update_traces(contours_z=dict(show=True, usecolormap=True, highlightcolor="limegreen", project_z=True))
 
-    fig.update_layout(title=fname, autosize=False,scene_camera_eye=dict(x=1.87, y=0.88, z=0.64), width=1000, height=800, margin=dict(l=100, r=100, b=90, t=90), xaxis_type="log", yaxis_type="log", scene=dict(xaxis_title=xlabel, yaxis_title=ylabel, zaxis_title=zlabel, aspectmode="cube"))
+    title = ""
+    if fname is not None:
+        title = fname
+
+    fig.update_layout(
+        title=title,
+        autosize=False,
+        scene_camera_eye=dict(
+            x=1.87, 
+            y=0.88, 
+            z=0.64
+        ), 
+        width=1000, 
+        height=800, 
+        margin=dict(
+            l=100, 
+            r=100, 
+            b=90, 
+            t=90
+        ), 
+        scene=dict(
+            xaxis_title=xlabel, 
+            yaxis_title=ylabel, 
+            zaxis_title=zlabel, 
+            aspectmode="cube"
+        )
+    )
 
     if zlim is not None:
         fig.update_layout(scene = dict(zaxis = dict(range=zlim,)))
 
 
-    offline.plot(fig, filename=fname, auto_open=auto_open)
+    if fname is not None:
+        offline.plot(fig, filename=fname, auto_open=auto_open)
+    else:
+        fig.show()
+
+
+def plotly_isosurfaces(d1, d2, d3, E, fname="isosurfaces.html",     \
+            cmap='viridis', xlabel="x", ylabel="y", zlabel="z",     \
+            vmin=None, vmax=None, auto_open=True, opacity=0.6,      \
+            logscale=True, isomin=None, isomax=None, surface_count=10):
+    
+    d1 = np.asarray(d1)
+    d2 = np.asarray(d2)
+    d3 = np.asarray(d3)
+    
+    if (len(d1.shape) > 1):
+        d1 = d1.flatten()
+        d2 = d2.flatten()
+        d3 = d3.flatten()
+        E = E.flatten()
+
+    sorted_indices = np.lexsort((d1,d2,d3))
+    d1 = d1[sorted_indices]
+    d2 = d2[sorted_indices]
+    d3 = d3[sorted_indices]
+    E = E[sorted_indices]
+
+    if logscale:
+        d1 = utils.remove_zeros(d1)
+        d2 = utils.remove_zeros(d2)
+        d3 = utils.remove_zeros(d3)
+        d1 = np.log10(d1)
+        d2 = np.log10(d2)
+        d3 = np.log10(d3)
+    
+    
+    E_range = np.max(E) - np.min(E)
+    if isomin is None:
+        isomin = np.min(E) + 0.1*E_range
+    if isomax is None:
+        isomax = np.min(E) + 0.9*E_range
+
+    fig = go.Figure(data=go.Isosurface(
+        x=d1,
+        y=d2,
+        z=d3,
+        value=E,
+        isomin=isomin,
+        isomax=isomax,
+        cmin=vmin,
+        cmax=vmax,
+        opacity=0.6,
+        colorscale='PRGn_r',
+        surface_count=surface_count, # number of isosurfaces, 2 by default: only min and max
+        colorbar_nticks=surface_count, # colorbar ticks correspond to isosurface values
+        caps=dict(x_show=False, y_show=False, z_show=True)
+    ))
+
+    title = ""
+    if fname is not None:
+        title = fname
+
+    fig.update_layout(
+        title=title,
+        autosize=False,
+        scene_camera_eye=dict(
+            x=1.87, 
+            y=0.88, 
+            z=0.64
+        ), 
+        width=1000, 
+        height=800, 
+        margin=dict(
+            l=100, 
+            r=100, 
+            b=90, 
+            t=90
+        ), 
+        scene=dict(
+            xaxis_title=xlabel, 
+            yaxis_title=ylabel, 
+            zaxis_title=zlabel, 
+            aspectmode="cube"
+        )
+    )
+
+    if fname is not None:
+        offline.plot(fig, filename=fname, auto_open=auto_open)
+    else:
+        fig.show()

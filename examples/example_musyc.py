@@ -1,7 +1,9 @@
 from matplotlib import pyplot as plt
 import numpy as np
+
 from synergy.combination import MuSyC
 from synergy.utils import plots
+from synergy.utils.dose_tools import grid
 
 
 E0, E1, E2, E3 = 1, 0.2, 0.1, 0.4
@@ -15,12 +17,7 @@ model = MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, alpha12=al
 npoints = 8
 npoints2 = 12
 
-d1 = np.logspace(-3,0,num=npoints)/3.
-d2 = np.logspace(-2,1,num=npoints2)
-D1, D2 = np.meshgrid(d1,d2)
-D1 = D1.flatten()
-D2 = D2.flatten()
-
+D1, D2 = grid(1e-3/3, 1/3, 1e-2,10, npoints, npoints2, include_zero=True)
 
 E = model.E(D1, D2)
 Efit = E*(1+(np.random.rand(len(D1))-0.5)/5.)

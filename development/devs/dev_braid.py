@@ -26,7 +26,7 @@ xdelta = [1,1,1,1,1,1,1,1,1]
 
 npoints = 80
 
-D1, D2 = grid(0,3,0,3,npoints,npoints,logspace=False)
+D1, D2 = grid(0,3,0,3,npoints,npoints,logscale=False)
 
 fig = plt.figure(figsize=(8,8))
 
@@ -49,13 +49,18 @@ for i in range(9):
     
     truemodel = BRAID(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, kappa=kappa, delta=delta)
 
-    #E = truemodel.E(D1, D2)
-
-    #model = BRAID()
-    #model.fit(D1, D2, E)
+    break
 
     truemodel.plot_colormap(D1, D2, logscale=False, cmap="RdYlGn_r", ax=ax, vmin=0, vmax=1)
 
+E = truemodel.E(D1, D2)
+Efit = E*(1+(np.random.rand(len(D1))-0.5)/5.)
 
-plt.tight_layout()
-plt.show()
+model = BRAID()
+model.fit(D1, D2, Efit, bootstrap_iterations=100)
+print(model)
+if model.converged:
+    print(model.get_parameter_range().T)
+
+#plt.tight_layout()
+#plt.show()

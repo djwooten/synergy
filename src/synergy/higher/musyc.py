@@ -14,40 +14,51 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-from scipy.optimize import curve_fit
 
-#from .. import utils
-#from ..single import Hill
+from .. import utils
+from .parametric_base import ParametricHigher
+from ..single import Hill
 
-class MuSyC():
-    def __init__(self, E_bounds=(-np.inf,np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf), alpha_bounds=(0,np.inf), gamma_bounds=(0,np.inf), r=1.):
-        self.params = None
+class MuSyC(ParametricHigher):
+    def __init__(self, E_bounds=(-np.inf,np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf), alpha_bounds=(0,np.inf), gamma_bounds=(0,np.inf), r=1., parameters=None):
+        super().__init__(parameters=parameters)
+        
+        self.E_bounds = E_bounds
+        self.h_bounds = h_bounds
+        self.C_bounds = C_bounds
+        self.alpha_bounds = alpha_bounds
+        self.gamma_bounds = gamma_bounds
+
+        with np.errstate(divide='ignore'):
+            self.logh_bounds = (np.log(h_bounds[0]))
+            self.logC_bounds = (np.log(C_bounds[0]))
+            self.logalpha_bounds = (np.log(alpha_bounds[0]), np.log(alpha_bounds[1]))
+            self.loggamma_bounds = (np.log(gamma_bounds[0]), np.log(gamma_bounds[1]))
+
+        # Bounds will depened on the number of dimensions, so will be filled out in _get_initial_guess()
+
         self.r = r
+        self.fit_function = self._model
 
         # Given 3 drugs, there are 9 synergy edges, and so 9 synergistic potencies and cooperativities. Thus, alphas=[a,b,c,d,e,f,g,h,i]. _edge_index[2][6] will give the index of the alpha corresponding to going from state [010] to [110] (e.g., adding drug 3).
         self._edge_index = None
 
-    def fit(self, d, E):
-        p0 = self._get_initial_guess(d, E)
-        popt, pcov = curve_fit(self._model, d, E, p0=p0)
-        return popt
-
     def E(self, d):
         if len(d.shape) != 2:
             # d is not properly formatted
-            return 0
+            return None
 
         n = d.shape[1]
         if (n < 2):
             # MuSyC requires at least two drugs
-            return 0
+            return None
+
+        if not self._is_parameterized():
+            return None
 
         self._build_edge_indices(n)
-        params = MuSyC._transform_params_to_fit(self.params)
+        params = MuSyC._transform_params_to_fit(self.parameters)
         return self._model(d, *params)
-
-    def set_params(self, params):
-        self.params = params
 
     @staticmethod
     def _transform_params_to_fit(params):
@@ -80,31 +91,75 @@ class MuSyC():
             return n
         return 0
 
-    def _get_initial_guess(self, d, E):
-        # TODO Implement bounds sanitizing, and good guesses based on single-drug and pairwise drug combinations
+    def _get_initial_guess(self, d, E, p0=None):
         n = d.shape[1]
 
-        E_params = [0,]*(2**n)
+        n_E = 2**n
+        n_h = n
+        n_C = n
+        n_alpha = 2**(n-1)*n-n
+        n_gamma = 2**(n-1)*n-n
+
+        E_bounds = [self.E_bounds,]*n_E
+        logh_bounds = [self.logh_bounds,]*n_h
+        logC_bounds = [self.logC_bounds,]*n_C
+        logalpha_bounds = [self.logalpha_bounds,]*n_alpha
+        loggamma_bounds = [self.loggamma_bounds,]*n_gamma
         
-        for idx in range(2**n):
-            # state = [0,1,1] means drug3=0, drug2=1, drug1=1
-            state = MuSyC._idx_to_state(idx, n)
-            mask = d[:,0]>0
-            for drugnum in range(1,n+1): # 1, 2, 3, ...
-                drugstate = state[n-drugnum] # 1->2, 2->1, 3->0
-                if drugstate==0:
-                    mask = mask & (d[:,drugnum-1]==np.min(d[:,drugnum-1]))
+        bounds = E_bounds + logh_bounds + logC_bounds + logalpha_bounds + loggamma_bounds
+
+        self.bounds = tuple(zip(*bounds))
+        
+        if p0 is None:
+            E_params = [0,]*(2**n)
+            h_params = [1,]*n
+            C_params = [np.median(d[:,i]) for i in range(n)]
+            alpha_params = [1,]*(2**(n-1)*n-n)
+            gamma_params = [1,]*(2**(n-1)*n-n)
+        
+            # Make guesses of E for each drug state
+            for idx in range(2**n):
+                # state = [0,1,1] means drug3=0, drug2=1, drug1=1
+                state = MuSyC._idx_to_state(idx, n)
+                mask = d[:,0]>0 # d is always > 0, so initializes to array of True
+                for drugnum in range(1,n+1): # 1, 2, 3, ...
+                    drugstate = state[n-drugnum] # 1->2, 2->1, 3->0
+                    if drugstate==0:
+                        mask = mask & (d[:,drugnum-1]==np.min(d[:,drugnum-1]))
+                    else:
+                        mask = mask & (d[:,drugnum-1]==np.max(d[:,drugnum-1]))
+                E_params[idx] = np.median(E[mask])
+
+            # Make guesses for E, h, C of undrugged and single-drugged states
+            single_drug_model = Hill(E0_bounds=self.E_bounds, Emax_bounds=self.E_bounds, h_bounds=self.h_bounds, C_bounds=self.C_bounds)
+            E0_guess = 0
+
+            # Make Hill model of each single drug
+            for i in range(n):
+                # Mask all other drugs at their minimum values
+                mask = d[:,0]>0 # d is always > 0, so initializes to array of True
+                for otherdrug in range(n):
+                    if otherdrug==i:
+                        continue
+                    mask = mask & (d[:,otherdrug] == np.min(d[:,otherdrug]))
+                
+                single_drug_model.fit(d[mask,i], E[mask], p0=(E_params[0], E_params[i], h_params[i], C_params[i]))
+
+                # Override initial guesses with single fits
+                if single_drug_model.converged:
+                    E0_guess += single_drug_model.E0/n
+                    E_params[i] = single_drug_model.Emax
+                    h_params[i] = single_drug_model.h
+                    C_params[i] = single_drug_model.C
                 else:
-                    mask = mask & (d[:,drugnum-1]==np.max(d[:,drugnum-1]))
-            E_params[idx] = np.median(E[mask])
-
-        h_params = [1,]*n
-        C_params = [np.median(d[:,i]) for i in range(n)]
-        alpha_params = [1,]*(2**(n-1)*n-n)
-        gamma_params = [1,]*(2**(n-1)*n-n)
-
-        p0 = E_params + h_params + C_params + alpha_params + gamma_params
-        return MuSyC._transform_params_to_fit(p0)
+                    E0_guess += E_params[0]/n
+            E_params[0] = E0_guess
+            
+            p0 = E_params + h_params + C_params + alpha_params + gamma_params
+        
+        p0 = list(_transform_params_to_fit(p0))
+        utils.sanitize_initial_guess(p0, self.bounds)
+        return p0
         
     @staticmethod
     def _hamming(a,b):
@@ -204,7 +259,7 @@ class MuSyC():
             M x N ndarray, where M is the number of samples, and N is the number of drugs.
 
         args
-            Parameters for the model, in order of E, h, C, alpha, gamma. The number of each type of parameter is E (2**N), h and C (N), alpha and gamma (2**(N-1)*N-N).
+            Parameters for the model, in order of E, logh, logC, logalpha, loggamma. The number of each type of parameter is E (2**N), h and C (N), alpha and gamma (2**(N-1)*N-N).
         """
         n = doses.shape[1]
         matrix = np.zeros((doses.shape[0],2**n,2**n))
@@ -233,10 +288,9 @@ class MuSyC():
             d = doses[:,drugnum]
             h = h_params[drugnum]
             C = C_params[drugnum]
-            r = 1
-            r1r = r*np.power(C,h)
+            r1r = self.r*np.power(C,h)
             
-            matrix[:,0,0] -= r*np.power(d,h)
+            matrix[:,0,0] -= self.r*np.power(d,h)
             matrix[:,0,jidx] = r1r
 
         # Loop over all other states/rows (except the last one)
@@ -254,14 +308,13 @@ class MuSyC():
                 d = doses[:,drugnum]
                 h = h_params[drugnum]
                 C = C_params[drugnum]
-                r = 1
-                r1r = r*np.power(C,h)
+                r1r = self.r*np.power(C,h)
                 
                 # This state gains from reverse transitions out of jidx
                 matrix[:,idx,jidx] += r1r**gamma
 
                 # This state loses from transitions toward jidx
-                matrix[:,idx,idx] -= np.power(r*np.power(alpha*d,h),gamma)
+                matrix[:,idx,idx] -= np.power(self.r*np.power(alpha*d,h),gamma)
 
             for drugnum, jidx in remove_drugs:
                 gamma = 1
@@ -274,14 +327,13 @@ class MuSyC():
                 d = doses[:,drugnum]
                 h = h_params[drugnum]
                 C = C_params[drugnum]
-                r = 1
-                r1r = r*np.power(C,h)
+                r1r = self.r*np.power(C,h)
                 
                 # This state loses from reverse transitions toward jidx
                 matrix[:, idx, idx] -= r1r**gamma
 
                 # This state gaines from transitions from jidx
-                matrix[:, idx, jidx] += np.power(r*np.power(alpha*d,h),gamma)
+                matrix[:, idx, jidx] += np.power(self.r*np.power(alpha*d,h),gamma)
             
         # The final constraint is that U+A1+A2+... = 1
         matrix[:,-1,:]=1
@@ -291,70 +343,3 @@ class MuSyC():
         b = np.zeros(2**n)
         b[-1]=1
         return np.dot(np.dot(matrix_inv,b), np.asarray(E_params))
-
-
-if __name__=="__main__":
-    from matplotlib import pyplot as plt
-    
-    
-    E_params = [2,1,1,1,1,0,0,0]
-    h_params = [2,1,0.8]
-    C_params = [0.1,0.01,0.1]
-    #alpha_params = [2,3,1,1,0.7,0.5,2,1,1]
-    #gamma_params = [0.4,2,1,2,0.7,3,2,0.5,2]
-    alpha_params = [1,]*9
-    gamma_params = [1,]*9
-
-    params = E_params + h_params + C_params + alpha_params + gamma_params
-
-    model = MuSyC()
-    model.params = params
-
-    n_points = 10
-    D = np.logspace(-3,0,n_points)
-    d1, d2, d3 = np.meshgrid(D,D,D)
-    d1 = d1.flatten()
-    d2 = d2.flatten()
-    d3 = d3.flatten()
-
-    d = np.zeros((n_points**3,3))
-    d[:,0] = d1
-    d[:,1] = d2
-    d[:,2] = d3
-
-    E = model.E(d)
-    for i in D:
-        for j in D:
-            mask = np.where((d2==i)&(d3==j))
-            plt.plot(d1[mask], E[mask])
-    plt.xscale('log')
-    plt.show()
-
-
-    import plotly.graph_objects as go
-
-    fig = go.Figure(data=go.Isosurface(
-        x=np.log10(d1),
-        y=np.log10(d2),
-        z=np.log10(d3),
-        value=E,
-        isomin=0.1,
-        isomax=2,
-        opacity=0.6,
-        colorscale='PRGn_r',
-        surface_count=10, # number of isosurfaces, 2 by default: only min and max
-        colorbar_nticks=10, # colorbar ticks correspond to isosurface values
-        caps=dict(x_show=False, y_show=False)
-        ))
-    fig.show()
-
-
-    from synergy.utils import plots
-    fig = plt.figure(figsize=(15,6))
-    for i,DD in enumerate(D):
-        mask = np.where(d2==DD)
-        ax = fig.add_subplot(2,5,i+1)
-        plots.plot_colormap(d1[mask], d3[mask], E[mask], ax=ax, vmin=0, vmax=2)
-    plt.show()
-
-    

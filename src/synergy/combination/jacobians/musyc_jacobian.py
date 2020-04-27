@@ -114,4 +114,6 @@ def jacobian(d1, d2, E0, E1, E2, E3, logh1, logh2, logC1, logC2, r1, r2, logalph
 
 
     # E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21
-    return np.hstack([j.reshape(-1,1) for j in [j_E0, j_E1, j_E2, j_E3, j_logh1, j_logh2, j_logC1, j_logC2, j_logalpha12, j_logalpha21, j_loggamma12, j_loggamma21]])
+    jac = np.hstack([j.reshape(-1,1) for j in [j_E0, j_E1, j_E2, j_E3, j_logh1, j_logh2, j_logC1, j_logC2, j_logalpha12, j_logalpha21, j_loggamma12, j_loggamma21]])
+    jac[np.isnan(jac)] = 0
+    return jac

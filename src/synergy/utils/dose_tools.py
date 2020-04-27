@@ -15,17 +15,17 @@
 
 import numpy as np
 
-def grid(d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=1, logspace=True, include_zero=False):
+def grid(d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=1, logscale=True, include_zero=False):
     replicates = int(replicates)
 
-    if logspace:
+    if logscale:
         d1 = np.logspace(np.log10(d1min), np.log10(d1max), num=n_points1)
         d2 = np.logspace(np.log10(d2min), np.log10(d2max), num=n_points2)
     else:
         d1 = np.linspace(d1min, d1max, num=n_points1)
         d2 = np.linspace(d2min, d2max, num=n_points2)
 
-    if include_zero:
+    if include_zero and logscale:
         if d1min > 0:
             d1 = np.append(0, d1)
         if d2min > 0:
@@ -39,6 +39,35 @@ def grid(d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=1, logspac
     D2 = np.hstack([D2,]*replicates)
 
     return D1, D2
+
+def grid_multi(dmin, dmax, npoints, logscale=True, include_zero=False):
+    if not (len(dmin)==len(dmax) and len(dmin)==len(npoints)):
+        return None
+    doses = []
+    for Dmin, Dmax, n in zip(dmin, dmax, npoints):
+        if logscale:
+            logDmin = np.log10(Dmin)
+            logDmax = np.log10(Dmax)
+            d = np.logspace(logDmin, logDmax, num=n)
+        else:
+            d = np.linspace(Dmin, Dmax, num=n)
+        if include_zero and Dmin > 0:
+            d = np.append(0, d)
+        doses.append(d)
+    dosegrid = np.meshgrid(*doses)
+    
+    if include_zero:
+        total_length = np.prod([i+1 for i in npoints])
+    else:
+        total_length = np.prod(npoints)
+    n = len(dmin)
+    return_d = np.zeros((total_length, n))
+    
+    for i in range(n):
+        return_d[:,i] = dosegrid[i].flatten()
+
+    return return_d
+
 
 def get_num_replicates(d1, d2):
     """Given 1d dose arrays d1 and d2, determine how many replicates of each unique combination are present

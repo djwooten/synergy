@@ -159,7 +159,9 @@ class Hill(ParameterizedModel1D):
 
         jh = (Emax-E0)*dh*np.exp(logh) * ((Ch+dh)*logd - (logC*Ch + logd*dh)) / ((Ch+dh)*(Ch+dh))
         
-        return np.hstack((jE0.reshape(-1,1), jEmax.reshape(-1,1), jh.reshape(-1,1), jC.reshape(-1,1)))
+        jac = np.hstack((jE0.reshape(-1,1), jEmax.reshape(-1,1), jh.reshape(-1,1), jC.reshape(-1,1)))
+        jac[np.isnan(jac)]=0
+        return jac
 
     def _get_initial_guess(self, d, E, p0=None):
 
@@ -230,7 +232,9 @@ class Hill_2P(Hill):
 
         jh = (Emax-E0)*dh*np.exp(logh) * ((Ch+dh)*logd - (logC*Ch + logd*dh)) / ((Ch+dh)*(Ch+dh))
         
-        return np.hstack((jh.reshape(-1,1), jC.reshape(-1,1)))
+        jac = np.hstack((jh.reshape(-1,1), jC.reshape(-1,1)))
+        jac[np.isnan(jac)]=0
+        return jac
 
     def _get_initial_guess(self, d, E, p0=None):
 

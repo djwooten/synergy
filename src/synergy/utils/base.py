@@ -29,20 +29,21 @@ def sham(d, drug):
     E = drug.E(d1+d2)
     return d1, d2, E
 
-def remove_zeros(d):
-    d=np.array(d,copy=True)
-    dmin = np.min(d[d>0]) # smallest nonzero dose
-    dmax = np.max(d) # Largest dose
-    dilution = dmin/dmax # What is the total dose range tested (in logspace)
-    d[d==0]=dmin * dilution**10
-    #d[d==0] = np.nextafter(0,1) # Smallest positive float
-    return d
-
-def remove_zeros_onestep(d):
+def remove_zeros(d, min_buffer=0.2):
     d=np.array(d,copy=True)
     dmin = np.min(d[d>0]) # smallest nonzero dose
     dmin2 = np.min(d[d>dmin])
     dilution = dmin/dmin2
+
+    dmax = np.max(d)
+    logdmin = np.log(dmin)
+    logdmin2 = np.log(dmin2)
+    logdmax = np.log(dmax)
+
+    if (logdmin2-logdmin) / (logdmax-logdmin) < min_buffer:
+        logdmin2_effective = logdmin + min_buffer*(logdmax-logdmin)
+        dilution = dmin/np.exp(logdmin2_effective)
+
     d[d==0]=dmin * dilution
     return d
 
