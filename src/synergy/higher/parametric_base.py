@@ -16,6 +16,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from scipy.optimize import curve_fit
+from scipy.stats import norm
 
 from .. import utils
 from ..utils import plots
@@ -40,12 +41,12 @@ class ParametricHigher(ABC):
         try:
             popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, **kwargs)
             return self._transform_params_from_fit(popt)
-        except:
+        except Exception as e:
+            print("Exception:", e)
             return None
 
     def fit(self, d, E, bootstrap_iterations=0, **kwargs):
 
-        #d = utils.remove_zeros_higher(d)
         d = np.asarray(d)
         E = np.asarray(E)
 
@@ -54,13 +55,14 @@ class ParametricHigher(ABC):
         else:
             p0 = None
         p0 = self._get_initial_guess(d, E, p0=p0)
+        kwargs['p0'] = p0
 
         with np.errstate(divide='ignore', invalid='ignore'):
             popt = self._internal_fit(d, E, **kwargs)
         
         if popt is None:
             self.converged = False
-            self.parametrers = _transform_params_from_fit(p0)
+            self.parameters = self._transform_params_from_fit(p0)
 
         else:
             self.converged = True
@@ -77,7 +79,7 @@ class ParametricHigher(ABC):
         if not self.converged: return
 
         n_data_points = len(E)
-        n_parameters = len(self.get_parameters())
+        n_parameters = len(self.parameters)
         
         sigma_residuals = np.sqrt(self.sum_of_squares_residuals / (n_data_points - n_parameters))
 
@@ -85,6 +87,7 @@ class ParametricHigher(ABC):
         bootstrap_parameters = []
 
         for iteration in range(bootstrap_iterations):
+            print("Bootstrap iteration = %d"%iteration)
             residuals_step = norm.rvs(loc=0, scale=sigma_residuals, size=n_data_points)
 
             # Add random noise to model prediction
@@ -120,11 +123,31 @@ class ParametricHigher(ABC):
 
             n_parameters = len(self.parameters)
 
-            # TODO sum_of_squares_residuals for higher dimensional d
-            self.sum_of_squares_residuals = utils.residual_ss(d, E, self.E)
+            self.sum_of_squares_residuals = utils.residual_ss_1d(d, E, self.E)
             self.r_squared = utils.r_squared(E, self.sum_of_squares_residuals)
             self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, len(E))
             self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
+
+    def get_parameter_range(self, confidence_interval=95):
+        """Returns the lower bound and upper bound estimate for each parameter.
+
+        Parameters:
+        -----------
+        confidence_interval : int, float, default=95
+            % confidence interval to return. Must be between 0 and 100.
+        """
+        if not self._is_parameterized():
+            return None
+        if not self.converged:
+            return None
+        if confidence_interval < 0 or confidence_interval > 100:
+            return None
+        if self.bootstrap_parameters is None:
+            return None
+
+        lb = (100-confidence_interval)/2.
+        ub = 100-lb
+        return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0)
 
     def _is_parameterized(self):
         """Returns False if any parameters are None or nan.
@@ -146,19 +169,16 @@ class ParametricHigher(ABC):
     def E(self, d):
         pass
 
-    @staticmethod
     @abstractmethod
-    def _transform_params_to_fit(params):
+    def _transform_params_to_fit(self, params):
         pass
 
-    @staticmethod
     @abstractmethod
-    def _transform_params_from_fit(popt):
+    def _transform_params_from_fit(self, popt):
         pass
 
-    @staticmethod
     @abstractmethod
-    def _get_n_drugs_from_params(params):
+    def _get_n_drugs_from_params(self, params):
         pass
 
     @abstractmethod

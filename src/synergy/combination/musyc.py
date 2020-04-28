@@ -212,15 +212,6 @@ class MuSyC(ParametricModel):
         
         return U*E0 + A1*E1 + A2*E2 + (1-(U+A1+A2))*E3
     
-    def create_fit(d1, d2, E, h_bounds=(1e-3,1e3), C_bounds=(0,np.inf),     \
-            E_bounds=(-np.inf,np.inf), alpha_bounds=(1e-5,1e5),            \
-            gamma_bounds=(1e-5,1e5), **kwargs):
-
-        model = MuSyC(E0_bounds=E_bounds, E1_bounds=E_bounds, E2_bounds=E_bounds, E3_bounds=E_bounds, h1_bounds=h_bounds, h2_bounds=h_bounds, C1_bounds=C_bounds, C2_bounds=C_bounds, alpha12_bounds=alpha_bounds, alpha21_bounds=alpha_bounds, gamma12_bounds=gamma_bounds, gamma21_bounds=gamma_bounds)
-
-        model.fit(d1, d2, E, **kwargs)
-        return model
-
     def get_parameter_range(self, confidence_interval=95):
         if not self._is_parameterized():
             return None

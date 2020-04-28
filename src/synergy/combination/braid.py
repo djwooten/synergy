@@ -142,14 +142,6 @@ class BRAID(ParametricModel):
     def get_parameters(self):
         return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.kappa, self.delta
 
-    def create_fit(d1, d2, E, h_bounds=(1e-3,1e3), C_bounds=(0,np.inf),     \
-            E_bounds=(-np.inf,np.inf), kappa_bounds=(-1e5,1e5), delta_bounds=(1e-5,1e5), **kwargs):
-
-        model = BRAID(E0_bounds=E_bounds, E1_bounds=E_bounds, E2_bounds=E_bounds, E3_bounds=E_bounds, h1_bounds=h_bounds, h2_bounds=h_bounds, C1_bounds=C_bounds, C2_bounds=C_bounds, kappa_bounds=kappa_bounds, delta_bounds=delta_bounds)
-        
-        model.fit(d, E, **kwargs)
-        return model
-
     def __repr__(self):
         if not self._is_parameterized(): return "BRAID()"
         return "BRAID(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, kappa=%0.2f, delta=%0.2f)"%(self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.kappa, self.delta)

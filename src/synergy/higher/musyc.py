@@ -30,8 +30,8 @@ class MuSyC(ParametricHigher):
         self.gamma_bounds = gamma_bounds
 
         with np.errstate(divide='ignore'):
-            self.logh_bounds = (np.log(h_bounds[0]))
-            self.logC_bounds = (np.log(C_bounds[0]))
+            self.logh_bounds = (np.log(h_bounds[0]), np.log(h_bounds[1]))
+            self.logC_bounds = (np.log(C_bounds[0]), np.log(C_bounds[1]))
             self.logalpha_bounds = (np.log(alpha_bounds[0]), np.log(alpha_bounds[1]))
             self.loggamma_bounds = (np.log(gamma_bounds[0]), np.log(gamma_bounds[1]))
 
@@ -42,6 +42,13 @@ class MuSyC(ParametricHigher):
 
         # Given 3 drugs, there are 9 synergy edges, and so 9 synergistic potencies and cooperativities. Thus, alphas=[a,b,c,d,e,f,g,h,i]. _edge_index[2][6] will give the index of the alpha corresponding to going from state [010] to [110] (e.g., adding drug 3).
         self._edge_index = None
+
+    def fit(self, d, E, bootstrap_iterations=0, **kwargs):
+        if len(d.shape) != 2:
+            return None
+        
+        self._build_edge_indices(d.shape[1])
+        super().fit(d, E, bootstrap_iterations=bootstrap_iterations, **kwargs)
 
     def E(self, d):
         if len(d.shape) != 2:
@@ -57,33 +64,30 @@ class MuSyC(ParametricHigher):
             return None
 
         self._build_edge_indices(n)
-        params = MuSyC._transform_params_to_fit(self.parameters)
+        params = self._transform_params_to_fit(self.parameters)
         return self._model(d, *params)
 
-    @staticmethod
-    def _transform_params_to_fit(params):
-        params = np.asarray(params)
-        n = MuSyC._get_n_drugs_from_params(params)
+    def _transform_params_to_fit(self, params):
+        params = np.array(params, copy=True)
+        n = self._get_n_drugs_from_params(params)
         if n<2:
-            return 0
+            return None
         
         h_param_offset = 2**n
         params[h_param_offset:] = np.log(params[h_param_offset:])
         return params
 
-    @staticmethod
-    def _transform_params_from_fit(popt):
-        params = np.asarray(popt)
-        n = MuSyC._get_n_drugs_from_params(params)
+    def _transform_params_from_fit(self, popt):
+        params = np.array(popt, copy=True)
+        n = self._get_n_drugs_from_params(params)
         if n<2:
-            return 0
+            return None
         
         h_param_offset = 2**n
         params[h_param_offset:] = np.exp(params[h_param_offset:])
         return params
 
-    @staticmethod
-    def _get_n_drugs_from_params(params):
+    def _get_n_drugs_from_params(self, params):
         n = 2
         while len(params) > 2**n + n*2**n:
             n += 1
@@ -121,13 +125,14 @@ class MuSyC(ParametricHigher):
             for idx in range(2**n):
                 # state = [0,1,1] means drug3=0, drug2=1, drug1=1
                 state = MuSyC._idx_to_state(idx, n)
-                mask = d[:,0]>0 # d is always > 0, so initializes to array of True
+                mask = d[:,0]>-1 # d is always > 0, so initializes to array of True
                 for drugnum in range(1,n+1): # 1, 2, 3, ...
                     drugstate = state[n-drugnum] # 1->2, 2->1, 3->0
                     if drugstate==0:
                         mask = mask & (d[:,drugnum-1]==np.min(d[:,drugnum-1]))
                     else:
                         mask = mask & (d[:,drugnum-1]==np.max(d[:,drugnum-1]))
+                mask = np.where(mask)
                 E_params[idx] = np.median(E[mask])
 
             # Make guesses for E, h, C of undrugged and single-drugged states
@@ -137,12 +142,12 @@ class MuSyC(ParametricHigher):
             # Make Hill model of each single drug
             for i in range(n):
                 # Mask all other drugs at their minimum values
-                mask = d[:,0]>0 # d is always > 0, so initializes to array of True
+                mask = d[:,0]>-1 # d is always > 0, so initializes to array of True
                 for otherdrug in range(n):
                     if otherdrug==i:
                         continue
                     mask = mask & (d[:,otherdrug] == np.min(d[:,otherdrug]))
-                
+                mask = np.where(mask)
                 single_drug_model.fit(d[mask,i], E[mask], p0=(E_params[0], E_params[i], h_params[i], C_params[i]))
 
                 # Override initial guesses with single fits
@@ -157,7 +162,7 @@ class MuSyC(ParametricHigher):
             
             p0 = E_params + h_params + C_params + alpha_params + gamma_params
         
-        p0 = list(_transform_params_to_fit(p0))
+        p0 = list(self._transform_params_to_fit(p0))
         utils.sanitize_initial_guess(p0, self.bounds)
         return p0
         

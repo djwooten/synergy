@@ -130,13 +130,6 @@ class Zimmer(ParametricModel):
     def get_parameters(self):
         return self.h1, self.h2, self.C1, self.C2, self.a12, self.a21
 
-    def create_fit(d1, d2, E, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf), C1_bounds=(0,np.inf), C2_bounds=(0,np.inf), a12_bounds=(-np.inf,np.inf), a21_bounds=(-np.inf,np.inf), **kwargs):
-
-        model = Zimmer(h1_bounds=h1_bounds, h2_bounds=h2_bounds, C1_bounds=C1_bounds, C2_bounds=C2_bounds, a12_bounds=a12_bounds, a21_bounds=a21_bounds)
-        
-        model.fit(d, E, **kwargs)
-        return model
-
     def __repr__(self):
         if not self._is_parameterized(): return "Zimmer()"
         return "Zimmer(h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, a12=%0.2f, a21=%0.2f)"%(self.h1, self.h2, self.C1, self.C2, self.a12, self.a21)

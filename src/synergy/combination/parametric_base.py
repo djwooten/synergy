@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-
+from abc import ABC, abstractmethod
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy.stats import norm
@@ -23,7 +23,7 @@ from ..utils import plots
 
 
 
-class ParametricModel:
+class ParametricModel(ABC):
     """Base class for paramterized synergy models, including MuSyC, Zimmer, GPDI, and BRAID.
     """
     def __init__(self):
@@ -69,6 +69,7 @@ class ParametricModel:
             self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, len(E))
             self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
 
+    @abstractmethod
     def get_parameters(self):
         """Returns all of the model's fit parameters
 
@@ -77,7 +78,7 @@ class ParametricModel:
         parameters : list or tuple
             Model's parameters
         """
-        return []
+        pass
 
     def _internal_fit(self, d, E, use_jacobian, **kwargs):
         """Internal method to fit the model to data (d,E)
@@ -153,6 +154,7 @@ class ParametricModel:
             kwargs['p0'] = self._transform_params_to_fit(popt)
             self._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs)
     
+    @abstractmethod
     def E(self, d1, d2):
         """Returns drug effect E at dose d1,d2 for a pre-defined or fitted model.
 
@@ -169,7 +171,7 @@ class ParametricModel:
         effect : array_like
             Evaluate's the model at doses d1 and d2
         """
-        return 0
+        pass
 
     def _is_parameterized(self):
         """Returns False if any parameters are None or nan.
@@ -181,30 +183,35 @@ class ParametricModel:
         """
         return not (None in self.get_parameters() or True in np.isnan(np.asarray(self.get_parameters())))
 
+    @abstractmethod
     def _set_parameters(self, popt):
         """Internal method to set model parameters
         """
         pass
 
+    @abstractmethod
     def _transform_params_from_fit(self, params):
         """Internal method to transform parameterss as needed.
 
         For instance, models that fit logh and logC must transform those to h and C
         """
-        return params
+        pass
 
+    @abstractmethod
     def _transform_params_to_fit(self, params):
         """Internal method to transform parameterss as needed.
 
         For instance, models that fit logh and logC must transform from h and C
         """
-        return params
+        pass
 
+    @abstractmethod
     def _get_initial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
         """Internal method to format and/or guess p0
         """
-        return p0
+        pass
 
+    
     def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs):
         """Internal function to identify confidence intervals for parameters
         """
@@ -322,31 +329,3 @@ class ParametricModel:
         
         E = self.E(d1, d2)
         plots.plot_surface_plotly(d1, d2, E, cmap=cmap, **kwargs)
-
-    @staticmethod
-    def create_fit(d1, d2, E, **kwargs):
-        """Courtesy one-liner to create a model and fit it to data. Appropriate (see model __init__() for details) bounds may be set for curve_fit.
-
-        Parameters
-        ----------
-        d1 : array_like
-            Doses of drug 1
-        
-        d2 : array_like
-            Doses of drug 2
-        
-        E : array_like
-            Dose-response at doses d1 and d2
-
-        X_bounds : tuple, 
-            Bounds for each parameter of the model to be fit. See model.__init__() for specific details.
-        
-        kwargs
-            kwargs to pass sto model.fit()
-
-        Returns
-        ----------
-        model : ParametricModel
-            Synergy model fit to the given data
-        """
-        return

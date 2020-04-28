@@ -320,7 +320,7 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
         fig.show()
 
 
-def plotly_isosurfaces(d1, d2, d3, E, fname="isosurfaces.html",     \
+def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
             cmap='viridis', xlabel="x", ylabel="y", zlabel="z",     \
             vmin=None, vmax=None, auto_open=True, opacity=0.6,      \
             logscale=True, isomin=None, isomax=None, surface_count=10):
