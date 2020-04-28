@@ -256,16 +256,6 @@ class MuSyC(ParametricHigher):
                 count += 1
 
     def _model(self, doses, *args):
-        """Model for higher dimensional MuSyC.
-
-        Parameters
-        ----------
-        doses : numpy.ndarray
-            M x N ndarray, where M is the number of samples, and N is the number of drugs.
-
-        args
-            Parameters for the model, in order of E, logh, logC, logalpha, loggamma. The number of each type of parameter is E (2**N), h and C (N), alpha and gamma (2**(N-1)*N-N).
-        """
         n = doses.shape[1]
         matrix = np.zeros((doses.shape[0],2**n,2**n))
         
@@ -372,6 +362,8 @@ class MuSyC(ParametricHigher):
 
     @staticmethod
     def _get_beta(state, parameters):
+        """Calculates synergistic efficacy, a synergy parameter derived from E parameters.
+        """
 
         # beta is only defined for states associated with 2 or more drugs
         if state.count(1)<2:
@@ -400,12 +392,6 @@ class MuSyC(ParametricHigher):
 
 
     def get_parameters(self, confidence_interval=95):
-        """Returns a dict of the model's parameters.
-
-        When relevant, it will also return meaningful derived parameters. For instance, MuSyC has several parameters for E, but defines a synergy parameter beta as a function of E parameters. Thus, beta will also be included.
-        
-        If the model was fit to data with bootstrap_iterations > 0, this will also return the specified confidence interval.
-        """
         if not self._is_parameterized():
             return None
         
@@ -415,7 +401,7 @@ class MuSyC(ParametricHigher):
         alpha_param_offset = C_param_offset + n
         gamma_param_offset = alpha_param_offset + 2**(n-1)*n-n
         
-        if self.converged:
+        if self.converged and self.bootstrap_parameters is not None:
             parameter_ranges = self.get_parameter_range(confidence_interval=confidence_interval)
         else:
             parameter_ranges = None
@@ -541,6 +527,9 @@ class MuSyC(ParametricHigher):
                     elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
                         ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>1) synergistic"%(key, v,lb,ub))
         
-        return "\n".join(ret)
+        if len(ret)>0:
+            return "\n".join(ret)
+        else:
+            return "No synergy or antagonism detected with %d percent confidence interval"%(int(confidence_interval))
 
 

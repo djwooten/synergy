@@ -163,7 +163,7 @@ class MuSyC(ParametricModel):
             #raise ModelNotParameterizedError()
         return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21, self.gamma12, self.gamma21)
 
-    def get_parameters(self):
+    def _get_parameters(self):
         return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21
     
     def _set_parameters(self, popt):
@@ -212,31 +212,131 @@ class MuSyC(ParametricModel):
         
         return U*E0 + A1*E1 + A2*E2 + (1-(U+A1+A2))*E3
     
-    def get_parameter_range(self, confidence_interval=95):
+    @staticmethod
+    def _get_beta(E0, E1, E2, E3):
+        """Calculates synergistic efficacy, a synergy parameter derived from E parameters.
+        """
+        strongest_E = np.amin(np.asarray([E1,E2]), axis=0)
+        beta = (strongest_E-E3) / (E0 - strongest_E)
+        return beta
+
+
+    def get_parameters(self, confidence_interval=95):
         if not self._is_parameterized():
             return None
-        if not self.converged:
-            return None
-        if confidence_interval < 0 or confidence_interval > 100:
-            return None
-        if self.bootstrap_parameters is None:
-            return None
-
-        lb = (100-confidence_interval)/2.
-        ub = 100-lb
-        bp = np.array(self.bootstrap_parameters, copy=True)
-        E0 = self.bootstrap_parameters[:,0]
-        E1 = self.bootstrap_parameters[:,1]
-        E2 = self.bootstrap_parameters[:,2]
-        E3 = self.bootstrap_parameters[:,3]
         
-        beta = (np.minimum(E1,E2)-E3) / (E0 - np.minimum(E1,E2))
-        bp = np.insert(self.bootstrap_parameters, 10, values=beta, axis=1)
-        return np.percentile(bp, [lb, ub], axis=0)
+        #beta = (min(self.E1,self.E2)-self.E3) / (self.E0 - min(self.E1,self.E2))
+        beta = MuSyC._get_beta(self.E0, self.E1, self.E2, self.E3)
+
+        if self.converged and self.bootstrap_parameters is not None:
+            parameter_ranges = self.get_parameter_range(confidence_interval=confidence_interval)
+        else:
+            parameter_ranges = None
+
+        params = dict()
+        params['E0'] = [self.E0, ]
+        params['E1'] = [self.E1, ]
+        params['E2'] = [self.E2, ]
+        params['E3'] = [self.E3, ]
+        params['h1'] = [self.h1, ]
+        params['h2'] = [self.h2, ]
+        params['C1'] = [self.C1, ]
+        params['C2'] = [self.C2, ]
+        params['beta'] = [beta, ]
+        params['alpha12'] = [self.alpha12, ]
+        params['alpha21'] = [self.alpha21, ]
+        params['gamma12'] = [self.gamma12, ]
+        params['gamma21'] = [self.gamma21, ]
+
+        if parameter_ranges is not None:
+            params['E0'].append(parameter_ranges[:,0])
+            params['E1'].append(parameter_ranges[:,1])
+            params['E2'].append(parameter_ranges[:,2])
+            params['E3'].append(parameter_ranges[:,3])
+            params['h1'].append(parameter_ranges[:,4])
+            params['h2'].append(parameter_ranges[:,5])
+            params['C1'].append(parameter_ranges[:,6])
+            params['C2'].append(parameter_ranges[:,7])
+            params['alpha12'].append(parameter_ranges[:,8])
+            params['alpha21'].append(parameter_ranges[:,9])
+            params['gamma12'].append(parameter_ranges[:,10])
+            params['gamma21'].append(parameter_ranges[:,11])
+
+            bsE0 = self.bootstrap_parameters[:,0]
+            bsE1 = self.bootstrap_parameters[:,1]
+            bsE2 = self.bootstrap_parameters[:,2]
+            bsE3 = self.bootstrap_parameters[:,3]
+            beta_bootstrap = MuSyC._get_beta(bsE0, bsE1, bsE2, bsE3)
+
+            beta_bootstrap = np.percentile(beta_bootstrap, [(100-confidence_interval)/2, 50+confidence_interval/2])
+            params['beta'].append(beta_bootstrap)    
+        return params
+    
+    def summary(self, confidence_interval=95, tol=0.01):
+        pars = self.get_parameters(confidence_interval=confidence_interval)
+        if pars is None:
+            return None
+        
+        ret = []
+        keys = pars.keys()
+        # beta
+        for key in keys:
+            if "beta" in key:
+                l = pars[key]
+                if len(l)==1:
+                    if l[0] < -tol:
+                        ret.append("%s\t%0.2f\t(<0) antagonistic"%(key, l[0]))
+                    elif l[0] > tol:
+                        ret.append("%s\t%0.2f\t(>0) synergistic"%(key, l[0]))
+                else:
+                    v = l[0]
+                    lb,ub = l[1]
+                    if v < -tol and lb < -tol and ub < -tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<0) antagonistic"%(key, v,lb,ub))
+                    elif v > tol and lb > tol and ub > tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>0) synergistic"%(key, v,lb,ub))
+        # alpha
+        for key in keys:
+            if "alpha" in key:
+                l = pars[key]
+                if len(l)==1:
+                    if np.log10(l[0]) < -tol:
+                        ret.append("%s\t%0.2f\t(<1) antagonistic"%(key, l[0]))
+                    elif np.log10(l[0]) > tol:
+                        ret.append("%s\t%0.2f\t(>1) synergistic"%(key, l[0]))
+                else:
+                    v = l[0]
+                    lb,ub = l[1]
+                    if np.log10(v) < -tol and np.log10(lb) < -tol and np.log10(ub) < -tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<1) antagonistic"%(key, v,lb,ub))
+                    elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>1) synergistic"%(key, v,lb,ub))
+
+        # gamma
+        for key in keys:
+            if "gamma" in key:
+                l = pars[key]
+                if len(l)==1:
+                    if np.log10(l[0]) < -tol:
+                        ret.append("%s\t%0.2f\t(<1) antagonistic"%(key, l[0]))
+                    elif np.log10(l[0]) > tol:
+                        ret.append("%s\t%0.2f\t(>1) synergistic"%(key, l[0]))
+                else:
+                    v = l[0]
+                    lb,ub = l[1]
+                    if np.log10(v) < -tol and np.log10(lb) < -tol and np.log10(ub) < -tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<1) antagonistic"%(key, v,lb,ub))
+                    elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>1) synergistic"%(key, v,lb,ub))
+        if len(ret)>0:
+            return "\n".join(ret)
+        else:
+            return "No synergy or antagonism detected with %d percent confidence interval"%(int(confidence_interval))
 
     def __repr__(self):
         if not self._is_parameterized(): return "MuSyC()"
         
-        beta = (min(self.E1,self.E2)-self.E3) / (self.E0 - min(self.E1,self.E2))
+        #beta = (min(self.E1,self.E2)-self.E3) / (self.E0 - min(self.E1,self.E2))
+        beta = MuSyC._get_beta(self.E0, self.E1, self.E2, self.E3)
 
         return "MuSyC(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, alpha12=%0.2f, alpha21=%0.2f, beta=%0.2f, gamma12=%0.2f, gamma21=%0.2f)"%(self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, beta, self.gamma12, self.gamma21)

@@ -22,6 +22,8 @@ from .. import utils
 from ..utils import plots
 
 class ParametricHigher(ABC):
+    """The abstract base class for higher dimensional (3+ drug) parametric synergy models.
+    """
     def __init__(self, parameters=None):
         self.bounds = None
         self.fit_function = None
@@ -46,7 +48,22 @@ class ParametricHigher(ABC):
             return None
 
     def fit(self, d, E, bootstrap_iterations=0, **kwargs):
+        """Fits the model to data
 
+        Parameters
+        ----------
+        d : numpy.ndarray (M x N)
+            Doses of N drugs sampled at M points
+        
+        E : array_like
+            Dose-response at doses d
+
+        bootstrap_iterations : int , default=0
+            The number of boostrap resample iterations performed to estimate parameter confidence intervals.
+
+        kwargs
+            kwargs to pass to scipy.optimize.curve_fit()
+        """
         d = np.asarray(d)
         E = np.asarray(E)
 
@@ -113,7 +130,7 @@ class ParametricHigher(ABC):
 
         Parameters
         ----------
-        d : M x N
+        d : numpy.ndarray (M x N)
             Doses of N drugs sampled at M points
         
         E : array_like
@@ -161,12 +178,25 @@ class ParametricHigher(ABC):
 
     @abstractmethod
     def _get_initial_guess(self, d, E, p0=None):
-        """Internal method to format and/or guess p0
+        """Internal method to format and/or come up with initial guess for parameters
         """
         pass
 
     @abstractmethod
     def E(self, d):
+        """Evaluates the model at dose d
+
+        Parameters
+        ----------
+        d : numpy.ndarray
+            Doses, in an M x N ndarray, where M is the number of samples, and N is the number of drugs.
+
+        Returns
+        ----------
+        E : numpy.array
+            Model effect evaluated at doses d.
+            
+        """
         pass
 
     @abstractmethod
@@ -202,22 +232,40 @@ class ParametricHigher(ABC):
 
     @abstractmethod
     def _transform_params_to_fit(self, params):
+        """Some parameters may be fit on nonlinear (e.g., log) scales. This method transforms linear parameters into this scale.
+        """
         pass
 
     @abstractmethod
     def _transform_params_from_fit(self, popt):
+        """Some parameters may be fit on nonlinear (e.g., log) scales. These transformed-parameters must be transformed back to a linear scale.
+        """
         pass
 
     @abstractmethod
     def _get_n_drugs_from_params(self, params):
+        """Determine the number of drugs that are being modeled, given the size of the params array.
+        """
         pass
 
     @abstractmethod
-    def _get_initial_guess(self, d, E):
+    def _get_initial_guess(self, d, E, p0=None):
+        """Gets the initial guess used for curve_fitting
+        """
         pass
     
     @abstractmethod
     def _model(self, doses, *args):
+        """Model for higher dimensional parametric synergy models.
+
+        Parameters
+        ----------
+        doses : numpy.ndarray
+            M x N ndarray, where M is the number of samples, and N is the number of drugs.
+
+        args
+            Parameters for the model.
+        """
         pass
 
     def plotly_isosurfaces(self, d, drug_axes=[0,1,2], other_drug_slices=None, **kwargs):

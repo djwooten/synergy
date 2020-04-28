@@ -62,7 +62,7 @@ class ParametricModel(ABC):
         """
         if (self._is_parameterized()):
 
-            n_parameters = len(self.get_parameters())
+            n_parameters = len(self._get_parameters())
 
             self.sum_of_squares_residuals = utils.residual_ss(d1, d2, E, self.E)
             self.r_squared = utils.r_squared(E, self.sum_of_squares_residuals)
@@ -70,13 +70,44 @@ class ParametricModel(ABC):
             self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
 
     @abstractmethod
-    def get_parameters(self):
+    def _get_parameters(self):
         """Returns all of the model's fit parameters
 
         Returns
         ----------
         parameters : list or tuple
             Model's parameters
+        """
+        pass
+
+    @abstractmethod
+    def get_parameters(self, confidence_interval=95):
+        """Returns a dict of the model's parameters.
+
+        When relevant, it will also return meaningful derived parameters. For instance, MuSyC has several parameters for E, but defines a synergy parameter beta as a function of E parameters. Thus, beta will also be included.
+        
+        If the model was fit to data with bootstrap_iterations > 0, this will also return the specified confidence interval.
+        """
+        pass
+
+    @abstractmethod
+    def summary(self, confidence_interval=95, tol=0.01):
+        """Summarizes the model's synergy conclusions.
+
+        For each synergy parameters, determines whether it indicates synergy or antagonism. When the model has been fit with bootstrap_parameters>0, the best fit, lower bound, and upper bound must all agree on synergy or antagonism.
+    
+        Parameters
+        ----------
+        confidence_interval : float, optional (default=95)
+            If the model was fit() with bootstrap_parameters>0, confidence_interval will be used to get the upper and lower bounds. 
+
+        tol : float, optional (default=0.01)
+            Tolerance to determine synergy or antagonism. The parameter must exceed the threshold by at least tol (some parameters, like MuSyC's alpha which is antagonistic from 0 to 1, and synergistic from 1 to inf, will be log-scaled prior to comparison with tol)
+
+        Returns
+        ----------
+        summary : str
+            Tab-separated string. If the model has been bootstrapped, columns are [parameter, value, (lower,upper), synergism/antagonism]. If the model has not been bootstrapped, columns are [parameter, value, synergism/antagonism].
         """
         pass
 
@@ -181,7 +212,7 @@ class ParametricModel(ABC):
         is_parameterzed : bool
             True if all of the parameters are set. False if any are None or nan.
         """
-        return not (None in self.get_parameters() or True in np.isnan(np.asarray(self.get_parameters())))
+        return not (None in self._get_parameters() or True in np.isnan(np.asarray(self._get_parameters())))
 
     @abstractmethod
     def _set_parameters(self, popt):
@@ -220,7 +251,7 @@ class ParametricModel(ABC):
         if not self.converged: return
 
         n_data_points = len(E)
-        n_parameters = len(self.get_parameters())
+        n_parameters = len(self._get_parameters())
         
         sigma_residuals = np.sqrt(self.sum_of_squares_residuals / (n_data_points - n_parameters))
 

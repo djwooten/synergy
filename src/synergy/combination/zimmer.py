@@ -127,8 +127,61 @@ class Zimmer(ParametricModel):
         
         return (1 - d1p**h1/(C1**h1+d1p**h1)) * (1 - d2p**h2/(C2**h2+d2p**h2))
 
-    def get_parameters(self):
+    def _get_parameters(self):
         return self.h1, self.h2, self.C1, self.C2, self.a12, self.a21
+
+    def get_parameters(self, confidence_interval=95):
+        if not self._is_parameterized():
+            return None
+        
+        if self.converged and self.bootstrap_parameters is not None:
+            parameter_ranges = self.get_parameter_range(confidence_interval=confidence_interval)
+        else:
+            parameter_ranges = None
+
+        params = dict()
+        params['h1'] = [self.h1, ]
+        params['h2'] = [self.h2, ]
+        params['C1'] = [self.C1, ]
+        params['C2'] = [self.C2, ]
+        params['a12'] = [self.a12, ]
+        params['a21'] = [self.a21, ]
+        
+        if parameter_ranges is not None:
+            params['h1'].append(parameter_ranges[:,0])
+            params['h2'].append(parameter_ranges[:,1])
+            params['C1'].append(parameter_ranges[:,2])
+            params['C2'].append(parameter_ranges[:,3])
+            params['a12'].append(parameter_ranges[:,4])
+            params['a21'].append(parameter_ranges[:,5])
+
+        return params
+    
+    def summary(self, confidence_interval=95, tol=0.01):
+        pars = self.get_parameters(confidence_interval=confidence_interval)
+        if pars is None:
+            return None
+        
+        ret = []
+        for key in ['a12','a21']:
+            l = pars[key]
+            if len(l)==1:
+                if l[0] < -tol:
+                    ret.append("%s\t%0.2f\t(<0) synergistic"%(key, l[0]))
+                elif l[0] > tol:
+                    ret.append("%s\t%0.2f\t(>0) antagonistic"%(key, l[0]))
+            else:
+                v = l[0]
+                lb,ub = l[1]
+                if v < -tol and lb < -tol and ub < -tol:
+                    ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<0) synergistic"%(key, v,lb,ub))
+                elif v > tol and lb > tol and ub > tol:
+                    ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>0) antagonistic"%(key, v,lb,ub))
+
+        if len(ret)>0:
+            return "\n".join(ret)
+        else:
+            return "No synergy or antagonism detected with %d percent confidence interval"%(int(confidence_interval))
 
     def __repr__(self):
         if not self._is_parameterized(): return "Zimmer()"

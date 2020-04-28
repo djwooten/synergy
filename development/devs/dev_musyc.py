@@ -22,15 +22,16 @@ E = truemodel.E(d1, d2)
 noise = 0.05
 E_fit = E + noise*(E0-E3)*(2*np.random.rand(len(E))-1)
 
-model = MuSyC.create_fit(d1, d2, E_fit, bootstrap_iterations=10)
+model = MuSyC()
+model.fit(d1, d2, E_fit, bootstrap_iterations=100)
 
-print("\n")
-print(model)
-if model.converged:
-    print(model.get_parameter_range().T)
+#print(model)
+#if model.converged:
+#    print(model.get_parameter_range().T)
+print(model.summary())
 
+if False:
+    scatter_points = pd.DataFrame({'drug1.conc':d1, 'drug2.conc':d2, 'effect':E_fit})
+    DD1, DD2 = grid(C1/1e4, C1*1e4, C2/1e4, C2*1e4, npoints*2, npoints2*2)
 
-scatter_points = pd.DataFrame({'drug1.conc':d1, 'drug2.conc':d2, 'effect':E_fit})
-DD1, DD2 = grid(C1/1e4, C1*1e4, C2/1e4, C2*1e4, npoints*2, npoints2*2)
-
-model.plot_surface_plotly(DD1, DD2, fname="musyc_fit_new.html", scatter_points=scatter_points)
+    model.plot_surface_plotly(DD1, DD2, fname="musyc_fit_new.html", scatter_points=scatter_points)
