@@ -170,6 +170,37 @@ class ParametricHigher(ABC):
         pass
 
     @abstractmethod
+    def get_parameters(self, confidence_interval=95):
+        """Returns a dict of the model's parameters.
+
+        When relevant, it will also return meaningful derived parameters. For instance, MuSyC has several parameters for E, but defines a synergy parameter beta as a function of E parameters. Thus, beta will also be included.
+        
+        If the model was fit to data with bootstrap_iterations > 0, this will also return the specified confidence interval.
+        """
+        pass
+
+    @abstractmethod
+    def summary(self, confidence_interval=95, tol=0.01):
+        """Summarizes the model's synergy conclusions.
+
+        For each synergy parameters, determines whether it indicates synergy or antagonism. When the model has been fit with bootstrap_parameters>0, the best fit, lower bound, and upper bound must all agree on synergy or antagonism.
+    
+        Parameters
+        ----------
+        confidence_interval : float, optional (default=95)
+            If the model was fit() with bootstrap_parameters>0, confidence_interval will be used to get the upper and lower bounds. 
+
+        tol : float, optional (default=0.01)
+            Tolerance to determine synergy or antagonism. The parameter must exceed the threshold by at least tol (some parameters, like MuSyC's alpha which is antagonistic from 0 to 1, and synergistic from 1 to inf, will be log-scaled prior to comparison with tol)
+
+        Returns
+        ----------
+        summary : str
+            Tab-separated string. If the model has been bootstrapped, columns are [parameter, value, (lower,upper), synergism/antagonism]. If the model has not been bootstrapped, columns are [parameter, value, synergism/antagonism].
+        """
+        pass
+
+    @abstractmethod
     def _transform_params_to_fit(self, params):
         pass
 

@@ -348,3 +348,199 @@ class MuSyC(ParametricHigher):
         b = np.zeros(2**n)
         b[-1]=1
         return np.dot(np.dot(matrix_inv,b), np.asarray(E_params))
+
+    @staticmethod
+    def _state_to_drugstr(s, sb=None):
+        """Converts state (e.g., [1,1,0]) to drug-string (e.g., "2,3")
+        """
+        # If state is undrugged, return 0
+        if s.count(1)==0:
+            return 0
+        n = len(s)
+        snums = []
+        for i in range(n):
+            if s[n-i-1]==1:
+                snums.append(str(i+1))
+        if sb is None:
+            return ','.join(snums)
+        sbnums = []
+        for i in range(n):
+            if sb[n-i-1]==1:
+                sbnums.append(str(i+1))
+        sbnums = [i for i in sbnums if not i in snums]
+        return ','.join(snums), ','.join(sbnums)
+
+    @staticmethod
+    def _get_beta(state, parameters):
+
+        # beta is only defined for states associated with 2 or more drugs
+        if state.count(1)<2:
+            return 0
+
+        n = len(state)
+
+        idx = MuSyC._state_to_idx(state)
+        E = parameters[idx]
+
+        # parents are states with one fewer drug active (e.g., parents of 011 are 001 and 010). beta is calculated by comparing E, the strongest of E_parents, and E0.
+        E_parents = []
+        for i in range(n):
+            if state[i]==1:
+                parent = [j for j in state]
+                parent[i] = 0
+                pidx = MuSyC._state_to_idx(parent)
+                E_parents.append(parameters[pidx])
+
+        E0 = parameters[0]
+        # TODO Add support for positive E orientation
+        E_best_parent = np.amin(np.asarray(E_parents), axis=0)
+
+        beta = (E_best_parent-E)/(E0-E_best_parent)
+        return beta
+
+
+    def get_parameters(self, confidence_interval=95):
+        """Returns a dict of the model's parameters.
+
+        When relevant, it will also return meaningful derived parameters. For instance, MuSyC has several parameters for E, but defines a synergy parameter beta as a function of E parameters. Thus, beta will also be included.
+        
+        If the model was fit to data with bootstrap_iterations > 0, this will also return the specified confidence interval.
+        """
+        if not self._is_parameterized():
+            return None
+        
+        n = self._get_n_drugs_from_params(self.parameters)
+        h_param_offset = 2**n
+        C_param_offset = h_param_offset + n
+        alpha_param_offset = C_param_offset + n
+        gamma_param_offset = alpha_param_offset + 2**(n-1)*n-n
+        
+        if self.converged:
+            parameter_ranges = self.get_parameter_range(confidence_interval=confidence_interval)
+        else:
+            parameter_ranges = None
+
+        params = dict()
+
+        # Add E parameters
+        for idx in range(2**n):
+            state = MuSyC._idx_to_state(idx, n)
+            #state = "".join([str(s) for s in state])
+            statestr = MuSyC._state_to_drugstr(state)
+            l = []
+            l.append(self.parameters[idx])
+            if parameter_ranges is not None:
+                l.append(parameter_ranges[:,idx])
+            params["E_%s"%statestr] = l
+
+            # Add beta parameters
+            if state.count(1) > 1:
+                beta = MuSyC._get_beta(state, self.parameters)
+                l = []
+                l.append(beta)
+
+                if parameter_ranges is not None:
+                    beta_bootstrap = MuSyC._get_beta(state, self.bootstrap_parameters.T)
+
+                    beta_bootstrap = np.percentile(beta_bootstrap, [(100-confidence_interval)/2, 50+confidence_interval/2])
+                    l.append(beta_bootstrap)
+                params["beta_%s"%statestr] = l
+
+
+        # h and C
+        for i in range(n):
+            lh = []
+            lC = []
+            lh.append(self.parameters[h_param_offset+i])
+            lC.append(self.parameters[C_param_offset+i])
+            if parameter_ranges is not None:
+                lh.append(parameter_ranges[:,h_param_offset+i])
+                lC.append(parameter_ranges[:,C_param_offset+i])
+            params["h%d"%i] = lh
+            params["C%d"%i] = lC
+        
+        # alpha and gamma
+
+        for idx_a in self._edge_index.keys():
+            state_a = MuSyC._idx_to_state(idx_a,n)
+            
+            for idx_b in self._edge_index[idx_a].keys():
+                state_b = MuSyC._idx_to_state(idx_b,n)
+                state_a_str, state_b_str = MuSyC._state_to_drugstr(state_a, state_b)
+
+                lalpha = []
+                lgamma = []
+
+                i = self._edge_index[idx_a][idx_b]
+                lalpha.append(self.parameters[alpha_param_offset + i])
+                lgamma.append(self.parameters[gamma_param_offset + i])
+
+                if parameter_ranges is not None:
+                    lalpha.append(parameter_ranges[:,alpha_param_offset+i])
+                    lgamma.append(parameter_ranges[:,gamma_param_offset+i])
+
+                params["alpha_%s_%s"%(state_a_str, state_b_str)] = lalpha
+                params["gamma_%s_%s"%(state_a_str, state_b_str)] = lgamma
+        
+        return params
+
+    def summary(self, confidence_interval=95, tol=0.01):
+        pars = self.get_parameters(confidence_interval=confidence_interval)
+        if pars is None:
+            return None
+        
+        ret = []
+        keys = pars.keys()
+        # beta
+        for key in keys:
+            if "beta" in key:
+                l = pars[key]
+                if len(l)==1:
+                    if l[0] < -tol:
+                        ret.append("%s\t%0.2f\t(<0) antagonistic"%(key, l[0]))
+                    elif l[0] > tol:
+                        ret.append("%s\t%0.2f\t(>0) synergistic"%(key, l[0]))
+                else:
+                    v = l[0]
+                    lb,ub = l[1]
+                    if v < -tol and lb < -tol and ub < -tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<0) antagonistic"%(key, v,lb,ub))
+                    elif v > tol and lb > tol and ub > tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>0) synergistic"%(key, v,lb,ub))
+        # alpha
+        for key in keys:
+            if "alpha" in key:
+                l = pars[key]
+                if len(l)==1:
+                    if np.log10(l[0]) < -tol:
+                        ret.append("%s\t%0.2f\t(<1) antagonistic"%(key, l[0]))
+                    elif np.log10(l[0]) > tol:
+                        ret.append("%s\t%0.2f\t(>1) synergistic"%(key, l[0]))
+                else:
+                    v = l[0]
+                    lb,ub = l[1]
+                    if np.log10(v) < -tol and np.log10(lb) < -tol and np.log10(ub) < -tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<1) antagonistic"%(key, v,lb,ub))
+                    elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>1) synergistic"%(key, v,lb,ub))
+
+        # gamma
+        for key in keys:
+            if "gamma" in key:
+                l = pars[key]
+                if len(l)==1:
+                    if np.log10(l[0]) < -tol:
+                        ret.append("%s\t%0.2f\t(<1) antagonistic"%(key, l[0]))
+                    elif np.log10(l[0]) > tol:
+                        ret.append("%s\t%0.2f\t(>1) synergistic"%(key, l[0]))
+                else:
+                    v = l[0]
+                    lb,ub = l[1]
+                    if np.log10(v) < -tol and np.log10(lb) < -tol and np.log10(ub) < -tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<1) antagonistic"%(key, v,lb,ub))
+                    elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
+                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>1) synergistic"%(key, v,lb,ub))
+        
+        return "\n".join(ret)
+
+
