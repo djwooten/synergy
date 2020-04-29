@@ -48,7 +48,7 @@ class MuSyC(ParametricModel):
             gamma12_bounds=(0,np.inf), gamma21_bounds=(0,np.inf),   \
             r1=1., r2=1., E0=None, E1=None, E2=None, E3=None,   \
             h1=None, h2=None, C1=None, C2=None, alpha12=None,       \
-            alpha21=None, gamma12=None, gamma21=None):
+            alpha21=None, gamma12=None, gamma21=None, variant="full"):
         super().__init__()
         self.C1_bounds = C1_bounds
         self.C2_bounds = C2_bounds
@@ -62,6 +62,8 @@ class MuSyC(ParametricModel):
         self.alpha21_bounds = alpha21_bounds
         self.gamma12_bounds = gamma12_bounds
         self.gamma21_bounds = gamma21_bounds
+
+        self.variant = variant
 
         self.r1 = r1
         self.r2 = r2
@@ -94,11 +96,21 @@ class MuSyC(ParametricModel):
             self.loggamma12_bounds = (np.log(gamma12_bounds[0]), np.log(gamma12_bounds[1]))
             self.loggamma21_bounds = (np.log(gamma21_bounds[0]), np.log(gamma21_bounds[1]))
 
-        self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1, self.r2, np.exp(logalpha12), np.exp(logalpha21), np.exp(loggamma12), np.exp(loggamma21))
 
-        self.jacobian_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: jacobian(d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1, self.r2, logalpha12, logalpha21, loggamma12, loggamma21)
+        if variant == "full":
+            self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1, self.r2, np.exp(logalpha12), np.exp(logalpha21), np.exp(loggamma12), np.exp(loggamma21))
 
-        self.bounds = tuple(zip(self.E0_bounds, self.E1_bounds, self.E2_bounds, self.E3_bounds, self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.logalpha12_bounds, self.logalpha21_bounds, self.loggamma12_bounds, self.loggamma21_bounds))
+            self.jacobian_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: jacobian(d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1, self.r2, logalpha12, logalpha21, loggamma12, loggamma21)
+
+            self.bounds = tuple(zip(self.E0_bounds, self.E1_bounds, self.E2_bounds, self.E3_bounds, self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.logalpha12_bounds, self.logalpha21_bounds, self.loggamma12_bounds, self.loggamma21_bounds))
+        
+        elif variant == "no_gamma":
+            self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1, self.r2, np.exp(logalpha12), np.exp(logalpha21), 1, 1)
+
+            self.jacobian_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: jacobian(d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1, self.r2, logalpha12, logalpha21, 0, 0)[:,:-2]
+
+            self.bounds = tuple(zip(self.E0_bounds, self.E1_bounds, self.E2_bounds, self.E3_bounds, self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.logalpha12_bounds, self.logalpha21_bounds))
+
 
     def _get_initial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
         
@@ -123,28 +135,43 @@ class MuSyC(ParametricModel):
             else: E3 = np.min(E)
             
             p0 = [(E0_1+E0_2)/2., E1, E2, E3, h1, h2, C1, C2, 1, 1, 1, 1]
-            
+        
+        if self.variant == "no_gamma":
+            p0 = p0[:-2]
+
         p0 = list(self._transform_params_to_fit(p0))
         utils.sanitize_initial_guess(p0, self.bounds)
         return p0
 
     def _transform_params_from_fit(self, params):
         
-        E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21 = params
+        if self.variant == "no_gamma":
+            E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21 = params
+        else:
+            E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21 = params
+            gamma12 = np.exp(loggamma12)
+            gamma21 = np.exp(loggamma21)
+        
         h1 = np.exp(logh1)
         h2 = np.exp(logh2)
         C1 = np.exp(logC1)
         C2 = np.exp(logC2)
         alpha12 = np.exp(logalpha12)
         alpha21 = np.exp(logalpha21)
-        gamma12 = np.exp(loggamma12)
-        gamma21 = np.exp(loggamma21)
-
+        
+        if self.variant == "no_gamma":
+            return E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21
+        
         return E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21
 
     def _transform_params_to_fit(self, params):
         
-        E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21 = params
+        if self.variant == "no_gamma":
+            E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21 = params
+        else:
+            E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21 = params
+            loggamma12 = np.log(gamma12)
+            loggamma21 = np.log(gamma21)
 
         logh1 = np.log(h1)
         logh2 = np.log(h2)
@@ -152,22 +179,33 @@ class MuSyC(ParametricModel):
         logC2 = np.log(C2)
         logalpha12 = np.log(alpha12)
         logalpha21 = np.log(alpha21)
-        loggamma12 = np.log(gamma12)
-        loggamma21 = np.log(gamma21)
+
+        if self.variant == "no_gamma":
+            return E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21
 
         return E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21
 
     def E(self, d1, d2):
         if not self._is_parameterized():
-            return 0
-            #raise ModelNotParameterizedError()
-        return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21, self.gamma12, self.gamma21)
+            return None
+
+        if self.variant == "no_gamma":
+            return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21, 1, 1)
+        
+        else:
+            return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21, self.gamma12, self.gamma21)
 
     def _get_parameters(self):
-        return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21
+        if self.variant == "no_gamma":
+            return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21
+        else:
+            return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21
     
     def _set_parameters(self, popt):
-        self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21 = popt
+        if self.variant == "no_gamma":
+            self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21 = popt
+        else:
+            self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21 = popt
 
     def _C_to_r1r(self, C, h, r1):
         return r1*C**h
@@ -177,23 +215,15 @@ class MuSyC(ParametricModel):
 
     def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, r1, r2, alpha12, alpha21, gamma12, gamma21):
 
-        #d1h1 = d1**h1
-        #d2h2 = d2**h2
         d1h1 = np.power(d1,h1)
         d2h2 = np.power(d2,h2)
 
-        #C1h1 = C1**h1
-        #C2h2 = C2**h2
         C1h1 = np.power(C1,h1)
         C2h2 = np.power(C2,h2)
 
-        #alpha21d1gamma21h1 = (alpha21*d1)**(gamma21*h1)
-        #alpha12d2gamma12h2 = (alpha12*d2)**(gamma12*h2)
         alpha21d1gamma21h1 = np.power(alpha21*d1, gamma21*h1)
         alpha12d2gamma12h2 = np.power(alpha12*d2, gamma12*h2)
 
-        #C12h1 = C1**(2*h1)
-        #C22h2 = C2**(2*h2)
         C12h1 = np.power(C1,2*h1)
         C22h2 = np.power(C2,2*h2)
 
@@ -245,8 +275,9 @@ class MuSyC(ParametricModel):
         params['beta'] = [beta, ]
         params['alpha12'] = [self.alpha12, ]
         params['alpha21'] = [self.alpha21, ]
-        params['gamma12'] = [self.gamma12, ]
-        params['gamma21'] = [self.gamma21, ]
+        if self.variant != "no_gamma":
+            params['gamma12'] = [self.gamma12, ]
+            params['gamma21'] = [self.gamma21, ]
 
         if parameter_ranges is not None:
             params['E0'].append(parameter_ranges[:,0])
@@ -259,8 +290,9 @@ class MuSyC(ParametricModel):
             params['C2'].append(parameter_ranges[:,7])
             params['alpha12'].append(parameter_ranges[:,8])
             params['alpha21'].append(parameter_ranges[:,9])
-            params['gamma12'].append(parameter_ranges[:,10])
-            params['gamma21'].append(parameter_ranges[:,11])
+            if self.variant != "no_gamma":
+                params['gamma12'].append(parameter_ranges[:,10])
+                params['gamma21'].append(parameter_ranges[:,11])
 
             bsE0 = self.bootstrap_parameters[:,0]
             bsE1 = self.bootstrap_parameters[:,1]
@@ -339,4 +371,6 @@ class MuSyC(ParametricModel):
         #beta = (min(self.E1,self.E2)-self.E3) / (self.E0 - min(self.E1,self.E2))
         beta = MuSyC._get_beta(self.E0, self.E1, self.E2, self.E3)
 
+        if self.variant == "no_gamma":
+            return "MuSyC(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, alpha12=%0.2f, alpha21=%0.2f, beta=%0.2f)"%(self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, beta)
         return "MuSyC(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, alpha12=%0.2f, alpha21=%0.2f, beta=%0.2f, gamma12=%0.2f, gamma21=%0.2f)"%(self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, beta, self.gamma12, self.gamma21)

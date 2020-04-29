@@ -20,7 +20,7 @@ from .parametric_base import ParametricHigher
 from ..single import Hill
 
 class MuSyC(ParametricHigher):
-    def __init__(self, E_bounds=(-np.inf,np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf), alpha_bounds=(0,np.inf), gamma_bounds=(0,np.inf), r=1., parameters=None):
+    def __init__(self, E_bounds=(-np.inf,np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf), alpha_bounds=(0,np.inf), gamma_bounds=(0,np.inf), r=1., parameters=None, variant="full"):
         super().__init__(parameters=parameters)
         
         self.E_bounds = E_bounds
@@ -28,6 +28,7 @@ class MuSyC(ParametricHigher):
         self.C_bounds = C_bounds
         self.alpha_bounds = alpha_bounds
         self.gamma_bounds = gamma_bounds
+        self.r = r
 
         with np.errstate(divide='ignore'):
             self.logh_bounds = (np.log(h_bounds[0]), np.log(h_bounds[1]))
@@ -37,8 +38,12 @@ class MuSyC(ParametricHigher):
 
         # Bounds will depened on the number of dimensions, so will be filled out in _get_initial_guess()
 
-        self.r = r
-        self.fit_function = self._model
+        self.variant = variant
+
+        if variant == "no_gamma":
+            self.fit_function = self._model_no_gamma
+        else:
+            self.fit_function = self._model
 
         # Given 3 drugs, there are 9 synergy edges, and so 9 synergistic potencies and cooperativities. Thus, alphas=[a,b,c,d,e,f,g,h,i]. _edge_index[2][6] will give the index of the alpha corresponding to going from state [010] to [110] (e.g., adding drug 3).
         self._edge_index = None
@@ -65,6 +70,9 @@ class MuSyC(ParametricHigher):
 
         self._build_edge_indices(n)
         params = self._transform_params_to_fit(self.parameters)
+
+        if self.variant == "no_gamma":
+            return self._model_no_gamma(d, *params)
         return self._model(d, *params)
 
     def _transform_params_to_fit(self, params):
@@ -89,9 +97,13 @@ class MuSyC(ParametricHigher):
 
     def _get_n_drugs_from_params(self, params):
         n = 2
-        while len(params) > 2**n + n*2**n:
+        if self.variant == "no_gamma":
+            threshold = lambda n : 2**n + n + 2**(n-1)*n
+        else:
+            threshold = lambda n : 2**n + n*2**n
+        while len(params) > threshold(n):
             n += 1
-        if len(params) == 2**n+n*2**n:
+        if len(params) == threshold(n):
             return n
         return 0
 
@@ -108,9 +120,12 @@ class MuSyC(ParametricHigher):
         logh_bounds = [self.logh_bounds,]*n_h
         logC_bounds = [self.logC_bounds,]*n_C
         logalpha_bounds = [self.logalpha_bounds,]*n_alpha
-        loggamma_bounds = [self.loggamma_bounds,]*n_gamma
         
-        bounds = E_bounds + logh_bounds + logC_bounds + logalpha_bounds + loggamma_bounds
+        if self.variant == "no_gamma":
+            bounds = E_bounds + logh_bounds + logC_bounds + logalpha_bounds
+        else:
+            loggamma_bounds = [self.loggamma_bounds,]*n_gamma
+            bounds = E_bounds + logh_bounds + logC_bounds + logalpha_bounds + loggamma_bounds
 
         self.bounds = tuple(zip(*bounds))
         
@@ -160,7 +175,10 @@ class MuSyC(ParametricHigher):
                     E0_guess += E_params[0]/n
             E_params[0] = E0_guess
             
-            p0 = E_params + h_params + C_params + alpha_params + gamma_params
+            if self.variant == "no_gamma":
+                p0 = E_params + h_params + C_params + alpha_params
+            else:
+                p0 = E_params + h_params + C_params + alpha_params + gamma_params
         
         p0 = list(self._transform_params_to_fit(p0))
         utils.sanitize_initial_guess(p0, self.bounds)
@@ -254,6 +272,11 @@ class MuSyC(ParametricHigher):
             for j in add_d:
                 self._edge_index[i][j[1]] = count
                 count += 1
+
+    def _model_no_gamma(self, doses, *args):
+        n = doses.shape[1]
+        loggammas = [0,]*(2**(n-1)*n-n)
+        return self._model(doses, *args, *loggammas)
 
     def _model(self, doses, *args):
         n = doses.shape[1]
@@ -459,14 +482,17 @@ class MuSyC(ParametricHigher):
 
                 i = self._edge_index[idx_a][idx_b]
                 lalpha.append(self.parameters[alpha_param_offset + i])
-                lgamma.append(self.parameters[gamma_param_offset + i])
+                if self.variant != "no_gamma":
+                    lgamma.append(self.parameters[gamma_param_offset + i])
 
                 if parameter_ranges is not None:
                     lalpha.append(parameter_ranges[:,alpha_param_offset+i])
-                    lgamma.append(parameter_ranges[:,gamma_param_offset+i])
+                    if self.variant != "no_gamma":
+                        lgamma.append(parameter_ranges[:,gamma_param_offset+i])
 
                 params["alpha_%s_%s"%(state_a_str, state_b_str)] = lalpha
-                params["gamma_%s_%s"%(state_a_str, state_b_str)] = lgamma
+                if self.variant != "no_gamma":
+                    params["gamma_%s_%s"%(state_a_str, state_b_str)] = lgamma
         
         return params
 
