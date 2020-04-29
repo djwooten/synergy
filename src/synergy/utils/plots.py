@@ -69,7 +69,7 @@ def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel=""
 
         if center_on_zero:
             if vmin is None or vmax is None:
-                zmax = max(abs(min(E)), abs(max(E)))
+                zmax = max(abs(np.nanmin(E)), abs(np.nanmax(E)))
                 vmin = -zmax
                 vmax = zmax
             else:
@@ -212,12 +212,12 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
     d2 = np.asarray(d2)
     E = np.asarray(E)
 
-    print(np.min(d1), np.min(d2))
+    print(np.nanmin(d1), np.nanmin(d2))
 
     if logscale:
         d1 = utils.remove_zeros(d1)
         d2 = utils.remove_zeros(d2)
-        print(np.min(d1), np.min(d2))
+        print(np.nanmin(d1), np.nanmin(d2))
         d1 = np.log10(d1)
         d2 = np.log10(d2)
 
@@ -323,7 +323,8 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
 def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
             cmap='viridis', xlabel="x", ylabel="y", zlabel="z",     \
             vmin=None, vmax=None, auto_open=True, opacity=0.6,      \
-            logscale=True, isomin=None, isomax=None, surface_count=10):
+            logscale=True, isomin=None, isomax=None,                \
+            center_on_zero=False, surface_count=10):
     
     d1 = np.asarray(d1)
     d2 = np.asarray(d2)
@@ -350,12 +351,23 @@ def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
         d3 = np.log10(d3)
     
     
-    E_range = np.max(E) - np.min(E)
+    E_range = np.nanmax(E[~np.isinf(E)]) - np.nanmin(E[~np.isinf(E)])
     if isomin is None:
-        isomin = np.min(E) + 0.1*E_range
+        isomin = np.nanmin(E[~np.isinf(E)]) + 0.1*E_range
     if isomax is None:
-        isomax = np.min(E) + 0.9*E_range
+        isomax = np.nanmin(E[~np.isinf(E)]) + 0.9*E_range
 
+    if center_on_zero:
+        if vmin is None or vmax is None:
+            zmax = max(abs(np.nanmin(E[~np.isinf(E)])), abs(np.nanmax(E[~np.isinf(E)])))
+            vmin = -zmax
+            vmax = zmax
+        else:
+            zmax = max(abs(vmin), abs(vmax))
+            vmin = -zmax
+            vmax = zmax
+
+        
     fig = go.Figure(data=go.Isosurface(
         x=d1,
         y=d2,

@@ -17,9 +17,21 @@ import numpy as np
 
 class MarginalLinear:
     """Some drugs' dose response may not follow some known parametric equation. In these cases, MarginalLinear() fits a piecewise linear model mapping log(d) -> E
+
+    Parameters
+    ----------
+    aggregation_function : function, default=np.mean
+        If d contains repeated values (e.g., experimental replicates using the same dose many times), E at these repeated doses will be averaged using aggregation_function(E[d==X])
     """
-    def __init__(self, d=None, E=None, aggregation_function=np.mean):
-        """
+    def __init__(self, aggregation_function=np.mean):
+        self._d = None
+        self._E = None
+        self._logd = None
+        self._aggregation_function = aggregation_function
+
+    def fit(self, d, E):
+        """Calls __init__(d, E, aggregation_function)
+
         Parameters
         ----------
         d : array_like
@@ -27,11 +39,8 @@ class MarginalLinear:
         
         E : array_like
             Array of effects measured at doses d
-
-        aggregation_function : function, default=np.mean
-            If d contains repeated values (e.g., experimental replicates using the same dose many times), E at these repeated doses will be averaged using aggregation_function(E[d==X])
         """
-
+        
         if (len(d) > len(np.unique(d))):
             self._d = []
             self._E = []
@@ -39,7 +48,7 @@ class MarginalLinear:
             # Given repeated dose measurements, average E for each
             for val in np.unique(d):
                 self._d.append(val)
-                self._E.append(aggregation_function(E[d==val]))
+                self._E.append(self._aggregation_function(E[d==val]))
 
             self._d = np.asarray(self._d)
             self._E = np.asarray(self._E)
@@ -58,23 +67,6 @@ class MarginalLinear:
         
         # Get log-transformed dose (used for interpolation)
         self._logd = np.log(self._d)
-
-    def fit(self, d, E, aggregation_function=np.mean):
-        """Calls __init__(d, E, aggregation_function)
-
-        Parameters
-        ----------
-        d : array_like
-            Array of doses measured
-        
-        E : array_like
-            Array of effects measured at doses d
-
-        aggregation_function : function, default=np.mean
-            If d contains repeated values (e.g., experimental replicates using the same dose many times), E at these repeated doses will be averaged using aggregation_function(E[d==X])
-        """
-        
-        self.__init__(d=d, E=E)
 
     def E(self, d):
         """Evaluate this model at dose d

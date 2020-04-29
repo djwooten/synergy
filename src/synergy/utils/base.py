@@ -17,9 +17,7 @@ import numpy as np
 
 
 def sham(d, drug):
-    """Simulates a sham combination experiment. In a sham experiment, the two drugs combined are (secretly) the same drug. For example, a sham combination may add 10uM drugA + 20uM drugB. But because drugA and drugB are the same (drugX), the combination is really just equivalent to 30uM of the drug.
-
-    
+    """Simulates a sham combination experiment. In a sham experiment, the two drugs combined are (secretly) the same drug. For example, a sham combination may add 10uM drugA + 20uM drugB. But because drugA and drugB are the same (drugX), the combination is really just equivalent to 30uM of the drug.    
     """
     if not 0 in d:
         d = np.append(0,d)
@@ -29,7 +27,52 @@ def sham(d, drug):
     E = drug.E(d1+d2)
     return d1, d2, E
 
+def sham_higher(d, drug, n_drugs):
+    """Simulates a sham combination experiment for 3+ drugs. In a sham experiment, the two drugs combined are (secretly) the same drug. For example, a sham combination may add 10uM drugA + 20uM drugB. But because drugA and drugB are the same (drugX), the combination is really just equivalent to 30uM of the drug.
+
+    Parameters
+    ----------
+    d : array_like
+        Dose escalation to use for each "sham" drug
+
+    drug
+        A parameterized drug model from synergy.single, such as Hill, Hill_2P, Hill_CI, or MarginalLinear.
+
+    n_drugs : int
+        The number of drugs to include in the sham combination
+
+    Returns
+    ----------
+    doses : M x n_drugs numpy.ndarray
+        All dose pairs for each combination. In total, there are M samples, taken from n_drugs drugs.
+
+    E : numpy.array
+        Sham effects calculated as drug.E(doses.sum(axis=1))
+    """
+    if not 0 in d:
+        d = np.append(0,d)
+    doses = [d, ]*n_drugs
+    doses = list(np.meshgrid(*doses))
+    for i in range(n_drugs):
+        doses[i] = doses[i].flatten()
+    doses = np.asarray(doses).T
+    E = drug.E(doses.sum(axis=1))
+    return doses, E
+
 def remove_zeros(d, min_buffer=0.2):
+    """Replace zeros with some semi-intelligently chosen small value
+
+    When plotting on a log scale, 0 doses can cause problems. This replaces all 0's using the dilution factor between the smallest non-zero, and second-smallest non-zero doses. If that dilution factor is too close to 1, it will replace 0's doses with a dose that is min_buffer*(max(d)-min(d[d>0])) less than min(d[d>0]) on a log scale.
+
+    Parameters
+    ----------
+    d : array_like
+        Doses to remove zeros from. Original array will not be changed.
+
+    min_buffer : float , default=0.2
+        For very large dose arrays with very small step sizes (useful for getting smooth plots), replacing 0's may lead to a value too close to the smallest non-zero dose. min_buffer is the minimum buffer (in log scale, relative to the full dose range) that 0's will be replaced with.
+    """
+
     d=np.array(d,copy=True)
     dmin = np.min(d[d>0]) # smallest nonzero dose
     dmin2 = np.min(d[d>dmin])
@@ -51,7 +94,6 @@ def residual_ss(d1, d2, E, model):
     E_model = model(d1, d2)
     return np.sum((E-E_model)**2)
 
-# TODO: replace with single residual_ss
 def residual_ss_1d(d, E, model):
     E_model = model(d)
     return np.sum((E-E_model)**2)

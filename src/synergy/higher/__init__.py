@@ -2,16 +2,11 @@
 from .musyc import MuSyC
 
 # Nonparametric models
-#from .bliss import Bliss
-#from .hsa import HSA
-#from .loewe import Loewe
-#from .combination_index import CombinationIndex
-
-######################
-
-
-# Need to check
-#from .schindler import Schindler
+from .bliss import Bliss
+from .hsa import HSA
+from .loewe import Loewe
+from .combination_index import CombinationIndex
+from .schindler import Schindler
 
 ######################
 
@@ -22,4 +17,4 @@ from .musyc import MuSyC
 #from .braid import BRAID
 
 # Nonparametric models
-#from .zero_interaction_potency import ZIP
+#from .zero_interaction_potency import ZIP # This could almost certainly be done by averaging over 3+ Hill equation slices, but isn't explicitly described

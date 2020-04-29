@@ -38,10 +38,12 @@ class HSA(DoseDependentModel):
         d2_alone_mask = np.where(d1==d1_min)
 
         if drug1_model is None:
-            drug1_model = MarginalLinear(d=d1[d1_alone_mask], E=E[d1_alone_mask])
+            drug1_model = MarginalLinear()
+            drug1_model.fit(d1[d1_alone_mask], E[d1_alone_mask])
 
         if drug2_model is None:
-            drug2_model = MarginalLinear(d=d2[d2_alone_mask], E=E[d2_alone_mask])
+            drug2_model = MarginalLinear()
+            drug2_model.fit(d2[d2_alone_mask], E[d2_alone_mask])
 
         self.drug1_model = drug1_model
         self.drug2_model = drug2_model

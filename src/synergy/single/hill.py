@@ -68,8 +68,6 @@ class Hill(ParameterizedModel1D):
             self.logh_bounds = (np.log(h_bounds[0]), np.log(h_bounds[1]))
             self.logC_bounds = (np.log(C_bounds[0]), np.log(C_bounds[1]))
 
-        
-
         self.fit_function = lambda d, E0, E1, logh, logC: self._model(d, E0, E1, np.exp(logh), np.exp(logC))
 
         self.jacobian_function = lambda d, E0, E1, logh, logC: self._model_jacobian(d, E0, E1, logh, logC)

@@ -163,7 +163,7 @@ class MuSyC(ParametricHigher):
                         continue
                     mask = mask & (d[:,otherdrug] == np.min(d[:,otherdrug]))
                 mask = np.where(mask)
-                single_drug_model.fit(d[mask,i], E[mask], p0=(E_params[0], E_params[i], h_params[i], C_params[i]))
+                single_drug_model.fit(d[mask,i].flatten(), E[mask], p0=(E_params[0], E_params[i], h_params[i], C_params[i]))
 
                 # Override initial guesses with single fits
                 if single_drug_model.converged:

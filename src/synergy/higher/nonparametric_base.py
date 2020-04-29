@@ -58,6 +58,29 @@ class DoseDependentHigher:
             The synergy calculated at all doses d1, d2
         """
         self.d = d
-        self.synergy = 0*d
+        self.synergy = 0*E
         self.synergy[:] = np.nan
         return self.synergy
+
+
+    def plotly_isosurfaces(self, d, drug_axes=[0,1,2], other_drug_slices=None, cmap="PRGn", neglog=False, **kwargs):
+        mask = d[:,0]>0
+        n = d.shape[1]
+        for i in range(n):
+            if i in drug_axes:
+                continue
+            if other_drug_slices is None:
+                dslice = np.min(d[:,i])
+            else:
+                dslice = other_drug_slices[i]
+            mask = mask & (d[:,i]==dslice)
+
+        d1 = d[mask,drug_axes[0]]
+        d2 = d[mask,drug_axes[1]]
+        d3 = d[mask,drug_axes[2]]
+
+        Z = self.synergy[mask]
+        if neglog:
+            Z = -np.log10(Z)
+
+        plots.plotly_isosurfaces(d1, d2, d3, Z, cmap=cmap, center_on_zero=True, **kwargs)
