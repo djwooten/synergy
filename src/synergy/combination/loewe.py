@@ -50,3 +50,7 @@ class Loewe(DoseDependentModel):
         self.synergy[(d1==0) | (d2==0)] = 1
         
         return self.synergy
+    
+
+    def plot_colormap(self, cmap="PRGn", neglog=True, **kwargs):
+        super().plot_colormap(cmap=cmap, neglog=neglog, **kwargs)

@@ -29,4 +29,4 @@ E = truemodel.E(d)
 model = HSA()
 model.fit(d, E)
 
-model.plotly_isosurfaces(d)
+model.plotly_isosurfaces()

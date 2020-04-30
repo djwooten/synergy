@@ -28,4 +28,4 @@ E = truemodel.E(d)
 model = CombinationIndex()
 model.fit(d, E)
 
-model.plotly_isosurfaces(d)
+model.plotly_isosurfaces()

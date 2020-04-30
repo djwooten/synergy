@@ -33,4 +33,4 @@ E = truemodel.E(d)
 model = Loewe(h_bounds=(1e-3,1e3))
 model.fit(d, E, single_models=single_models)
 
-model.plotly_isosurfaces(d)
+model.plotly_isosurfaces()

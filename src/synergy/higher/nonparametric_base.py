@@ -63,21 +63,21 @@ class DoseDependentHigher:
         return self.synergy
 
 
-    def plotly_isosurfaces(self, d, drug_axes=[0,1,2], other_drug_slices=None, cmap="PRGn", neglog=False, **kwargs):
-        mask = d[:,0]>0
-        n = d.shape[1]
+    def plotly_isosurfaces(self, drug_axes=[0,1,2], other_drug_slices=None, cmap="PRGn", neglog=False, **kwargs):
+        mask = self.d[:,0]>0
+        n = self.d.shape[1]
         for i in range(n):
             if i in drug_axes:
                 continue
             if other_drug_slices is None:
-                dslice = np.min(d[:,i])
+                dslice = np.min(self.d[:,i])
             else:
                 dslice = other_drug_slices[i]
-            mask = mask & (d[:,i]==dslice)
+            mask = mask & (self.d[:,i]==dslice)
 
-        d1 = d[mask,drug_axes[0]]
-        d2 = d[mask,drug_axes[1]]
-        d3 = d[mask,drug_axes[2]]
+        d1 = self.d[mask,drug_axes[0]]
+        d2 = self.d[mask,drug_axes[1]]
+        d3 = self.d[mask,drug_axes[2]]
 
         Z = self.synergy[mask]
         if neglog:
