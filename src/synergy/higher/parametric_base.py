@@ -272,6 +272,7 @@ class ParametricHigher(ABC):
         if not self._is_parameterized():
             return None
         
+        d = np.asarray(d)
         mask = d[:,0]>0
         n = d.shape[1]
         for i in range(n):

@@ -90,7 +90,7 @@ class DoseDependentModel:
         self.synergy[:] = np.nan
         return self.synergy
 
-    def plot_colormap(self, cmap="PRGn", neglog=False, **kwargs):
+    def plot_colormap(self, cmap="PRGn", neglog=False, center_on_zero=True, **kwargs):
         """Plots the synergy as a heatmap
 
         Parameters
@@ -106,9 +106,9 @@ class DoseDependentModel:
         """
         if neglog:
             with np.errstate(invalid="ignore"):
-                plots.plot_colormap(self.d1, self.d2, -np.log(self.synergy), cmap=cmap, **kwargs)
+                plots.plot_colormap(self.d1, self.d2, -np.log(self.synergy), cmap=cmap, center_on_zero=True, **kwargs)
         else:
-            plots.plot_colormap(self.d1, self.d2, self.synergy, cmap=cmap, **kwargs)
+            plots.plot_colormap(self.d1, self.d2, self.synergy, cmap=cmap, center_on_zero=True, **kwargs)
 
     def plot_surface_plotly(self, cmap="PRGn", **kwargs):
         """Plots the synergy as a 3D surface using synergy.utils.plots.plot_surface_plotly()

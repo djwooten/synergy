@@ -25,7 +25,10 @@ class HSA(DoseDependentModel):
     """
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
         
-        super().fit(d1, d2, E)
+        d1 = np.asarray(d1)
+        d2 = np.asarray(d2)
+        E = np.asarray(E)
+        super().fit(d1,d2,E)
 
         #self.synergy = []
         d1_min = np.min(d1)

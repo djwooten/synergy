@@ -119,6 +119,8 @@ class ParametricModel(ABC):
                 popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, jac=self.jacobian_function, **kwargs)
             else: 
                 popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, **kwargs)
+            if True in np.isnan(popt):
+                return None
             return self._transform_params_from_fit(popt)
         except:
             return None

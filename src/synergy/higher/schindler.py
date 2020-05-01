@@ -40,12 +40,11 @@ class Schindler(DoseDependentHigher):
             self.C_bounds = C_bounds
     
     def fit(self, d, E, single_models=None, **kwargs):
-        super().fit(d, E, single_models=single_models, **kwargs)
-        
         d = np.asarray(d)
         E = np.asarray(E)
         n = d.shape[1]
-
+        super().fit(d, E, single_models=single_models, **kwargs)
+        
         E0 = 0
         
         # Fit single drugs

@@ -35,15 +35,15 @@ class ParameterizedModel1D:
     def _internal_fit(self, d, E, use_jacobian, **kwargs):
         """Internal method to fit the model to data (d,E)
         """
-        ##try:
-        if True:
+        try:
+        #if True:
             if use_jacobian:
                 popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, jac=self.jacobian_function, **kwargs)
             else: 
                 popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, **kwargs)
             return self._transform_params_from_fit(popt)
-        else:
-        #except:
+        except:
+        #else:
             return None
 
     def _get_initial_guess(self, d, E, p0=None):
@@ -77,6 +77,9 @@ class ParameterizedModel1D:
             kwargs to pass to scipy.optimize.curve_fit()
         """
         
+        d = np.asarray(d)
+        E = np.asarray(E)
+
         if 'p0' in kwargs:
             p0 = list(kwargs.get('p0'))
         else:

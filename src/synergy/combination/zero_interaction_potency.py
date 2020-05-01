@@ -56,7 +56,10 @@ class ZIP(DoseDependentModel):
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian=True, **kwargs):
     
-        super().fit(d1, d2, E)
+        d1 = np.asarray(d1)
+        d2 = np.asarray(d2)
+        E = np.asarray(E)
+        super().fit(d1,d2,E)
         
         if drug1_model is None:
             mask = np.where(d2==min(d2))
@@ -82,12 +85,6 @@ class ZIP(DoseDependentModel):
             tmp = E0
             E0 = Emax
             Emax = tmp
-
-
-            # Should I do E = (E-E0)/(E0-Emax) + 1
-            # This puts E on the range 1 to 0.
-            # But it also kills info about drugs that don't reach 0% viability
-
         
         logh1 = np.log(h1)
         logh2 = np.log(h2)
@@ -103,13 +100,10 @@ class ZIP(DoseDependentModel):
 
         for D1, D2 in zip(d1, d2):
             # Fix d2==D2, and fit hill for D1
-            print(D1,D2)
-
             mask = np.where(d2==D2)
             y2 = drug2_model.E(D2)
             zip_model.E0 = y2
             zip_model.fit(d1[mask],E[mask], use_jacobian=use_jacobian, p0=[h1,C1])
-            #print(zip_model.converged)
             self._h_21.append(zip_model.h)
             self._C_21.append(zip_model.C)
 
@@ -118,7 +112,6 @@ class ZIP(DoseDependentModel):
             y1 = drug1_model.E(D1)
             zip_model.E0 = y1
             zip_model.fit(d2[mask],E[mask], use_jacobian=use_jacobian, p0=[h2,C2])
-            #print(zip_model.converged)
             self._h_12.append(zip_model.h)
             self._C_12.append(zip_model.C)
         
@@ -132,14 +125,15 @@ class ZIP(DoseDependentModel):
         return self.synergy
 
     def _delta_score(self, d1, d2, E0, Emax, h1, h2, C1, C2, h_21, h_12, C_21, C_12):
-        dCh1 = (d1/C1)**h1
-        dCh2 = (d2/C2)**h2
-        dCh1_prime = (d1/C_21)**h_21
-        dCh2_prime = (d2/C_12)**h_12
+        dCh1 = np.power(d1/C1,h1)
+        dCh2 = np.power(d2/C2,h2)
+        dCh1_prime = np.power(d1/C_21,h_21)
+        dCh2_prime = np.power(d2/C_12,h_12)
         
         AA = ((E0 + Emax*dCh2)/(1.+dCh2) + Emax*dCh1_prime) / (1+dCh1_prime)
         BB = ((E0 + Emax*dCh1)/(1.+dCh1) + Emax*dCh2_prime) / (1+dCh2_prime)
         #CC = (E0 + Emax*dCh1)/(1+dCh1) + (E0 + Emax*dCh2)/(1+dCh2) - (E0 + Emax*dCh1)/(1+dCh1)*(E0 + Emax*dCh2)/(1+dCh2) # This form expects E0==0, Emax=1
-        CC = (E0 + Emax*dCh1)/(1+dCh1)*(E0 + Emax*dCh2)/(1+dCh2)
+        CC = (E0 + Emax*dCh1)/(1+dCh1)*(E0 + Emax*dCh2)/(1+dCh2)/E0
+        # ^^^ The /E0 at the end is needed in case E0 != 1, as AA and BB are on the scale of E0, but CC would have been on the scale of E0^2. The final result is then on the order of E0. So if E ranges from 100 to 0, it will be 100 times greater than if E had ranged from 1 to 0.
 
         return CC - (AA+BB)/2.

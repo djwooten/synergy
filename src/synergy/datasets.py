@@ -22,7 +22,7 @@ from .utils import base as utils
 from .single import Hill
 
 
-def ds_A():
+def ds_A(noise=0.05):
     E0, E1, E2, E3 = 1, 0.4, 0.3, 0
     h1, h2 = 2.3, 0.8
     C1, C2 = 0.035, 0.15
@@ -34,14 +34,14 @@ def ds_A():
     d1, d2 = dose_tools.grid(C1/20, C1*20, C2/20, C2*20, 6, 6, include_zero=True)
 
     E = model.E(d1, d2)
-    noise = 0.05*(E0-E3)
+    noise = noise*(E0-E3)
 
     np.random.seed(0)
     E = E + noise*(2*np.random.rand(len(d1))-1)
     
     return d1, d2, E
 
-def ds_B():
+def ds_B(noise=0.05):
     E0, E1, E2, E3 = 1, 0.4, 0.1, 0.2
     h1, h2 = 2.3, 0.8
     C1, C2 = 0.035, 0.15
@@ -53,14 +53,14 @@ def ds_B():
     d1, d2 = dose_tools.grid(C1/20, C1*20, C2/20, C2*20, 6, 6, include_zero=True)
 
     E = model.E(d1, d2)
-    noise = 0.05*(E0-E3)
+    noise = noise*(E0-E3)
 
     np.random.seed(10)
     E = E + noise*(2*np.random.rand(len(d1))-1)
     
     return d1, d2, E
 
-def ds_C():
+def ds_C(noise=0.05):
     E0, E1, E2, E3 = 1, 0, 0, 0
     h1, h2 = 2.3, 0.5
     C1, C2 = 0.035, 0.15
@@ -72,7 +72,7 @@ def ds_C():
     d1, d2 = dose_tools.grid(C1/20, C1*20, C2/20, C2*20, 6, 6, include_zero=True)
 
     E = model.E(d1, d2)
-    noise = 0.05*(E0-E3)
+    noise = noise*(E0-E3)
 
     np.random.seed(20)
     E = E + noise*(2*np.random.rand(len(d1))-1)
@@ -81,7 +81,7 @@ def ds_C():
 
 
 
-def bliss_independent():
+def bliss_independent(noise=0.05):
     E0, E1, E2, E3 = 1, 0.4, 0.3, 0.12
     h1, h2 = 2.3, 0.8
     C1, C2 = 0.035, 0.15
@@ -93,14 +93,14 @@ def bliss_independent():
     d1, d2 = dose_tools.grid(C1/20, C1*20, C2/20, C2*20, 6, 6, include_zero=True)
 
     E = model.E(d1, d2)
-    noise = 0.05*(E0-E3)
+    noise = noise*(E0-E3)
 
     np.random.seed(230)
     E = E + noise*(2*np.random.rand(len(d1))-1)
     
     return d1, d2, E
 
-def linear_isobole():
+def linear_isobole(noise=0.05):
     E0, E1, E2, E3 = 1, 0.4, 0., 0
     h1, h2 = 1, 1
     C1, C2 = 0.035, 0.15
@@ -112,14 +112,14 @@ def linear_isobole():
     d1, d2 = dose_tools.grid(C1/20, C1*20, C2/20, C2*20, 6, 6, include_zero=True)
 
     E = model.E(d1, d2)
-    noise = 0.05*(E0-E3)
+    noise = noise*(E0-E3)
 
     np.random.seed(1)
     E = E + noise*(2*np.random.rand(len(d1))-1)
     
     return d1, d2, E
 
-def sham():
+def sham(noise=0.05):
     E0, Emax = 1, 0
     h = 1
     C = 0.035
@@ -128,7 +128,7 @@ def sham():
     d = np.linspace(0,1.5*C,num=10)
     d1, d2, E = utils.sham(d, drug)
 
-    noise = 0.05*(E0-Emax)
+    noise = noise*(E0-Emax)
     np.random.seed(22)
     E = E + noise*(2*np.random.rand(len(d1))-1)
     
@@ -137,7 +137,7 @@ def sham():
 
 # ################### HIGHER
 
-def ds_A_3():
+def ds_A_3(noise=0.05):
     E_params = [1,0.5,0.4,0.2,0.3,0.03,0.12,0.1]
     h_params = [2.3,0.8,1.3]
     C_params = [0.1,0.01,0.1]
@@ -150,14 +150,14 @@ def ds_A_3():
     d = dose_tools.grid_multi((1e-3,1e-3,1e-3),(1,1,1),(6,6,6), include_zero=True)
 
     E = model.E(d)
-    noise = 0.05*(max(E_params)-min(E_params))
+    noise = noise*(max(E_params)-min(E_params))
 
     np.random.seed(64)
     E = E + noise*(2*np.random.rand(d.shape[0])-1)
     
     return d, E
 
-def ds_B_3():
+def ds_B_3(noise=0.05):
     E_params = [1,0.45,0.4,0.4,0.3,0.3,0.3,0.]
     h_params = [0.3,0.8,1.3]
     C_params = [0.1,0.01,0.1]
@@ -170,14 +170,14 @@ def ds_B_3():
     d = dose_tools.grid_multi((1e-3,1e-3,1e-3),(1,1,1),(6,6,6), include_zero=True)
 
     E = model.E(d)
-    noise = 0.05*(max(E_params)-min(E_params))
+    noise = noise*(max(E_params)-min(E_params))
 
     np.random.seed(6400)
     E = E + noise*(2*np.random.rand(d.shape[0])-1)
     
     return d, E
 
-def ds_C_3():
+def ds_C_3(noise=0.05):
     E_params = [1,0.45,0.4,0.55,0.2,0.1,0.3,0.]
     h_params = [0.3,0.8,1.3]
     C_params = [0.1,0.01,0.1]
@@ -190,14 +190,14 @@ def ds_C_3():
     d = dose_tools.grid_multi((1e-3,1e-3,1e-3),(1,1,1),(6,6,6), include_zero=True)
 
     E = model.E(d)
-    noise = 0.05*(max(E_params)-min(E_params))
+    noise = noise*(max(E_params)-min(E_params))
 
     np.random.seed(6004)
     E = E + noise*(2*np.random.rand(d.shape[0])-1)
     
     return d, E
 
-def bliss_independent_3():
+def bliss_independent_3(noise=0.05):
     E_params = [1,0.5,0.4,0.2,0.3,0.15,0.12,0.06]
     h_params = [2.3,0.8,1.3]
     C_params = [0.1,0.01,0.1]
@@ -210,14 +210,14 @@ def bliss_independent_3():
     d = dose_tools.grid_multi((1e-3,1e-3,1e-3),(1,1,1),(6,6,6), include_zero=True)
 
     E = model.E(d)
-    noise = 0.05*(max(E_params)-min(E_params))
+    noise = noise*(max(E_params)-min(E_params))
 
     np.random.seed(4)
     E = E + noise*(2*np.random.rand(d.shape[0])-1)
     
     return d, E
 
-def linear_isobole_3():
+def linear_isobole_3(noise=0.05):
     E_params = [1,0.5,0.4,0.5,0.2,0,0,0]
     h_params = [1,1,1]
     C_params = [0.1,0.01,0.1]
@@ -231,14 +231,14 @@ def linear_isobole_3():
 
     with np.errstate(divide='ignore'):
         E = model.E(d)
-    noise = 0.05*(max(E_params)-min(E_params))
+    noise = noise*(max(E_params)-min(E_params))
 
     np.random.seed(44)
     E = E + noise*(2*np.random.rand(d.shape[0])-1)
     
     return d, E
 
-def sham_3():
+def sham_3(noise=0.05):
     E0, Emax = 1, 0
     h = 1
     C = 0.035
@@ -247,7 +247,7 @@ def sham_3():
     d = np.linspace(0,1.5*C,num=6)
     d, E = utils.sham_higher(d, drug, 3)
 
-    noise = 0.05*(E0-Emax)
+    noise = noise*(E0-Emax)
     np.random.seed(288)
     E = E + noise*(2*np.random.rand(d.shape[0])-1)
     

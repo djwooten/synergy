@@ -94,7 +94,6 @@ class Zimmer(ParametricModel):
         h2 = np.exp(logh2)
         C1 = np.exp(logC1)
         C2 = np.exp(logC2)
-
         return h1, h2, C1, C2, a12, a21
 
     def _transform_params_to_fit(self, params):
@@ -125,7 +124,7 @@ class Zimmer(ParametricModel):
         d1p = (-B + np.sqrt(np.power(B,2.) - 4*A*C)) / (2.*A)
         d2p = d2 / (1. + a21 / (1. + C1/d1p))
         
-        return (1 - d1p**h1/(C1**h1+d1p**h1)) * (1 - d2p**h2/(C2**h2+d2p**h2))
+        return (1 - np.power(d1p,h1)/(np.power(C1,h1)+np.power(d1p,h1))) * (1 - np.power(d2p,h2)/(np.power(C2,h2)+np.power(d2p,h2)))
 
     def _get_parameters(self):
         return self.h1, self.h2, self.C1, self.C2, self.a12, self.a21

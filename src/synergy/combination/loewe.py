@@ -29,28 +29,36 @@ class Loewe(DoseDependentModel):
     
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
 
+        d1 = np.asarray(d1)
+        d2 = np.asarray(d2)
+        E = np.asarray(E)
         super().fit(d1,d2,E)
 
         if drug1_model is None:
             mask = np.where(d2==min(d2))
-            drug1_model = Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+            drug1_model = Hill(E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+            drug1_model.fit(d1[mask], E[mask], **kwargs)
+        
         if drug2_model is None:
             mask = np.where(d1==min(d1))
-            drug2_model = Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+            drug2_model = Hill(E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+            drug2_model.fit(d2[mask], E[mask], **kwargs)
         
         self.drug1_model = drug1_model
         self.drug2_model = drug2_model
 
+        self.synergy = self._get_synergy(d1, d2, E, drug1_model, drug2_model)
+
+        return self.synergy
+    
+    def _get_synergy(self, d1, d2, E, drug1_model, drug2_model):
         with np.errstate(divide='ignore', invalid='ignore'):
             d1_alone = drug1_model.E_inv(E)
             d2_alone = drug2_model.E_inv(E)
+            synergy = d1/d1_alone + d2/d2_alone
+        synergy[(d1==0) | (d2==0)] = 1
+        return synergy
 
-            self.synergy = d1/d1_alone + d2/d2_alone
 
-        self.synergy[(d1==0) | (d2==0)] = 1
-        
-        return self.synergy
-    
-
-    def plot_colormap(self, cmap="PRGn", neglog=True, **kwargs):
-        super().plot_colormap(cmap=cmap, neglog=neglog, **kwargs)
+    def plot_colormap(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
+        super().plot_colormap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)

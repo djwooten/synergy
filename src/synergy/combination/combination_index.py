@@ -30,9 +30,11 @@ class CombinationIndex(DoseDependentModel):
     """
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
-
+        d1 = np.asarray(d1)
+        d2 = np.asarray(d2)
+        E = np.asarray(E)
         super().fit(d1,d2,E)
-
+        
         if drug1_model is None or not isinstance(drug1_model, Hill_CI):
             mask = np.where(d2==min(d2))
             drug1_model = Hill_CI.create_fit(d1[mask], E[mask])
@@ -52,3 +54,6 @@ class CombinationIndex(DoseDependentModel):
         self.synergy[(d1==0) | (d2==0)] = 1
         
         return self.synergy
+
+    def plot_colormap(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
+        super().plot_colormap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
