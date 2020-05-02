@@ -84,9 +84,13 @@ class ParametricHigher(ABC):
         else:
             self.converged = True
             self.parameters = popt
-            self._score(d, E)
-            kwargs['p0'] = self._transform_params_to_fit(popt)
-            self._bootstrap_resample(d, E, bootstrap_iterations, **kwargs)
+            n_parameters = len(popt)
+            n_samples = d.shape[0]
+            if (n_samples - n_parameters - 1 > 0):
+                self._score(d, E)
+                kwargs['p0'] = self._transform_params_to_fit(popt)
+                self._bootstrap_resample(d, E, bootstrap_iterations, **kwargs)
+            
 
     def _bootstrap_resample(self, d, E, bootstrap_iterations, **kwargs):
         """Internal function to identify confidence intervals for parameters

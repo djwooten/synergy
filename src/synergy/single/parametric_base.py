@@ -41,6 +41,8 @@ class ParameterizedModel1D:
                 popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, jac=self.jacobian_function, **kwargs)
             else: 
                 popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, **kwargs)
+            if True in np.isnan(popt):
+                return None
             return self._transform_params_from_fit(popt)
         except:
         #else:
@@ -96,9 +98,13 @@ class ParameterizedModel1D:
         else:
             self.converged = True
             self._set_parameters(popt)
-            self._score(d, E)
-            kwargs['p0'] = self._transform_params_to_fit(popt)
-            return self._bootstrap_resample(d, E, use_jacobian, bootstrap_iterations, bootstrap_confidence_interval, **kwargs)
+
+            n_parameters = len(popt)
+            n_samples = len(d)
+            if (n_samples - n_parameters - 1 > 0):
+                self._score(d, E)
+                kwargs['p0'] = self._transform_params_to_fit(popt)
+                self._bootstrap_resample(d, E, use_jacobian, bootstrap_iterations, bootstrap_confidence_interval, **kwargs)
 
     def E(self, d):
         """Evaluate this model at dose d.

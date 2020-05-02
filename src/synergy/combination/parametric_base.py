@@ -183,9 +183,12 @@ class ParametricModel(ABC):
         else:
             self.converged = True
             self._set_parameters(popt)
-            self._score(d1, d2, E)
-            kwargs['p0'] = self._transform_params_to_fit(popt)
-            self._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs)
+            n_parameters = len(popt)
+            n_samples = len(d1)
+            if (n_samples - n_parameters - 1 > 0):
+                self._score(d1, d2, E)
+                kwargs['p0'] = self._transform_params_to_fit(popt)
+                self._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs)
     
     @abstractmethod
     def E(self, d1, d2):
