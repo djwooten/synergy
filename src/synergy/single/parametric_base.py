@@ -14,7 +14,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from scipy.optimize import curve_fit
+from scipy.optimize import root_scalar
+from scipy.optimize import minimize_scalar
 from scipy.stats import norm
+from scipy.stats import f as fstat
 import numpy as np
 from .. import utils
 
@@ -31,6 +34,7 @@ class ParameterizedModel1D:
         self.aic = None
         self.bic = None
         self.bootstrap_parameters = None
+        self._pcov = None
     
     def _internal_fit(self, d, E, use_jacobian, **kwargs):
         """Internal method to fit the model to data (d,E)
@@ -43,6 +47,7 @@ class ParameterizedModel1D:
                 popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, **kwargs)
             if True in np.isnan(popt):
                 return None
+            self._pcov = pcov
             return self._transform_params_from_fit(popt)
         except:
         #else:
@@ -241,3 +246,109 @@ class ParameterizedModel1D:
             self.bootstrap_parameters = np.vstack(bootstrap_parameters)
         else:
             self.bootstrap_parameters = None
+
+
+    def f_parameter_range_2(self, d, E, pval=0.05):
+        """Find parameter confidence intervals using F test method
+
+        Page 110 of XXX
+        """
+        if not self._is_parameterized(): return
+        if not self.converged: return
+
+        params = list(self._transform_params_to_fit(self.get_parameters()))
+        P = len(params)
+        N = len(d)
+        if N<=P: return
+
+        F = fstat.isf(pval, P, N-P)
+
+        SS_best_fit = self.sum_of_squares_residuals
+
+        # Any parameter combinations that give a fit at least this good are within the requested confidence interval (pval)
+        SS_all_fixed = SS_best_fit * (F*P/(N-P) + 1)
+
+        param_ranges = []
+        for _i in range(P):
+            err = np.sqrt(self._pcov[_i, _i])
+            lb = params[_i]-10*err
+            ub = params[_i]+10*err
+            lb = max(bounds[0], lb) # If lb < bounds[0], replace with bounds[0]
+            ub = min(bounds[1], ub) # likewise for ub
+        
+        
+        
+
+
+    def f_parameter_range(self, d, E, pval=0.05):
+        """Find parameter confidence intervals using F test method
+
+        Page 110 of XXX
+        """
+        if not self._is_parameterized(): return
+        if not self.converged: return
+
+        params = list(self._transform_params_to_fit(self.get_parameters()))
+        P = len(params)
+        N = len(d)
+        if N<=P: return
+
+        F = fstat.isf(pval, P, N-P)
+
+        SS_best_fit = self.sum_of_squares_residuals
+
+        # Any parameter combinations that give a fit at least this good are within the requested confidence interval (pval)
+        SS_all_fixed = SS_best_fit * (F*P/(N-P) + 1)
+        lowers = []
+        uppers = []
+        for _i in range(P):
+            bounds = (self.bounds[0][_i], self.bounds[1][_i])
+            
+            if _i==0:
+                ssfunc = lambda param : np.abs(utils.residual_ss_1d(d, E, lambda dd: self.fit_function(dd, param, *params[1:])) - SS_all_fixed)
+            elif _i==P-1:
+                ssfunc = lambda param : np.abs(utils.residual_ss_1d(d, E, lambda dd: self.fit_function(dd, *params[:-1], param)) - SS_all_fixed)
+            else:
+                ssfunc = lambda param : np.abs(utils.residual_ss_1d(d, E, lambda dd : self.fit_function(dd, *params[:_i], param, *params[_i+1:])) - SS_all_fixed)
+
+            # Get lower and upper bounds for function minimization
+            err = np.sqrt(self._pcov[_i, _i])
+            lb = params[_i]-10*err
+            ub = params[_i]+10*err
+            lb = max(bounds[0], lb) # If lb < bounds[0], replace with bounds[0]
+            ub = min(bounds[1], ub) # likewise for ub
+
+            retlb = minimize_scalar(ssfunc, bounds=(lb,params[_i]), method="bounded")
+            retub = minimize_scalar(ssfunc, bounds=(params[_i], ub), method="bounded")
+            lowers.append(retlb.x)
+            uppers.append(retub.x)
+        return np.asarray([self._transform_params_from_fit(lowers), self._transform_params_from_fit(uppers)]).T
+
+    def _model(self, d, *args):
+        pass
+
+    def _pydream_loglikelihood(params):
+        E_model = self._model(self._data_d, *self._transform_params_from_fit(params))
+        return -np.sum((self._data_E-E_model)**2)
+
+    def fit_pydream(self, d, E):
+        self._data_d = d
+        self._data_E = E
+        #loglikelihood = lambda params : -utils.residual_ss_1d(d, E, lambda dd: self.fit_function(dd, *self._transform_params_to_fit(params)))
+
+        from pydream.parameters import FlatParam
+        from pydream.core import run_dream
+
+        self.fit(d, E)
+        print(self.converged)
+
+        
+
+        nchains = 5
+        m = np.random.multivariate_normal(self._transform_params_to_fit(self.get_parameters()), self._pcov, size=nchains)
+        starts = [m[chain,:] for chain in range(nchains)]
+
+        params = FlatParam(test_value=np.zeros(len(self.get_parameters())))
+
+        sampled_params, log_ps = run_dream([params], self._pydream_loglikelihood, nchains=nchains, start=starts, start_random=False, multitry=False, parallel=False)
+        return sampled_params, lop_ps

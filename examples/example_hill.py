@@ -17,12 +17,15 @@ E_fit = E + 0.08*(2*np.random.rand(len(E))-1)
 model.fit(d, E_fit, bootstrap_iterations=100)
 print(model)
 
-fig = plt.figure()
-ax = fig.add_subplot(111)
-ax.scatter(d,E_fit)
+if False:
 
-d = np.logspace(-3,0)
-ax.plot(d,model.E(d))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.scatter(d,E_fit)
 
-ax.set_xscale('log')
-plt.show()
+    d = np.logspace(-3,0)
+    ax.plot(d,model.E(d))
+
+    ax.set_xscale('log')
+    plt.show()
+
