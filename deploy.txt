@@ -1,6 +1,6 @@
 Commit new version to github:
 
-update version in __init__.py
+update version in src/synergy/__init__.py
 git add
 git commit
 git tag vX.X.X

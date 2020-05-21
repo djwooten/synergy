@@ -132,7 +132,6 @@ def square_log_axes(ax, nx, ny):
 
     elif (axratio < ratio):
         # decrease width
-        print("Decreasing width")
         target_width = fig_height*pos1.height/(fig_width*ratio)
         #target_width = pos1.width/10
         delta_width = pos1.width - target_width
@@ -140,7 +139,6 @@ def square_log_axes(ax, nx, ny):
         pos2[2] = target_width
         #pos2 = [0,0,1,1]
         ax.set_position(pos2)
-        print(ratio, axratio, (pos1.x0, pos1.y0, pos1.width, pos1.height), pos2)
 
 def relabel_log_ticks(ax, d1, d2):
     """
@@ -212,12 +210,10 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
     d2 = np.asarray(d2)
     E = np.asarray(E)
 
-    print(np.nanmin(d1), np.nanmin(d2))
 
     if logscale:
         d1 = utils.remove_zeros(d1)
         d2 = utils.remove_zeros(d2)
-        print(np.nanmin(d1), np.nanmin(d2))
         d1 = np.log10(d1)
         d2 = np.log10(d2)
 
@@ -256,12 +252,25 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
     ]
 
     if scatter_points is not None:
-        d1scatter = utils.remove_zeros(np.asarray(scatter_points['drug1.conc']))
-        d2scatter = utils.remove_zeros(np.asarray(scatter_points['drug2.conc']))
+        #d1scatter = utils.remove_zeros(np.asarray(scatter_points['drug1.conc']))
+        #d2scatter = utils.remove_zeros(np.asarray(scatter_points['drug2.conc']))
+        d1scatter = np.asarray(scatter_points['drug1.conc'])
+        d2scatter = np.asarray(scatter_points['drug2.conc'])
+        if logscale:
+            zero_mask_1 = np.where(d1scatter <= 0)
+            pos_mask_1 = np.where(d1scatter > 0)
+
+            zero_mask_2 = np.where(d2scatter <= 0)
+            pos_mask_2 = np.where(d2scatter > 0)
+
+            d1scatter[zero_mask_1] = np.min(d1)
+            d2scatter[zero_mask_2] = np.min(d2)
+            d1scatter[pos_mask_1] = np.log10(d1scatter[pos_mask_1])
+            d2scatter[pos_mask_2] = np.log10(d2scatter[pos_mask_2])
         
         data_to_plot.append(go.Scatter3d(
-            x=np.log10(d1scatter),
-            y=np.log10(d2scatter),
+            x=d1scatter,
+            y=d2scatter,
             z=scatter_points['effect'],
             mode="markers",
             marker=dict(
