@@ -43,8 +43,8 @@ def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel=""
             d1 = utils.remove_zeros(d1)
             d2 = utils.remove_zeros(d2)
         else:
-            d1 = np.asarray(d1)
-            d2 = np.asarray(d2)
+            d1 = np.array(d1, copy=True)
+            d2 = np.array(d2, copy=True)
         E = np.asarray(E)
 
 
@@ -206,8 +206,8 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
     if (not plotly_import):
         raise ImportError("plot_surface_plotly() requires plotly to be installed.")
     
-    d1 = np.asarray(d1)
-    d2 = np.asarray(d2)
+    d1 = np.array(d1, copy=True)
+    d2 = np.array(d2, copy=True)
     E = np.asarray(E)
 
 
@@ -254,8 +254,8 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
     if scatter_points is not None:
         #d1scatter = utils.remove_zeros(np.asarray(scatter_points['drug1.conc']))
         #d2scatter = utils.remove_zeros(np.asarray(scatter_points['drug2.conc']))
-        d1scatter = np.asarray(scatter_points['drug1.conc'])
-        d2scatter = np.asarray(scatter_points['drug2.conc'])
+        d1scatter = np.array(scatter_points['drug1.conc'], copy=True)
+        d2scatter = np.array(scatter_points['drug2.conc'], copy=True)
         if logscale:
             zero_mask_1 = np.where(d1scatter <= 0)
             pos_mask_1 = np.where(d1scatter > 0)
