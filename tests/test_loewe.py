@@ -49,4 +49,3 @@ def test_loewe_msp_3():
 
     synergy = model.fit(d, E)
     assert np.nanmax(np.abs(np.log(synergy)))>1
-

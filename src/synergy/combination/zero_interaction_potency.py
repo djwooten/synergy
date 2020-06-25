@@ -108,7 +108,7 @@ class ZIP(DoseDependentModel):
         if self.synergyfinder:
             zip_model = _Hill_3P(Emax_bounds=(-1e-6,1e-6))
         else:
-            zip_model = _Hill_3P(Emax_bounds=Emax_bounds)
+            zip_model = _Hill_3P(Emax_bounds=self.Emax_bounds)
         #zip_model = Hill_2P(Emax=Emax)
         #zip_model = Hill_2P(Emax=0, h_bounds=self.h_bounds, C_bounds=self.C_bounds)
 
