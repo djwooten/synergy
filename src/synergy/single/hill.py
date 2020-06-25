@@ -130,8 +130,8 @@ class Hill(ParameterizedModel1D):
         self.C = C
         
     def _model(self, d, E0, Emax, h, C):
-        dh = d**h
-        return E0 + (Emax-E0)*dh/(C**h+dh)
+        dh = np.power(d,h)
+        return E0 + (Emax-E0)*dh/(np.power(C,h)+dh)
 
     def _model_inv(self, E, E0, Emax, h, C):
         d = np.float_power((E0-Emax)/(E-Emax)-1.,1./h)*C
@@ -272,9 +272,9 @@ class Hill_2P(Hill):
         return np.log(params[0]), np.log(params[1])
 
     def __repr__(self):
-        if not self._is_parameterized(): return "Hill()"
+        if not self._is_parameterized(): return "Hill_2P()"
         
-        return "Hill2P(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)"%(self.E0, self.Emax, self.h, self.C)
+        return "Hill_2P(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)"%(self.E0, self.Emax, self.h, self.C)
     
     
 

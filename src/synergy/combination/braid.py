@@ -37,7 +37,7 @@ class BRAID(ParametricModel):
     def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
             E0_bounds=(-np.inf,np.inf), E1_bounds=(-np.inf,np.inf), \
             E2_bounds=(-np.inf,np.inf), E3_bounds=(-np.inf,np.inf), \
-            C1_bounds=(0,np.inf), C2_bounds=(0,np.inf), kappa_bounds=(-np.inf, np.inf), delta_bounds=(0, np.inf), E0=None, E1=None, E2=None, E3=None, h1=None, h2=None, C1=None, C2=None, kappa=None, delta=None, variant="kappa"):
+            C1_bounds=(0,np.inf), C2_bounds=(0,np.inf), kappa_bounds=(-2, np.inf), delta_bounds=(0, np.inf), E0=None, E1=None, E2=None, E3=None, h1=None, h2=None, C1=None, C2=None, kappa=None, delta=None, variant="kappa"):
 
         super().__init__()
         self.E0_bounds = E0_bounds
@@ -84,6 +84,19 @@ class BRAID(ParametricModel):
             self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, kappa, logdelta: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), kappa, np.exp(logdelta))
 
             self.bounds = tuple(zip(self.E0_bounds, self.E1_bounds, self.E2_bounds, self.E3_bounds, self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.kappa_bounds, self.logdelta_bounds))
+
+    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, bootstrap_iterations=0, **kwargs):
+        super().fit(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, use_jacobian=use_jacobian, p0=p0, bootstrap_iterations=bootstrap_iterations, **kwargs)
+
+        # The way BRAID fits E3 uses a max() function that can actually make E3 not matter at all, over a potentially large range. Untreated, this can cause its uncertainty to explode. But E3 should be defined as the value that gives the greatest maximum E_range. Here we must manually fix it for bootstrapping.
+        if self.bootstrap_parameters is not None and self.bootstrap_parameters.shape[0]>0:
+            for i in range(self.bootstrap_parameters.shape[0]):
+                E0, E1, E2, E3, = self.bootstrap_parameters[i,:4]
+                delta_Es = [E1-E0, E2-E0, E3-E0]
+                max_delta_E_index = np.argmax(np.abs(delta_Es))
+                max_delta_E = delta_Es[max_delta_E_index]
+                E3 = max_delta_E + E0
+                self.bootstrap_parameters[i,3] = E3
 
 
     def _get_initial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
@@ -171,6 +184,13 @@ class BRAID(ParametricModel):
             self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.delta = popt
         elif self.variant == "both":
             self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.kappa, self.delta = popt
+
+        # E3 is, by definition, the value of E that gives the greatest delta_E. In fitting, the max() function can make E3 have no impact, leading to very sloppy output. Thus here we correct it by setting E3 to whichever E gives the greatest delta_E.
+
+        delta_Es = [self.E1-self.E0, self.E2-self.E0, self.E3-self.E0]
+        max_delta_E_index = np.argmax(np.abs(delta_Es))
+        max_delta_E = delta_Es[max_delta_E_index]
+        self.E3 = max_delta_E + self.E0
         
 
     def E(self, d1, d2):
@@ -186,19 +206,25 @@ class BRAID(ParametricModel):
             return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.kappa, self.delta)
         
     def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, kappa, delta):
+        """
+From the braidrm R package (https://rdrr.io/cran/braidrm/man/evalBRAIDrsm.html)
 
+The parameters of this equation must satisfy h1>0, h2>0, delta>0, kappa>-2, sign(E3-E0)=sign(E1-E0)=sign(E2-E0), |E3-E0|>=|E1-E0|, and |E3-E0|>=|E2-E0|.
+        """
         delta_Es = [E1-E0, E2-E0, E3-E0]
         max_delta_E_index = np.argmax(np.abs(delta_Es))
         max_delta_E = delta_Es[max_delta_E_index]
 
-        D1 = (E1-E0)/(max_delta_E) * (d1/C1)**h1 / (1+(1-(E1-E0)/(max_delta_E))*(d1/C1)**h1)
-        D2 = (E2-E0)/(max_delta_E) * (d2/C2)**h2 / (1+(1-(E2-E0)/(max_delta_E))*(d2/C2)**h2)
-
-        power = 1 / (delta * np.sqrt(h1*h2))
+        h = np.sqrt(h1*h2)
+        power = 1/(delta*h)
         
-        D = D1**power + D2**power + kappa*np.sqrt(D1**power * D2**power)
-
-        return E0 + max_delta_E / (1+D**(-1/power))
+        D1 = (E1-E0)/max_delta_E * np.power(d1/C1,h1)/(1+(1-(E1-E0)/max_delta_E)*np.power(d1/C1,h1))
+        
+        D2 = (E2-E0)/max_delta_E*np.power(d2/C2,h2)/(1+(1-(E2-E0)/max_delta_E)*np.power(d2/C2,h2))
+        
+        D = np.power(D1,power) + np.power(D2,power) +kappa*np.sqrt(np.power(D1,power)*np.power(D2,power))
+        
+        return E0 + max_delta_E/(1+np.power(D,-delta*h))
 
     def _get_parameters(self):
         if self.variant == "kappa":
