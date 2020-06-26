@@ -8,11 +8,20 @@ Subpackages
    :maxdepth: 4
 
    synergy.combination
+   synergy.higher
    synergy.single
    synergy.utils
 
 Submodules
 ----------
+
+synergy.datasets module
+-----------------------
+
+.. automodule:: synergy.datasets
+   :members:
+   :undoc-members:
+   :show-inheritance:
 
 synergy.synergy\_exceptions module
 ----------------------------------

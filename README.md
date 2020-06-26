@@ -53,7 +53,7 @@ This will report any parameters that are synergistic or antagonistic across the 
 
 ```python
 # Requires matplotlib
-model.plot_colormap(df['drug1.conc'], df['drug2.conc'], xlabel="Drug1", ylabel="Drug2")
+model.plot_heatmap(df['drug1.conc'], df['drug2.conc'], xlabel="Drug1", ylabel="Drug2")
 
 # Requires plotly
 model.plot_surface_plotly(df['drug1.conc'], df['drug2.conc'], xlabel="Drug1", 	\
@@ -101,7 +101,7 @@ print(model.synergy) # Will have size equal to d1, d2, and E passed to fit()
 
 ```python
 # Requires matplotlib
-model.plot_colormap(xlabel="Drug1", ylabel="Drug2")
+model.plot_heatmap(xlabel="Drug1", ylabel="Drug2")
 
 # Requires plotly
 model.plot_surface_plotly(xlabel="Drug1", ylabel="Drug2", 				\
@@ -130,7 +130,7 @@ Unlike the two drug case, doses are passed to the three+ drug case in a single m
 
 #### Visualization
 
-For three drugs, E is a 3D scalar field. One option for visualization is to use `synergy.utils.plots.plot_colormap(d1, d2, E)` where E is calculated across `d1` and `d2`, but on fixed slices of `d3`. An additional option is to use plotly isosurfaces, which render curved 2D surfaces of constant E in a 3D space. These isosurfaces are similar to stacks of colormaps. This is implemented for `synergy.higher` models as
+For three drugs, E is a 3D scalar field. One option for visualization is to use `synergy.utils.plots.plot_heatmap(d1, d2, E)` where E is calculated across `d1` and `d2`, but on fixed slices of `d3`. An additional option is to use plotly isosurfaces, which render curved 2D surfaces of constant E in a 3D space. These isosurfaces are similar to stacks of colormaps. This is implemented for `synergy.higher` models as
 
 ```
 model.plotly_isosurfaces(d, drug_axes=[0,1,2])

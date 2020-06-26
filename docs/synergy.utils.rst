@@ -28,14 +28,6 @@ synergy.utils.dose\_tools module
    :undoc-members:
    :show-inheritance:
 
-synergy.utils.hts module
-------------------------
-
-.. automodule:: synergy.utils.hts
-   :members:
-   :undoc-members:
-   :show-inheritance:
-
 synergy.utils.plots module
 --------------------------
 
