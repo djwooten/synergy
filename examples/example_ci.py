@@ -45,11 +45,11 @@ fig = plt.figure(figsize=(8,9))
 # Model 1
 # ---------------
 ax = fig.add_subplot(3,2,1)
-model.plot_colormap(D1, D2, ax=ax, title="Dose Surface", vmin=E3, vmax=E0)
+model.plot_heatmap(D1, D2, ax=ax, title="Dose Surface", vmin=E3, vmax=E0)
 ax.set_xticks([])
 
 ax = fig.add_subplot(3,2,2)
-ci.plot_colormap(ax=ax, title="CI", vmin=-0.01, vmax=0.01, neglog=True)
+ci.plot_heatmap(ax=ax, title="CI", vmin=-0.01, vmax=0.01, neglog=True)
 ax.set_xticks([])
 ax.set_yticks([])
 
@@ -58,11 +58,11 @@ ax.set_yticks([])
 # ---------------
 
 ax = fig.add_subplot(3,2,3)
-model2.plot_colormap(D1, D2, ax=ax, title="Dose Surface", vmin=E3, vmax=E0)
+model2.plot_heatmap(D1, D2, ax=ax, title="Dose Surface", vmin=E3, vmax=E0)
 ax.set_xticks([])
 
 ax = fig.add_subplot(3,2,4)
-ci2.plot_colormap(ax=ax, title="CI", center_on_zero=True, neglog=True)
+ci2.plot_heatmap(ax=ax, title="CI", center_on_zero=True, neglog=True)
 ax.set_xticks([])
 ax.set_yticks([])
 
@@ -71,10 +71,10 @@ ax.set_yticks([])
 # ---------------
 
 ax = fig.add_subplot(3,2,5)
-model3.plot_colormap(D1, D2, ax=ax, title="Dose Surface", vmin=E3, vmax=E0)
+model3.plot_heatmap(D1, D2, ax=ax, title="Dose Surface", vmin=E3, vmax=E0)
 
 ax = fig.add_subplot(3,2,6)
-ci3.plot_colormap(ax=ax, title="CI", center_on_zero=True, neglog=True)
+ci3.plot_heatmap(ax=ax, title="CI", center_on_zero=True, neglog=True)
 ax.set_yticks([])
 
 plt.tight_layout()

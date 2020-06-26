@@ -38,17 +38,17 @@ bliss2.fit(D1, D2, E_2, drug1_model=drug1, drug2_model=drug2)
 fig = plt.figure(figsize=(5,6))
 
 ax = fig.add_subplot(2,2,1)
-model.plot_colormap(D1, D2, ax=ax,title="Dose Surface")
+model.plot_heatmap(D1, D2, ax=ax,title="Dose Surface")
 
 ax = fig.add_subplot(2,2,2)
-bliss.plot_colormap(ax=ax, title="Bliss", vmin=-0.01, vmax=0.01)
+bliss.plot_heatmap(ax=ax, title="Bliss", vmin=-0.01, vmax=0.01)
 ax.set_yticks([])
 
 ax = fig.add_subplot(2,2,3)
-model2.plot_colormap(D1, D2, ax=ax, title="Dose Surface")
+model2.plot_heatmap(D1, D2, ax=ax, title="Dose Surface")
 
 ax = fig.add_subplot(2,2,4)
-bliss2.plot_colormap(ax=ax, title="Bliss", center_on_zero=True)
+bliss2.plot_heatmap(ax=ax, title="Bliss", center_on_zero=True)
 ax.set_yticks([])
 
 plt.tight_layout()

@@ -303,7 +303,7 @@ class ParametricModel(ABC):
         ub = 100-lb
         return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0)
 
-    def plot_colormap(self, d1, d2, cmap="viridis", **kwargs):
+    def plot_heatmap(self, d1, d2, cmap="YlGnBu", **kwargs):
         """Plots the model's effect, E(d1, d2) as a heatmap
 
         Parameters
@@ -315,16 +315,16 @@ class ParametricModel(ABC):
             Doses of drug 2
         
         kwargs
-            kwargs passed to synergy.utils.plots.plot_colormap()
+            kwargs passed to synergy.utils.plots.plot_heatmap()
         """
         if not self._is_parameterized():
             #raise ModelNotParameterizedError()
             return
         
         E = self.E(d1, d2)
-        plots.plot_colormap(d1, d2, E, cmap=cmap, **kwargs)
+        plots.plot_heatmap(d1, d2, E, cmap=cmap, **kwargs)
 
-    def plot_residual_colormap(self, d1, d2, E, cmap="RdBu", **kwargs):
+    def plot_residual_heatmap(self, d1, d2, E, cmap="RdBu", **kwargs):
         """Plots the model's effect, E(d1, d2) as a heatmap
 
         Parameters
@@ -334,18 +334,24 @@ class ParametricModel(ABC):
         
         d2 : array_like
             Doses of drug 2
+
+        E : array_like
+            Observed drug effects
+
+        cmap : string, default="RdBu"
+            Colorscale for the plot
         
         kwargs
-            kwargs passed to synergy.utils.plots.plot_colormap()
+            kwargs passed to synergy.utils.plots.plot_heatmap()
         """
         if not self._is_parameterized():
             #raise ModelNotParameterizedError()
             return
         
         Emodel = self.E(d1, d2)
-        plots.plot_colormap(d1, d2, E-Emodel, cmap=cmap, **kwargs)
+        plots.plot_heatmap(d1, d2, E-Emodel, cmap=cmap, **kwargs)
 
-    def plot_surface_plotly(self, d1, d2, cmap="RdBu", **kwargs):
+    def plot_surface_plotly(self, d1, d2, cmap="YlGnBu", **kwargs):
         """Plots the model's effect, E(d1, d2) as a surface using synergy.utils.plots.plot_surface_plotly()
 
         Parameters
@@ -356,8 +362,11 @@ class ParametricModel(ABC):
         d2 : array_like
             Doses of drug 2
         
+        cmap : string, default="viridis"
+            Colorscale for the plot
+
         kwargs
-            kwargs passed to synergy.utils.plots.plot_colormap()
+            kwargs passed to synergy.utils.plots.plot_heatmap()
         """
         if not self._is_parameterized():
             #raise ModelNotParameterizedError()

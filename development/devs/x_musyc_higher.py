@@ -36,7 +36,7 @@ if False:
     for i,DD in enumerate(np.unique(d3)):
         mask = np.where(d3==DD)
         ax = fig.add_subplot(3,4,i+1)
-        plots.plot_colormap(d1[mask], d2[mask], E[mask], ax=ax, vmin=0, vmax=2)
+        plots.plot_heatmap(d1[mask], d2[mask], E[mask], ax=ax, vmin=0, vmax=2)
 
     plt.tight_layout()
     plt.show()

@@ -42,10 +42,10 @@ print(model.drug1_model, model.drug2_model)
 fig = plt.figure(figsize=(7,3))
 
 ax=fig.add_subplot(121)
-musyc.plot_colormap(D1, D2, ax=ax, title="Data")
+musyc.plot_heatmap(D1, D2, ax=ax, title="Data")
 
 ax=fig.add_subplot(122)
-model.plot_colormap(ax=ax, title="ZIP")
+model.plot_heatmap(ax=ax, title="ZIP")
 
 plt.tight_layout()
 plt.show()

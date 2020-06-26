@@ -272,7 +272,7 @@ class ParametricHigher(ABC):
         """
         pass
 
-    def plotly_isosurfaces(self, d, drug_axes=[0,1,2], other_drug_slices=None, **kwargs):
+    def plotly_isosurfaces(self, d, drug_axes=[0,1,2], other_drug_slices=None, cmap="YlGnBu", **kwargs):
         if not self._is_parameterized():
             return None
         

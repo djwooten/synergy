@@ -90,7 +90,7 @@ class DoseDependentModel:
         self.synergy[:] = np.nan
         return self.synergy
 
-    def plot_colormap(self, cmap="PRGn", neglog=False, center_on_zero=True, **kwargs):
+    def plot_heatmap(self, cmap="PRGn", neglog=False, center_on_zero=True, **kwargs):
         """Plots the synergy as a heatmap
 
         Parameters
@@ -101,21 +101,37 @@ class DoseDependentModel:
         neglog : bool, default=False
             If True, will transform the synergy values by -log(synergy). Loewe and CI are synergistic between [0,1) and antagonistic between (1,inf). Thus, -log(synergy) becomes synergistic for positive values, and antagonistic for negative values. This behavior matches other synergy frameworks, and helps better visualize results. But it is never set by default.
 
+        center_on_zero : bool, default=True
+            If True, will set vmin and vmax to be centered around 0.
+
         kwargs
-            kwargs passed to synergy.utils.plots.plot_colormap()
+            kwargs passed to synergy.utils.plots.plot_heatmap()
         """
         if neglog:
             with np.errstate(invalid="ignore"):
-                plots.plot_colormap(self.d1, self.d2, -np.log(self.synergy), cmap=cmap, center_on_zero=True, **kwargs)
+                plots.plot_heatmap(self.d1, self.d2, -np.log(self.synergy), cmap=cmap, center_on_zero=True, **kwargs)
         else:
-            plots.plot_colormap(self.d1, self.d2, self.synergy, cmap=cmap, center_on_zero=True, **kwargs)
+            plots.plot_heatmap(self.d1, self.d2, self.synergy, cmap=cmap, center_on_zero=True, **kwargs)
 
-    def plot_surface_plotly(self, cmap="PRGn", **kwargs):
+    def plot_surface_plotly(self, cmap="PRGn", neglog=False, center_on_zero=True, **kwargs):
         """Plots the synergy as a 3D surface using synergy.utils.plots.plot_surface_plotly()
 
         Parameters
         ----------
+        cmap : string, default="PRGn"
+            Colorscale for the plot
+
+        neglog : bool, default=False
+            If True, will transform the synergy values by -log(synergy). Loewe and CI are synergistic between [0,1) and antagonistic between (1,inf). Thus, -log(synergy) becomes synergistic for positive values, and antagonistic for negative values. This behavior matches other synergy frameworks, and helps better visualize results. But it is never set by default.
+
+        center_on_zero : bool, default=True
+            If True, will set vmin and vmax to be centered around 0.
+
         kwargs
-            kwargs passed to synergy.utils.plots.plot_colormap()
+            kwargs passed to synergy.utils.plots.plot_heatmap()
         """
-        plots.plot_surface_plotly(self.d1, self.d2, self.synergy, cmap=cmap, **kwargs)
+        if neglog:
+            with np.errstate(invalid="ignore"):
+                plots.plot_surface_plotly(self.d1, self.d2, -np.log(self.synergy), cmap=cmap, **kwargs)
+        else:
+            plots.plot_surface_plotly(self.d1, self.d2, self.synergy, cmap=cmap, **kwargs)

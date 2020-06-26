@@ -35,18 +35,18 @@ musyc.fit(d1, d2, E)
 fig = plt.figure(figsize=(12,3))
 
 ax = fig.add_subplot(1,4,1)
-musyc.plot_colormap(d1, d2, ax=ax, logscale=False, title="Sham Surface")
+musyc.plot_heatmap(d1, d2, ax=ax, logscale=False, title="Sham Surface")
 
 ax = fig.add_subplot(1,4,2)
-loewe.plot_colormap(ax=ax, title="-log(Loewe)", vmin=-0.01, vmax=0.01, logscale=False, neglog=True)
+loewe.plot_heatmap(ax=ax, title="-log(Loewe)", vmin=-0.01, vmax=0.01, logscale=False, neglog=True)
 ax.set_yticks([])
 
 ax = fig.add_subplot(1,4,3)
-schindler.plot_colormap(ax=ax, title="Schindler", vmin=-0.01, vmax=0.01, logscale=False)
+schindler.plot_heatmap(ax=ax, title="Schindler", vmin=-0.01, vmax=0.01, logscale=False)
 ax.set_yticks([])
 
 ax = fig.add_subplot(1,4,4)
-bliss.plot_colormap(ax=ax, title="Bliss", center_on_zero=True, logscale=False)
+bliss.plot_heatmap(ax=ax, title="Bliss", center_on_zero=True, logscale=False)
 ax.set_yticks([])
 
 plt.tight_layout()

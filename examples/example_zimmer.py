@@ -25,13 +25,13 @@ if model.converged:
 fig = plt.figure(figsize=(10,3))
 
 ax=fig.add_subplot(131)
-plots.plot_colormap(D1, D2, E, ax=ax, title="True", cmap="viridis")
+plots.plot_heatmap(D1, D2, E, ax=ax, title="True", cmap="viridis")
 
 ax=fig.add_subplot(132)
-plots.plot_colormap(D1, D2, Efit, ax=ax, title="Noisy", cmap="viridis")
+plots.plot_heatmap(D1, D2, Efit, ax=ax, title="Noisy", cmap="viridis")
 
 ax=fig.add_subplot(133)
-model.plot_colormap(D1, D2, ax=ax, title="Fit")
+model.plot_heatmap(D1, D2, ax=ax, title="Fit")
 
 plt.tight_layout()
 plt.show()

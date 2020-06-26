@@ -31,4 +31,4 @@ E = truemodel.E(d)
 model = Bliss(h_bounds=(1e-3,1e3))
 model.fit(d, E, single_models=single_models)
 
-model.plotly_isosurfaces()
+model.plotly_isosurfaces(fname="bliss_higher.html")

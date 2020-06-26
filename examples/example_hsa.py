@@ -32,10 +32,10 @@ synergy = hsa.fit(d1, d2, E)
 fig = plt.figure(figsize=(6,3))
 
 ax = fig.add_subplot(121)
-plots.plot_colormap(d1, d2, E, ax=ax, title="Data", cmap="viridis")
+plots.plot_heatmap(d1, d2, E, ax=ax, title="Data", cmap="viridis")
 
 ax = fig.add_subplot(122)
-hsa.plot_colormap(ax=ax, title="HSA", center_on_zero=True)
+hsa.plot_heatmap(ax=ax, title="HSA", center_on_zero=True)
 
 plt.tight_layout()
 plt.show()

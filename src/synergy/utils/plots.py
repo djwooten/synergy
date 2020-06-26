@@ -35,7 +35,7 @@ try:
 except ImportError as e:
     pass
 
-def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel="", figsize=None, cmap="PRGn_r", aspect='equal', vmin=None, vmax=None, center_on_zero=False, logscale=True, nancolor="#BBBBBB", **kwargs):
+def plot_heatmap(d1, d2, E, ax=None, fname=None, title="", xlabel="Drug 1", ylabel="Drug 2", figsize=None, cmap="PRGn", aspect='equal', vmin=None, vmax=None, center_on_zero=False, logscale=True, nancolor="#BBBBBB", **kwargs):
         if (not matplotlib_import):
             raise ImportError("matplotlib must be installed to plot")
         
@@ -58,7 +58,7 @@ def plot_colormap(d1, d2, E, ax=None, fname=None, title="", xlabel="", ylabel=""
         
 
         if len(d1) != n_d1*n_d2:
-            raise ValueError("plot_colormap() requires d1, d2 to represent a dose grid")
+            raise ValueError("plot_heatmap() requires d1, d2 to represent a dose grid")
         
         created_ax = False
         if ax is None:
@@ -201,8 +201,9 @@ def interp(x, x0, x1, y0, y1):
 
 def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
                  elev=20, azim=19, fname="plot.html", zlim=None, cmap='viridis', logscale=True,         \
-                 xlabel="x", ylabel="y", zlabel="z", \
-                 vmin=None, vmax=None, auto_open=True, opacity=0.8):
+                 xlabel="Drug 1", ylabel="Drug 2", zlabel="z", \
+                 vmin=None, vmax=None, auto_open=True, opacity=0.8, \
+                 center_on_zero=False):
     if (not plotly_import):
         raise ImportError("plot_surface_plotly() requires plotly to be installed.")
     
@@ -228,6 +229,16 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
     d2 = d2.reshape(n_d2,n_d1)
     E = E.reshape(n_d2,n_d1)
 
+    if center_on_zero:
+        if vmin is None or vmax is None:
+            zmax = max(abs(np.nanmin(E[~np.isinf(E)])), abs(np.nanmax(E[~np.isinf(E)])))
+            vmin = -zmax
+            vmax = zmax
+        else:
+            zmax = max(abs(vmin), abs(vmax))
+            vmin = -zmax
+            vmax = zmax
+
     data_to_plot = [go.Surface(
         x=d1,
         y=d2,
@@ -242,7 +253,7 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
             project_z=False
         ),
         colorscale=cmap,
-        reversescale=True,
+        reversescale=False,
         colorbar=dict(
             lenmode='fraction',
             len=0.65,
@@ -274,10 +285,10 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
             z=scatter_points['effect'],
             mode="markers",
             marker=dict(
-                size=1.5,
+                size=3.0,
                 color=scatter_points['effect'],
                 colorscale=cmap,
-                reversescale=True,
+                reversescale=False,
                 cmin=vmin,
                 cmax=vmax,
                 line=dict(
@@ -316,6 +327,9 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
             yaxis_title=ylabel, 
             zaxis_title=zlabel, 
             aspectmode="cube"
+        ),
+        font=dict(
+            size=18
         )
     )
 
@@ -330,7 +344,7 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
 
 
 def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
-            cmap='viridis', xlabel="x", ylabel="y", zlabel="z",     \
+            cmap='viridis', xlabel="Drug 1", ylabel="Drug 2", zlabel="Drug 3",     \
             vmin=None, vmax=None, auto_open=True, opacity=0.6,      \
             logscale=True, isomin=None, isomax=None,                \
             center_on_zero=False, surface_count=10):
@@ -387,7 +401,7 @@ def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
         cmin=vmin,
         cmax=vmax,
         opacity=0.6,
-        colorscale='PRGn_r',
+        colorscale=cmap,
         surface_count=surface_count, # number of isosurfaces, 2 by default: only min and max
         colorbar_nticks=surface_count, # colorbar ticks correspond to isosurface values
         caps=dict(x_show=False, y_show=False, z_show=True)
@@ -418,6 +432,9 @@ def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
             yaxis_title=ylabel, 
             zaxis_title=zlabel, 
             aspectmode="cube"
+        ),
+        font=dict(
+            size=18
         )
     )
 

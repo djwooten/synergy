@@ -17,9 +17,9 @@ D1, D2 = grid(C1/100,C1*100,C2/100,C2*100,8,8)
 fig = plt.figure(figsize=(8,5))
 
 ax = fig.add_subplot(121)
-model1.plot_colormap(D1, D2, ax=ax)
+model1.plot_heatmap(D1, D2, ax=ax)
 
 ax = fig.add_subplot(122)
-model2.plot_colormap(D1, D2, ax=ax)
+model2.plot_heatmap(D1, D2, ax=ax)
 
 plt.show()

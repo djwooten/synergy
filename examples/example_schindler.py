@@ -35,19 +35,19 @@ schindler2.fit(D1, D2, E_2, drug1_model=drug1, drug2_model=drug2)
 fig = plt.figure(figsize=(7,6))
 
 ax = fig.add_subplot(2,2,1)
-model.plot_colormap(D1, D2, ax=ax, title="Dose Surface", vmin=E3, vmax=E0)
+model.plot_heatmap(D1, D2, ax=ax, title="Dose Surface", vmin=E3, vmax=E0)
 ax.set_xticks([])
 
 ax = fig.add_subplot(2,2,2)
-schindler.plot_colormap(ax=ax, title="Schindler", vmin=-0.01, vmax=0.01)
+schindler.plot_heatmap(ax=ax, title="Schindler", vmin=-0.01, vmax=0.01)
 ax.set_xticks([])
 ax.set_yticks([])
 
 ax = fig.add_subplot(2,2,3)
-model2.plot_colormap(D1, D2, ax=ax, title="Dose Surface", vmin=E3, Vmax=E0)
+model2.plot_heatmap(D1, D2, ax=ax, title="Dose Surface", vmin=E3, Vmax=E0)
 
 ax = fig.add_subplot(2,2,4)
-schindler2.plot_colormap(ax=ax, title="Schindler", center_on_zero=True)
+schindler2.plot_heatmap(ax=ax, title="Schindler", center_on_zero=True)
 ax.set_yticks([])
 
 plt.tight_layout()

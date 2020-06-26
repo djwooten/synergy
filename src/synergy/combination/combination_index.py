@@ -55,5 +55,8 @@ class CombinationIndex(DoseDependentModel):
         
         return self.synergy
 
-    def plot_colormap(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
-        super().plot_colormap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
+    def plot_heatmap(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
+        super().plot_heatmap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
+
+    def plot_surface_plotly(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
+        super().plot_surface_plotly(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)

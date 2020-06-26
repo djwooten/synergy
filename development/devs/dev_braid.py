@@ -53,7 +53,7 @@ for i in range(9):
 
     break
 
-    truemodel.plot_colormap(D1, D2, logscale=False, cmap="RdYlGn_r", ax=ax, vmin=0, vmax=1)
+    truemodel.plot_heatmap(D1, D2, logscale=False, cmap="RdYlGn_r", ax=ax, vmin=0, vmax=1)
 
 D1, D2 = grid(C1/100,C1*100,C2/100,C2*100,8,8)
 

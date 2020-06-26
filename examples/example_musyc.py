@@ -46,13 +46,13 @@ print(model)
 fig = plt.figure(figsize=(7,7))
 
 ax=fig.add_subplot(221)
-plots.plot_colormap(D1, D2, E, ax=ax, title="True", cmap="viridis")
+plots.plot_heatmap(D1, D2, E, ax=ax, title="True", cmap="viridis")
 
 ax=fig.add_subplot(222)
-plots.plot_colormap(D1, D2, Efit, ax=ax, title="Noisy", cmap="viridis")
+plots.plot_heatmap(D1, D2, Efit, ax=ax, title="Noisy", cmap="viridis")
 
 ax=fig.add_subplot(223)
-model.plot_colormap(D1, D2, ax=ax, title="Fit")
+model.plot_heatmap(D1, D2, ax=ax, title="Fit")
 
 ax=fig.add_subplot(224)
 model.plot_residual_colormap(D1, D2, Efit, ax=ax, title="Residuals", center_on_zero=True)
