@@ -187,6 +187,19 @@ class ParametricHigher(ABC):
         pass
 
     @abstractmethod
+    def _get_single_drug_classes(self):
+        """
+        Returns
+        -------
+        default_single_class : class
+            The default class type to use for single-drug models
+
+        expected_single_superclass : class
+            The required type for single-drug models. If a single-drug model is passed that is not an instance of this superclass, it will be re-instantiated using default_model
+        """
+        pass
+
+    @abstractmethod
     def E(self, d):
         """Evaluates the model at dose d
 

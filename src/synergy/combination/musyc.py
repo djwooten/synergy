@@ -112,16 +112,26 @@ class MuSyC(ParametricModel):
             self.bounds = tuple(zip(self.E0_bounds, self.E1_bounds, self.E2_bounds, self.E3_bounds, self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.logalpha12_bounds, self.logalpha21_bounds))
 
 
-    def _get_initial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
+    def _get_initial_guess(self, d1, d2, E, drug1_model, drug2_model, p0=None):
         
+
+        # If there is no intial guess, use single-drug models to come up with intitial guess
         if p0 is None:
-            if drug1_model is None:
+            # Sanitize single-drug models
+            default_class, expected_superclass = self._get_single_drug_classes()
+
+            drug1_model = utils.sanitize_single_drug_model(drug1_model, default_class, expected_superclass=expected_superclass, E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+
+            drug2_model = utils.sanitize_single_drug_model(drug2_model, default_class, expected_superclass=expected_superclass, E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+
+            # Fit the single drug models if they were not pre-fit by the user
+            if not drug1_model.is_fit():
                 mask = np.where(d2==min(d2))
-                drug1_model = Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
-            if drug2_model is None:
+                drug1_model.fit(d1[mask], E[mask])
+            if not drug2_model.is_fit():
                 mask = np.where(d1==min(d1))
-                drug2_model = Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
-            
+                drug2_model.fit(d2[mask], E[mask])
+
             # Get initial guesses of E0, E1, E2, h1, h2, C1, and C2 from single-drug fits
             E0_1, E1, h1, C1 = drug1_model.get_parameters()
             E0_2, E2, h2, C2 = drug2_model.get_parameters()
@@ -136,8 +146,8 @@ class MuSyC(ParametricModel):
             
             p0 = [(E0_1+E0_2)/2., E1, E2, E3, h1, h2, C1, C2, 1, 1, 1, 1]
         
-        if self.variant == "no_gamma":
-            p0 = p0[:-2]
+            if self.variant == "no_gamma":
+                p0 = p0[:-2]
 
         p0 = list(self._transform_params_to_fit(p0))
         utils.sanitize_initial_guess(p0, self.bounds)
@@ -206,6 +216,9 @@ class MuSyC(ParametricModel):
             self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21 = popt
         else:
             self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.alpha12, self.alpha21, self.gamma12, self.gamma21 = popt
+
+    def _get_single_drug_classes(self):
+        return Hill, Hill
 
     def _C_to_r1r(self, C, h, r1):
         return r1*C**h

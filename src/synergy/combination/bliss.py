@@ -15,7 +15,8 @@
 
 import numpy as np
 
-from ..single import Hill
+from ..single import MarginalLinear
+from .. import utils
 from .nonparametric_base import DoseDependentModel
 
 class Bliss(DoseDependentModel):
@@ -31,18 +32,10 @@ class Bliss(DoseDependentModel):
         d1 = np.asarray(d1)
         d2 = np.asarray(d2)
         E = np.asarray(E)
-        super().fit(d1,d2,E)
+        super().fit(d1,d2,E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
 
-        if drug1_model is None:
-            mask = np.where(d2==min(d2))
-            drug1_model = Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
-
-        if drug2_model is None:
-            mask = np.where(d1==min(d1))
-            drug2_model = Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
-        
-        self.drug1_model = drug1_model
-        self.drug2_model = drug2_model
+        drug1_model = self.drug1_model
+        drug2_model = self.drug2_model
 
         E1_alone = drug1_model.E(d1)
         E2_alone = drug2_model.E(d2)
@@ -74,4 +67,5 @@ class Bliss(DoseDependentModel):
 
         return D1, D2, E1_alone*E2_alone
 
-    
+    def _get_single_drug_classes(self):
+        return MarginalLinear, None

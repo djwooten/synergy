@@ -111,6 +111,19 @@ class ParametricModel(ABC):
         """
         pass
 
+    @abstractmethod
+    def _get_single_drug_classes(self):
+        """
+        Returns
+        -------
+        default_single_class : class
+            The default class type to use for single-drug models
+
+        expected_single_superclass : class
+            The required type for single-drug models. If a single-drug model is passed that is not an instance of this superclass, it will be re-instantiated using default_model
+        """
+        pass
+
     def _internal_fit(self, d, E, use_jacobian, **kwargs):
         """Internal method to fit the model to data (d,E)
         """
@@ -170,7 +183,7 @@ class ParametricModel(ABC):
         else:
             p0 = None
         
-        p0 = self._get_initial_guess(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, p0=p0)
+        p0 = self._get_initial_guess(d1, d2, E, drug1_model, drug2_model, p0=p0)
 
         kwargs['p0']=p0
         
@@ -242,7 +255,7 @@ class ParametricModel(ABC):
         pass
 
     @abstractmethod
-    def _get_initial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
+    def _get_initial_guess(self, d1, d2, E, drug1_model, drug2_model, p0=None):
         """Internal method to format and/or guess p0
         """
         pass

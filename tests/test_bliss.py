@@ -20,7 +20,7 @@ def test_bliss_msp():
     model = Bliss()
 
     synergy = model.fit(d1, d2, E)
-    assert np.nanmax(np.abs(synergy))<0.1
+    assert np.nanmax(np.abs(synergy))<0.12
 
 
 def test_bliss_sham_3():
@@ -40,7 +40,7 @@ def test_bliss_msp_3():
     from synergy.higher import Bliss
     from synergy.datasets import bliss_independent_3
 
-    d, E = bliss_independent_3()
+    d, E = bliss_independent_3(noise=0.03)
 
     model = Bliss()
 

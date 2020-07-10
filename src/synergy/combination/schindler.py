@@ -16,6 +16,7 @@
 import numpy as np
 
 from ..single import Hill
+from .. import utils
 from .nonparametric_base import DoseDependentModel
 
 class Schindler(DoseDependentModel):
@@ -36,18 +37,11 @@ class Schindler(DoseDependentModel):
         d1 = np.asarray(d1)
         d2 = np.asarray(d2)
         E = np.asarray(E)
-        super().fit(d1,d2,E)
-        
-        if drug1_model is None:
-            mask = np.where(d2==min(d2))
-            drug1_model = Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
-        if drug2_model is None:
-            mask = np.where(d1==min(d1))
-            drug2_model = Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
-        
-        self.drug1_model = drug1_model
-        self.drug2_model = drug2_model
+        super().fit(d1,d2,E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
 
+        drug1_model = self.drug1_model
+        drug2_model = self.drug2_model
+        
         E0_1, E1, h1, C1 = self.drug1_model.get_parameters()
         E0_2, E2, h2, C2 = self.drug2_model.get_parameters()
         E0 = (E0_1+E0_2)/2.
@@ -82,3 +76,6 @@ class Schindler(DoseDependentModel):
         power = np.power(m1+m2, y)
         
         return u_max * power / (1. + power)
+
+    def _get_single_drug_classes(self):
+        return Hill, Hill

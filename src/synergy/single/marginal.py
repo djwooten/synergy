@@ -23,13 +23,18 @@ class MarginalLinear:
     aggregation_function : function, default=np.mean
         If d contains repeated values (e.g., experimental replicates using the same dose many times), E at these repeated doses will be averaged using aggregation_function(E[d==X])
     """
-    def __init__(self, aggregation_function=np.mean):
+
+    # NOTE on __init__() and fit(): **kwargs is only present to avoid errors
+    # people may run into when reusing code for fitting Hill functions in which
+    # they set kwargs. There are no kwargs used for these methods
+    def __init__(self, aggregation_function=np.mean, **kwargs):
         self._d = None
         self._E = None
         self._logd = None
         self._aggregation_function = aggregation_function
+        self._fit = False
 
-    def fit(self, d, E):
+    def fit(self, d, E, **kwargs):
         """Calls __init__(d, E, aggregation_function)
 
         Parameters
@@ -40,7 +45,7 @@ class MarginalLinear:
         E : array_like
             Array of effects measured at doses d
         """
-        
+        self._fit  = True
         if (len(d) > len(np.unique(d))):
             self._d = []
             self._E = []
@@ -130,3 +135,15 @@ class MarginalLinear:
             if np.all(consecutive_diffs>0) or np.all(consecutive_diffs<0):
                 return True
         return False
+
+    def create_fit(d, E, aggregation_function=np.mean):
+        """Courtesy function to build a marginal linear model directly from 
+        data. Initializes a model using the provided aggregation function, then 
+        fits.
+        """
+        drug = MarginalLinear(aggregation_function=aggregation_function)
+        drug.fit(d, E)
+        return drug
+
+    def is_fit(self):
+        return self._fit

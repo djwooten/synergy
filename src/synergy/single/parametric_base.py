@@ -25,6 +25,7 @@ class ParameterizedModel1D:
         self.jacobian_function = None
         
         self.converged = False
+        self._fit = False
 
         self.sum_of_squares_residuals = None
         self.r_squared = None
@@ -78,7 +79,8 @@ class ParameterizedModel1D:
         kwargs
             kwargs to pass to scipy.optimize.curve_fit()
         """
-        
+
+        self._fit = True
         d = np.asarray(d)
         E = np.asarray(E)
 
@@ -241,3 +243,6 @@ class ParameterizedModel1D:
             self.bootstrap_parameters = np.vstack(bootstrap_parameters)
         else:
             self.bootstrap_parameters = None
+
+    def is_fit(self):
+        return self._fit

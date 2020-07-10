@@ -33,17 +33,10 @@ class CombinationIndex(DoseDependentModel):
         d1 = np.asarray(d1)
         d2 = np.asarray(d2)
         E = np.asarray(E)
-        super().fit(d1,d2,E)
-        
-        if drug1_model is None or not isinstance(drug1_model, Hill_CI):
-            mask = np.where(d2==min(d2))
-            drug1_model = Hill_CI.create_fit(d1[mask], E[mask])
-        if drug2_model is None or not isinstance(drug2_model, Hill_CI):
-            mask = np.where(d1==min(d1))
-            drug2_model = Hill_CI.create_fit(d2[mask], E[mask])
-        
-        self.drug1_model = drug1_model
-        self.drug2_model = drug2_model
+        super().fit(d1,d2,E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
+
+        drug1_model = self.drug1_model
+        drug2_model = self.drug2_model
 
         with np.errstate(divide='ignore', invalid='ignore'):
             d1_alone = drug1_model.E_inv(E)
@@ -54,6 +47,9 @@ class CombinationIndex(DoseDependentModel):
         self.synergy[(d1==0) | (d2==0)] = 1
         
         return self.synergy
+
+    def _get_single_drug_classes(self):
+        return Hill_CI, Hill_CI
 
     def plot_heatmap(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
         super().plot_heatmap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)

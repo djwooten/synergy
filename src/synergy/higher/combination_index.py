@@ -71,6 +71,8 @@ class CombinationIndex(DoseDependentHigher):
 
         return self.synergy
 
+    def _get_single_drug_classes(self):
+        return Hill_CI, Hill_CI
 
     def plotly_isosurfaces(self, drug_axes=[0,1,2], other_drug_slices=None, cmap="PRGn", neglog=True, **kwargs):
         super().plotly_isosurfaces(drug_axes=drug_axes, other_drug_slices=other_drug_slices, cmap=cmap, neglog=neglog, **kwargs)

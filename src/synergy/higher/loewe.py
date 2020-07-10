@@ -26,14 +26,6 @@ class Loewe(DoseDependentHigher):
     synergy : array_like, float
         [0,1)=synergism, (1,inf)=antagonism
     """
-
-    def __init__(self, E_bounds=(0,1), h_bounds=(0,np.inf),         \
-            C_bounds=(0,np.inf)):
-            super().__init__()
-
-            self.E_bounds = E_bounds
-            self.h_bounds = h_bounds
-            self.C_bounds = C_bounds
     
     def fit(self, d, E, single_models=None, **kwargs):
         d = np.asarray(d)
@@ -41,24 +33,9 @@ class Loewe(DoseDependentHigher):
         n = d.shape[1]
         
         super().fit(d, E, single_models=single_models, **kwargs)
-        
-        # Fit single drugs
-        if single_models is None:
-            single_models = []
-            
-            for i in range(n):
-                # Mask where all other drugs are minimum (ideally 0)
-                mask = d[:,i]>=0 # This should always be true
-                for j in range(n):
-                    if i==j: continue
-                    mask = mask & (d[:,j]==np.min(d[:,j]))
-                mask = np.where(mask)
-                single = Hill(E0_bounds=self.E_bounds, Emax_bounds=self.E_bounds, h_bounds=self.h_bounds, C_bounds=self.C_bounds)
-                single.fit(d[mask,i].flatten(), E[mask], **kwargs)
-                single_models.append(single)
-        self.single_models = single_models
+        single_models=self.single_models
 
-        d_singles = d*0
+        d_singles = d*0 # The dose of each drug that alone achieves E
         with np.errstate(divide='ignore', invalid='ignore'):
             for i in range(n):
                 d_singles[:,i] = single_models[i].E_inv(E)
@@ -77,6 +54,8 @@ class Loewe(DoseDependentHigher):
 
         return self.synergy
 
+    def _get_single_drug_classes(self):
+        return Hill, None
 
     def plotly_isosurfaces(self, drug_axes=[0,1,2], other_drug_slices=None, cmap="PRGn", neglog=True, **kwargs):
         super().plotly_isosurfaces(drug_axes=drug_axes, other_drug_slices=other_drug_slices, cmap=cmap, neglog=neglog, **kwargs)

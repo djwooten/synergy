@@ -16,6 +16,7 @@
 import numpy as np
 
 from ..single import Hill
+from .. import utils
 from .nonparametric_base import DoseDependentModel
 
 class Loewe(DoseDependentModel):
@@ -26,26 +27,16 @@ class Loewe(DoseDependentModel):
     synergy : array_like, float
         [0,1)=synergism, (1,inf)=antagonism
     """
-    
+
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
 
         d1 = np.asarray(d1)
         d2 = np.asarray(d2)
         E = np.asarray(E)
-        super().fit(d1,d2,E)
+        super().fit(d1,d2,E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
 
-        if drug1_model is None:
-            mask = np.where(d2==min(d2))
-            drug1_model = Hill(E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
-            drug1_model.fit(d1[mask], E[mask], **kwargs)
-        
-        if drug2_model is None:
-            mask = np.where(d1==min(d1))
-            drug2_model = Hill(E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
-            drug2_model.fit(d2[mask], E[mask], **kwargs)
-        
-        self.drug1_model = drug1_model
-        self.drug2_model = drug2_model
+        drug1_model = self.drug1_model
+        drug2_model = self.drug2_model
 
         self.synergy = self._get_synergy(d1, d2, E, drug1_model, drug2_model)
 
@@ -59,6 +50,8 @@ class Loewe(DoseDependentModel):
         synergy[(d1==0) | (d2==0)] = 1
         return synergy
 
+    def _get_single_drug_classes(self):
+        return Hill, None
 
     def plot_heatmap(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
         super().plot_heatmap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)

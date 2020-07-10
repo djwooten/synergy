@@ -14,39 +14,36 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import warnings
 
+from .. import utils
 from ..single import MarginalLinear
 from .nonparametric_base import DoseDependentModel
+
 
 class HSA(DoseDependentModel):
     """Highest single agent (HSA)
 
     HSA says that any improvement a combination gives over the strongest single agent counts as synergy.
     """
+
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
         
         d1 = np.asarray(d1)
         d2 = np.asarray(d2)
         E = np.asarray(E)
-        super().fit(d1,d2,E)
+        super().fit(d1,d2,E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
+
+        drug1_model = self.drug1_model
+        drug2_model = self.drug2_model
 
         #self.synergy = []
         d1_min = np.min(d1)
         d2_min = np.min(d2)
 
         if (d1_min > 0 or d2_min > 0):
-            print("WARNING: HSA expects single-drug information")
+            warnings.warn("WARNING: HSA expects single-drug information for both drugs. min(d1)=%0.2e, min(d2)=%0.2e"%(d1_min, d2_min))
         
-        d1_alone_mask = np.where(d2==d2_min)
-        d2_alone_mask = np.where(d1==d1_min)
-
-        if drug1_model is None:
-            drug1_model = MarginalLinear()
-            drug1_model.fit(d1[d1_alone_mask], E[d1_alone_mask])
-
-        if drug2_model is None:
-            drug2_model = MarginalLinear()
-            drug2_model.fit(d2[d2_alone_mask], E[d2_alone_mask])
 
         self.drug1_model = drug1_model
         self.drug2_model = drug2_model
@@ -55,6 +52,8 @@ class HSA(DoseDependentModel):
         E2_alone = drug2_model.E(d2)
         self.synergy = np.minimum(E1_alone-E, E2_alone-E)
         
-        self.synergy[d1_alone_mask] = 0
-        self.synergy[d2_alone_mask] = 0
+        self.synergy[(d1==0) | (d2==0)] = 0
         return self.synergy
+
+    def _get_single_drug_classes(self):
+        return MarginalLinear, None

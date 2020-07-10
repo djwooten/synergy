@@ -107,7 +107,7 @@ class MuSyC(ParametricHigher):
             return n
         return 0
 
-    def _get_initial_guess(self, d, E, p0=None):
+    def _get_initial_guess(self, d, E, single_models=None, p0=None):
         n = d.shape[1]
 
         n_E = 2**n
@@ -151,11 +151,20 @@ class MuSyC(ParametricHigher):
                 E_params[idx] = np.median(E[mask])
 
             # Make guesses for E, h, C of undrugged and single-drugged states
-            single_drug_model = Hill(E0_bounds=self.E_bounds, Emax_bounds=self.E_bounds, h_bounds=self.h_bounds, C_bounds=self.C_bounds)
             E0_guess = 0
 
-            # Make Hill model of each single drug
+            default_class, expected_superclass = self._get_single_drug_classes()
+            # Make model of each single drug
             for i in range(n):
+                
+                if hasattr(single_models, "__iter__"):
+                    _single_model = single_models[i]
+                else:
+                    _single_model = single_models
+                
+                # Make sure the single model is correctly instantiated
+                single_drug_model = utils.sanitize_single_drug_model(_single_model, default_class, expected_superclass=expected_superclass, E0_bounds=self.E_bounds, Emax_bounds=self.E_bounds, h_bounds=self.h_bounds, C_bounds=self.C_bounds)
+
                 # Mask all other drugs at their minimum values
                 mask = d[:,0]>-1 # d is always > 0, so initializes to array of True
                 for otherdrug in range(n):
@@ -163,7 +172,9 @@ class MuSyC(ParametricHigher):
                         continue
                     mask = mask & (d[:,otherdrug] == np.min(d[:,otherdrug]))
                 mask = np.where(mask)
-                single_drug_model.fit(d[mask,i].flatten(), E[mask], p0=(E_params[0], E_params[i], h_params[i], C_params[i]))
+
+                if not single_drug_model.is_fit():
+                    single_drug_model.fit(d[mask,i].flatten(), E[mask], p0=(E_params[0], E_params[i], h_params[i], C_params[i]))
 
                 # Override initial guesses with single fits
                 if single_drug_model.converged:
@@ -413,6 +424,8 @@ class MuSyC(ParametricHigher):
         beta = (E_best_parent-E)/(E0-E_best_parent)
         return beta
 
+    def _get_single_drug_classes(self):
+        return Hill, Hill
 
     def get_parameters(self, confidence_interval=95):
         if not self._is_parameterized():

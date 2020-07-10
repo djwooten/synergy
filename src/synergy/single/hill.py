@@ -210,7 +210,7 @@ class Hill_2P(Hill):
     Mathematically equivalent to the four-parameter Hill equation, but E0 and Emax are held constant (not fit to data).
     
     """
-    def __init__(self, h=None, C=None, h_bounds=(0,np.inf), C_bounds=(0,np.inf), E0=1, Emax=0):
+    def __init__(self, h=None, C=None, h_bounds=(0,np.inf), C_bounds=(0,np.inf), E0=1, Emax=0, **kwargs):
         super().__init__(h=h, C=C, E0=E0, Emax=Emax, h_bounds=h_bounds, C_bounds=C_bounds)
 
         self.fit_function = lambda d, logh, logC: self._model(d, self.E0, self.Emax, np.exp(logh), np.exp(logC))
@@ -287,7 +287,7 @@ class Hill_2P(Hill):
 class Hill_CI(Hill_2P):
     """Mathematically equivalent two-parameter Hill equation with E0=1 and Emax=0. However, Hill_CI.fit() uses the log-linearization approach to dose-response fitting used by the Combination Index.
     """
-    def __init__(self, h=None, C=None):
+    def __init__(self, h=None, C=None, **kwargs):
         super().__init__(h=h, C=C, E0=1., Emax=0.)
 
 

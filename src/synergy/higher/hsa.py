@@ -66,3 +66,6 @@ class HSA(DoseDependentHigher):
                 self.synergy[mask] = 0
 
         return self.synergy
+
+    def _get_single_drug_classes(self):
+        return MarginalLinear, None

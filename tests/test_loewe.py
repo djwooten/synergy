@@ -31,7 +31,7 @@ def test_loewe_sham_3():
     from synergy.higher import Loewe
     from synergy.datasets import sham_3
 
-    d, E = sham_3()
+    d, E = sham_3(noise=0.03)
 
     model = Loewe()
 

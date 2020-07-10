@@ -68,15 +68,24 @@ class Zimmer(ParametricModel):
         self.bounds = tuple(zip(self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.a12_bounds, self.a21_bounds))
 
 
-    def _get_initial_guess(self, d1, d2, E, drug1_model=None, drug2_model=None, p0=None):
+    def _get_initial_guess(self, d1, d2, E, drug1_model, drug2_model, p0=None):
         
+        # If there is no intial guess, use single-drug models to come up with intitial guess
         if p0 is None:
-            if drug1_model is None:
+            # Sanitize single-drug models
+            default_class, expected_superclass = self._get_single_drug_classes()
+
+            drug1_model = utils.sanitize_single_drug_model(drug1_model, default_class, expected_superclass=expected_superclass, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+
+            drug2_model = utils.sanitize_single_drug_model(drug2_model, default_class, expected_superclass=expected_superclass, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+
+            # Fit the single drug models if they were not pre-fit by the user
+            if not drug1_model.is_fit():
                 mask = np.where(d2==min(d2))
-                drug1_model = Hill_2P.create_fit(d1[mask], E[mask], h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
-            if drug2_model is None:
+                drug1_model.fit(d1[mask], E[mask])
+            if not drug2_model.is_fit():
                 mask = np.where(d1==min(d1))
-                drug2_model = Hill_2P.create_fit(d2[mask], E[mask], h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+                drug2_model.fit(d2[mask], E[mask])
             
             # Get initial guesses of E0, E1, E2, h1, h2, C1, and C2 from single-drug fits
             h1, C1 = drug1_model.get_parameters()
@@ -128,6 +137,9 @@ class Zimmer(ParametricModel):
 
     def _get_parameters(self):
         return self.h1, self.h2, self.C1, self.C2, self.a12, self.a21
+
+    def _get_single_drug_classes(self):
+        return Hill_2P, Hill_2P
 
     def get_parameters(self, confidence_interval=95):
         if not self._is_parameterized():

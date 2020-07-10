@@ -15,7 +15,7 @@
 
 import numpy as np
 
-from ..single import Hill
+from ..single import MarginalLinear
 from .nonparametric_base import DoseDependentHigher
 
 class Bliss(DoseDependentHigher):
@@ -27,36 +27,13 @@ class Bliss(DoseDependentHigher):
         (-inf,0)=antagonism, (0,inf)=synergism
     """
 
-    def __init__(self, E_bounds=(0,1), h_bounds=(0,np.inf),         \
-            C_bounds=(0,np.inf)):
-            super().__init__()
-
-            self.E_bounds = E_bounds
-            self.h_bounds = h_bounds
-            self.C_bounds = C_bounds
-    
     def fit(self, d, E, single_models=None, **kwargs):
 
         d = np.asarray(d)
         E = np.asarray(E)
         n = d.shape[1]
         super().fit(d, E, single_models=single_models, **kwargs)
-        
-        # Fit single drugs
-        if single_models is None:
-            single_models = []
-            
-            for i in range(n):
-                # Mask where all other drugs are minimum (ideally 0)
-                mask = d[:,i]>=0 # This should always be true
-                for j in range(n):
-                    if i==j: continue
-                    mask = mask & (d[:,j]==np.min(d[:,j]))
-                mask = np.where(mask)
-                single = Hill(E0_bounds=self.E_bounds, Emax_bounds=self.E_bounds, h_bounds=self.h_bounds, C_bounds=self.C_bounds)
-                single.fit(d[mask,i].flatten(), E[mask], **kwargs)
-                single_models.append(single)
-        self.single_models = single_models
+        single_models=self.single_models
 
         # Get E for each single drug
         E_singles = d*0
@@ -78,3 +55,6 @@ class Bliss(DoseDependentHigher):
                 self.synergy[mask] = 0
 
         return self.synergy
+
+    def _get_single_drug_classes(self):
+        return MarginalLinear, None

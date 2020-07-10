@@ -14,6 +14,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import inspect
+import warnings
 
 from ..single import Hill, Hill_2P
 from .nonparametric_base import DoseDependentModel
@@ -41,14 +43,9 @@ class ZIP(DoseDependentModel):
     _C_12 : array_like
         The EC50 of drug 2 obtained by holding D1==constant
     """
-    def __init__(self, E0_bounds=(-np.inf,np.inf), Emax_bounds=(-np.inf,np.inf), h_bounds=(0,np.inf), C_bounds=(0,np.inf), synergyfinder=False):
+    def __init__(self, E0_bounds=(0,1.5), E1_bounds=(0,1.5), E2_bounds=(0,1.5), h1_bounds=(0,np.inf), C1_bounds=(0,np.inf), h2_bounds=(0,np.inf), C2_bounds=(0,np.inf), synergyfinder=False):
 
-        super().__init__(h1_bounds=h_bounds, h2_bounds=h_bounds, C1_bounds=C_bounds, C2_bounds=C_bounds, E0_bounds=E0_bounds, E1_bounds=Emax_bounds, E2_bounds=Emax_bounds)
-
-        self.E0_bounds = E0_bounds
-        self.Emax_bounds = Emax_bounds
-        self.C_bounds = C_bounds
-        self.h_bounds = h_bounds
+        super().__init__(h1_bounds=h1_bounds, h2_bounds=h2_bounds, C1_bounds=C1_bounds, C2_bounds=C2_bounds, E0_bounds=E0_bounds, E1_bounds=E1_bounds, E2_bounds=E2_bounds)
 
         self.synergyfinder = synergyfinder
 
@@ -59,25 +56,19 @@ class ZIP(DoseDependentModel):
         self._Emax_21 = []
         self._Emax_12 = []
         
+    def _get_single_drug_classes(self):
+        return Hill, Hill
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian=True, **kwargs):
     
         d1 = np.asarray(d1)
         d2 = np.asarray(d2)
         E = np.asarray(E)
-        super().fit(d1,d2,E)
-        
-        if drug1_model is None:
-            mask = np.where(d2==min(d2))
-            drug1_model = Hill.create_fit(d1[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.Emax_bounds, h_bounds=self.h_bounds, C_bounds=self.C_bounds, use_jacobian=use_jacobian)
-            
-        if drug2_model is None:
-            mask = np.where(d1==min(d1))
-            drug2_model = Hill.create_fit(d2[mask], E[mask], E0_bounds=self.E0_bounds, Emax_bounds=self.Emax_bounds,h_bounds=self.h_bounds, C_bounds=self.C_bounds, use_jacobian=use_jacobian)
+        super().fit(d1,d2,E, drug1_model=drug1_model, drug2_model=drug2_model, ues_jacobian=use_jacobian, **kwargs)
 
-        self.drug1_model = drug1_model
-        self.drug2_model = drug2_model
-            
+        drug1_model = self.drug1_model
+        drug2_model = self.drug2_model
+ 
         E0_1, Emax_1, h1, C1 = drug1_model.get_parameters()
         E0_2, Emax_2, h2, C2 = drug2_model.get_parameters()
         E0 = (E0_1+E0_2)/2.
@@ -108,9 +99,8 @@ class ZIP(DoseDependentModel):
         if self.synergyfinder:
             zip_model = _Hill_3P(Emax_bounds=(-1e-6,1e-6))
         else:
-            zip_model = _Hill_3P(Emax_bounds=self.Emax_bounds)
-        #zip_model = Hill_2P(Emax=Emax)
-        #zip_model = Hill_2P(Emax=0, h_bounds=self.h_bounds, C_bounds=self.C_bounds)
+            zip_model = _Hill_3P(Emax_bounds=(0,1.5))
+        
 
         for D1, D2 in zip(d1, d2):
             # Fix d2==D2, and fit hill for D1

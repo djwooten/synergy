@@ -13,12 +13,16 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from abc import ABC, abstractmethod
 
 import numpy as np
+
+from .. import utils
 from ..utils import plots
+from ..single import Hill
 
 
-class DoseDependentModel:
+class DoseDependentModel(ABC):
     """These are models for which synergy is defined independently at each individual dose.
     """
     def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
@@ -88,7 +92,37 @@ class DoseDependentModel:
         self.d2 = d2
         self.synergy = 0*d1
         self.synergy[:] = np.nan
+
+        default_class, expected_superclass = self._get_single_drug_classes()
+
+        # Sanitize single-drug models
+        self.drug1_model = utils.sanitize_single_drug_model(drug1_model, default_class, expected_superclass=expected_superclass, E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+
+        self.drug2_model = utils.sanitize_single_drug_model(drug2_model, default_class, expected_superclass=expected_superclass, E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+
+        # Fit the single drug models if they were not pre-fit by the user
+        if not self.drug1_model.is_fit():
+            mask = np.where(d2==min(d2))
+            self.drug1_model.fit(d1[mask], E[mask], **kwargs)
+        if not self.drug2_model.is_fit():
+            mask = np.where(d1==min(d1))
+            self.drug2_model.fit(d2[mask], E[mask], **kwargs)
+
+
         return self.synergy
+
+    @abstractmethod
+    def _get_single_drug_classes(self):
+        """
+        Returns
+        -------
+        default_single_class : class
+            The default class type to use for single-drug models
+
+        expected_single_superclass : class
+            The required type for single-drug models. If a single-drug model is passed that is not an instance of this superclass, it will be re-instantiated using default_model
+        """
+        pass
 
     def plot_heatmap(self, cmap="PRGn", neglog=False, center_on_zero=True, **kwargs):
         """Plots the synergy as a heatmap

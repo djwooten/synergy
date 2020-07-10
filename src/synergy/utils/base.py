@@ -14,6 +14,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+import inspect
+import warnings
 
 
 def sham(d, drug):
@@ -131,4 +133,61 @@ def sanitize_initial_guess(p0, bounds):
         elif x > upper: p0[index]=upper
         index += 1
 
-   
+def sanitize_single_drug_model(model, default_class, expected_superclass=None, **kwargs):
+    """
+    Makes sure the given single drug model is a class or object of a class that is permissible for the given synergy model.
+
+    Parameters
+    ----------
+    model : object or class
+        A single drug model
+
+    default_class : class
+        The type of model to return if the given model is of the wrong type
+
+    expected_superclass : class , default=None
+        The class the model is expected to be an instance of
+
+    Returns
+    -------
+    model : object
+        An object that is an instance of expected_superclass
+    """
+    # The model is a class
+    if inspect.isclass(model):
+
+        # If there is no expected_superclass, assume the given class is fine
+        if expected_superclass is None:
+            return model(**kwargs)
+
+        else:
+            # The model is a subclass of the expected subclass
+            if issubclass(model, expected_superclass):
+                # We are good!
+                return model(**kwargs)
+
+            # The given class violates the expected class: return the default
+            else:
+                if model is not None: warnings.warn("Expected single drug model to be subclass of %s, instead got %s"%(expected_superclass, model))
+                return default_class(**kwargs)
+        
+        return model(**kwargs)
+
+    # The model is an object
+    else:
+        # There is no expected_superclass, so assume the object is fine
+        if expected_superclass is None:
+            if model is None:
+                return default_class(**kwargs)
+            return model
+        
+        # The model is an instance of the expected_superclass, so good!
+        elif isinstance(model,expected_superclass):
+            return model
+
+        # The model is an instance of the wrong type of class, so return the default
+        else:
+            if model is not None: warnings.warn("Expected single drug model to be subclass of %s, instead got %s"%(expected_superclass, type(model)))
+
+            return default_class(**kwargs)
+    return default_class(**kwargs)

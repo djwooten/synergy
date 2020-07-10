@@ -12,8 +12,15 @@ Using PIP
 Using conda
 `not yet`
 
-Using git
-`git clone ...`
+From source
+
+```bash
+git clone git@github.com:djwooten/synergy.git
+cd synergy
+pip install -e .
+```
+
+
 
 ## Example Usage
 
@@ -130,7 +137,7 @@ Unlike the two drug case, doses are passed to the three+ drug case in a single m
 
 #### Visualization
 
-For three drugs, E is a 3D scalar field. One option for visualization is to use `synergy.utils.plots.plot_heatmap(d1, d2, E)` where E is calculated across `d1` and `d2`, but on fixed slices of `d3`. An additional option is to use plotly isosurfaces, which render curved 2D surfaces of constant E in a 3D space. These isosurfaces are similar to stacks of colormaps. This is implemented for `synergy.higher` models as
+For three drugs, E is a 3D scalar field. One option for visualization is to use `synergy.utils.plots.plot_heatmap(d1, d2, E)` where E is calculated across `d1` and `d2`, but on fixed slices of `d3`. An additional option is to use plotly isosurfaces, which render curved 2D surfaces of constant E in a 3D space. These isosurfaces are similar to stacks of heatmaps. This is implemented for `synergy.higher` models as
 
 ```
 model.plotly_isosurfaces(d, drug_axes=[0,1,2])
