@@ -1,0 +1,4 @@
+*.py linguist-detectable=true
+*.html linguist-detectable=false
+*.html linguist-detectable=false
+docs/* linguist-documentation
