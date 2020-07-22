@@ -149,6 +149,8 @@ class ZIP(DoseDependentModel):
         zip_fit = (zip_fit_1+zip_fit_2)/2.
         zip_ind = single_drug_1*single_drug_2
 
+        self.reference = zip_ind
+
         return zip_ind-zip_fit
 
 

@@ -2,6 +2,9 @@ import numpy as np
 from synergy.single import Hill
 from synergy.combination import MuSyC
 from synergy.combination import Bliss
+from synergy.utils import plots
+
+from synergy.utils.dose_tools import grid
 
 from matplotlib import pyplot as plt
 
@@ -21,11 +24,8 @@ drug2 = Hill(E0=E0, Emax=E2, h=h2, C=C2)
 npoints = 12
 npoints2 = 16
 
-d1 = np.logspace(-3,0,num=npoints)
-d2 = np.logspace(-2,1,num=npoints2)
-D1, D2 = np.meshgrid(d1,d2)
-D1 = D1.flatten()
-D2 = D2.flatten()
+
+D1, D2 = grid(1e-3, 1, 1e-2, 10, npoints, npoints2, include_zero=True)
 
 E = model.E(D1, D2)
 E_2 = model2.E(D1, D2)
@@ -51,5 +51,24 @@ ax = fig.add_subplot(2,2,4)
 bliss2.plot_heatmap(ax=ax, title="Bliss", center_on_zero=True)
 ax.set_yticks([])
 
+plt.tight_layout()
+
+
+
+fig = plt.figure(figsize=(10,4))
+
+vmin = min(np.nanmin(E), np.nanmin(bliss2.reference))
+vmax = max(np.nanmax(E), np.nanmax(bliss2.reference))
+
+ax = fig.add_subplot(1,3,1)
+bliss2.plot_reference_heatmap(ax=ax, title="Bliss Reference", vmin=vmin, vmax=vmax)
+
+ax = fig.add_subplot(1,3,2)
+model2.plot_heatmap(D1, D2, ax=ax, title="Measured Response", vmin=vmin, vmax=vmax)
+ax.set_yticks([])
+
+ax = fig.add_subplot(1,3,3)
+bliss2.plot_heatmap(ax=ax, title="Bliss", center_on_zero=True)
+ax.set_yticks([])
 plt.tight_layout()
 plt.show()

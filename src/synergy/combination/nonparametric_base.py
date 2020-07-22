@@ -59,6 +59,7 @@ class DoseDependentModel(ABC):
 
         self.drug1_model = None
         self.drug2_model = None
+        self.reference = None
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
         """Calculates dose-dependent synergy at doses d1, d2.
@@ -143,11 +144,15 @@ class DoseDependentModel(ABC):
         """
         if neglog:
             with np.errstate(invalid="ignore"):
-                plots.plot_heatmap(self.d1, self.d2, -np.log(self.synergy), cmap=cmap, center_on_zero=True, **kwargs)
+                plots.plot_heatmap(self.d1, self.d2, -np.log(self.synergy), cmap=cmap, center_on_zero=center_on_zero, **kwargs)
         else:
-            plots.plot_heatmap(self.d1, self.d2, self.synergy, cmap=cmap, center_on_zero=True, **kwargs)
+            plots.plot_heatmap(self.d1, self.d2, self.synergy, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
 
-    def plot_surface_plotly(self, cmap="PRGn", neglog=False, center_on_zero=True, **kwargs):
+    def plot_reference_heatmap(self, cmap="YlGnBu", **kwargs):
+        if self.reference is not None:
+            plots.plot_heatmap(self.d1, self.d2, self.reference, cmap=cmap, **kwargs)
+
+    def plot_surface_plotly(self, cmap="PRGn", neglog=False, **kwargs):
         """Plots the synergy as a 3D surface using synergy.utils.plots.plot_surface_plotly()
 
         Parameters
@@ -157,9 +162,6 @@ class DoseDependentModel(ABC):
 
         neglog : bool, default=False
             If True, will transform the synergy values by -log(synergy). Loewe and CI are synergistic between [0,1) and antagonistic between (1,inf). Thus, -log(synergy) becomes synergistic for positive values, and antagonistic for negative values. This behavior matches other synergy frameworks, and helps better visualize results. But it is never set by default.
-
-        center_on_zero : bool, default=True
-            If True, will set vmin and vmax to be centered around 0.
 
         kwargs
             kwargs passed to synergy.utils.plots.plot_heatmap()

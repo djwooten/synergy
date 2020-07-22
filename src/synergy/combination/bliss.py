@@ -40,32 +40,11 @@ class Bliss(DoseDependentModel):
         E1_alone = drug1_model.E(d1)
         E2_alone = drug2_model.E(d2)
 
-        self.synergy = E1_alone*E2_alone - E
+        self.reference = E1_alone*E2_alone
+        self.synergy = self.reference - E
         self.synergy[(d1==0) | (d2==0)] = 0
 
         return self.synergy
-
-    def null_E(self, d1, d2, drug1_model=None, drug2_model=None):
-        """Returns E from the Bliss null model (E = E1*E2)
-        """
-        if self.drug1_model is None or drug1_model is not None: self.drug1_model = drug1_model
-
-        if self.drug2_model is None or drug2_model is not None: self.drug2_model = drug2_model
-
-        if None in [self.drug1_model, self.drug2_model]:
-            # Raise model not set error
-            ret = 0*d1
-            ret[:] = np.nan
-            return ret
-
-        D1, D2 = np.meshgrid(d1, d2)
-        D1 = D1.flatten()
-        D2 = D2.flatten()
-
-        E1_alone = self.drug1_model.E(D1)
-        E2_alone = self.drug2_model.E(D2)
-
-        return D1, D2, E1_alone*E2_alone
 
     def _get_single_drug_classes(self):
         return MarginalLinear, None

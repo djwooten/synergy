@@ -50,7 +50,10 @@ class HSA(DoseDependentModel):
 
         E1_alone = drug1_model.E(d1)
         E2_alone = drug2_model.E(d2)
-        self.synergy = np.minimum(E1_alone-E, E2_alone-E)
+
+        self.reference = np.minimum(E1_alone, E2_alone)
+        #self.synergy = np.minimum(E1_alone-E, E2_alone-E)
+        self.synergy = self.reference - E
         
         self.synergy[(d1==0) | (d2==0)] = 0
         return self.synergy

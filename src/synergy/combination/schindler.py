@@ -54,6 +54,7 @@ class Schindler(DoseDependentModel):
         with np.errstate(divide='ignore', invalid='ignore'):
             uE_model = self._model(d1, d2, uE1, uE2, h1, h2, C1, C2)
 
+        self.reference = E0-uE_model
         self.synergy = uE-uE_model
 
         self.synergy[(d1==0) | (d2==0)] = 0.

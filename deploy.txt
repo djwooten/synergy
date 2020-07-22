@@ -1,8 +1,8 @@
 Commit new version to github:
 
 update version in src/synergy/__init__.py
-git add
-git commit
+git add -A
+git commit -m "blah blah"
 git tag vX.X.X
 git push origin vX.X.X
 git push (to put it on master)
