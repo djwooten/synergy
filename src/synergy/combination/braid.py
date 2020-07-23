@@ -214,6 +214,11 @@ class BRAID(ParametricModel):
         elif self.variant == "both":
             return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.kappa, self.delta)
         
+    def _reference_E(self, d1, d2):
+        if not self._is_parameterized():
+            return None
+        return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, 0, 1)
+    
     def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, kappa, delta):
         """
 From the braidrm R package (https://rdrr.io/cran/braidrm/man/evalBRAIDrsm.html)

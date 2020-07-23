@@ -226,6 +226,11 @@ class MuSyC(ParametricModel):
     def _r_to_C(self, h, r1r):
         return (r1r/r1)**(1./h)
 
+    def _reference_E(self, d1, d2):
+        if not self._is_parameterized():
+            return None
+        return self._model(d1, d2, self.E0, self.E1, self.E2, min(self.E1,self.E2), self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, 1, 1, 1, 1)
+
     def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, r1, r2, alpha12, alpha21, gamma12, gamma21):
 
         d1h1 = np.power(d1,h1)

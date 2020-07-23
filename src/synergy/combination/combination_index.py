@@ -46,7 +46,7 @@ class CombinationIndex(DoseDependentModel):
             self.synergy = d1/d1_alone + d2/d2_alone
 
         reference_model = Schindler()
-        self.reference = reference_model._model(d1, d2, 1, 1, drug1_model.h, drug2_model.h, drug1_model.C, drug2_model.C)
+        self.reference = 1-reference_model._model(d1, d2, 1, 1, drug1_model.h, drug2_model.h, drug1_model.C, drug2_model.C)
 
         self.synergy[(d1==0) | (d2==0)] = 1
         

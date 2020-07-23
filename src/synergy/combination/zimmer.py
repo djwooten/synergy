@@ -125,6 +125,11 @@ class Zimmer(ParametricModel):
             return 0
         return self._model(d1, d2, self.h1, self.h2, self.C1, self.C2, self.a12, self.a21)
 
+    def _reference_E(self, d1, d2):
+        if not self._is_parameterized():
+            return None
+        return self._model(d1, d2, self.h1, self.h2, self.C1, self.C2, 0, 0)
+
     def _model(self, d1, d2, h1, h2, C1, C2, a12, a21):
         A = d2 + C2*(a21+1) + d2*a12
         B = d2*C1 + C1*C2 + a12*d2*C1 - d1*(d2+C2*(a21+1))

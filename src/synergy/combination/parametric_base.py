@@ -337,8 +337,8 @@ class ParametricModel(ABC):
         E = self.E(d1, d2)
         plots.plot_heatmap(d1, d2, E, cmap=cmap, **kwargs)
 
-    def plot_residual_heatmap(self, d1, d2, E, cmap="RdBu", **kwargs):
-        """Plots the model's effect, E(d1, d2) as a heatmap
+    def plot_residual_heatmap(self, d1, d2, E, cmap="RdBu", center_on_zero=True, **kwargs):
+        """Plots the residuals of the fit model as a heatmap
 
         Parameters
         ----------
@@ -352,7 +352,7 @@ class ParametricModel(ABC):
             Observed drug effects
 
         cmap : string, default="RdBu"
-            Colorscale for the plot
+            Colormap for the plot
         
         kwargs
             kwargs passed to synergy.utils.plots.plot_heatmap()
@@ -362,7 +362,41 @@ class ParametricModel(ABC):
             return
         
         Emodel = self.E(d1, d2)
-        plots.plot_heatmap(d1, d2, E-Emodel, cmap=cmap, **kwargs)
+        plots.plot_heatmap(d1, d2, E-Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
+
+    @abstractmethod
+    def _reference_E(self, d1, d2):
+        pass
+
+    def plot_reference_heatmap(self, d1, d2, cmap="YlGnBu", **kwargs):
+        if not self._is_parameterized():
+            #raise ModelNotParameterizedError()
+            return
+
+        Ereference = self._reference_E(d1, d2)
+        plots.plot_heatmap(d1, d2, Ereference, cmap=cmap, **kwargs)
+
+    def plot_reference_surface(self, d1, d2, cmap="YlGnBu", **kwargs):
+        if not self._is_parameterized():
+            return
+        Ereference = self._reference_E(d1, d2)
+        plots.plot_surface_plotly(d1, d2, Ereference, cmap=cmap, **kwargs)
+
+    def plot_delta_heatmap(self, d1, d2, cmap="PRGn", center_on_zero=True, **kwargs):
+        if not self._is_parameterized():
+            #raise ModelNotParameterizedError()
+            return
+        Ereference = self._reference_E(d1, d2)
+        Emodel = self.E(d1, d2)
+        plots.plot_heatmap(d1, d2, Ereference-Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
+
+    def plot_delta_surface(self, d1, d2, cmap="PRGn", center_on_zero=True, **kwargs):
+        if not self._is_parameterized():
+            return
+        Ereference = self._reference_E(d1, d2)
+        Emodel = self.E(d1, d2)
+        plots.plot_surface_plotly(d1, d2, Ereference-Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
+    
 
     def plot_surface_plotly(self, d1, d2, cmap="YlGnBu", **kwargs):
         """Plots the model's effect, E(d1, d2) as a surface using synergy.utils.plots.plot_surface_plotly()
