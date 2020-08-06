@@ -203,12 +203,13 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
                  elev=20, azim=19, fname="plot.html", zlim=None, cmap='viridis', logscale=True,         \
                  xlabel="Drug 1", ylabel="Drug 2", zlabel="z", \
                  vmin=None, vmax=None, auto_open=True, opacity=0.8, \
-                 center_on_zero=False):
+                 center_on_zero=False, figsize=(1000,800), \
+                 fontsize=18):
     if (not plotly_import):
         raise ImportError("plot_surface_plotly() requires plotly to be installed.")
     
-    d1 = np.array(d1, copy=True)
-    d2 = np.array(d2, copy=True)
+    d1 = np.array(d1, copy=True, dtype=np.float64)
+    d2 = np.array(d2, copy=True, dtype=np.float64)
     E = np.asarray(E)
 
 
@@ -265,8 +266,8 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
     if scatter_points is not None:
         #d1scatter = utils.remove_zeros(np.asarray(scatter_points['drug1.conc']))
         #d2scatter = utils.remove_zeros(np.asarray(scatter_points['drug2.conc']))
-        d1scatter = np.array(scatter_points['drug1.conc'], copy=True)
-        d2scatter = np.array(scatter_points['drug2.conc'], copy=True)
+        d1scatter = np.array(scatter_points['drug1.conc'], copy=True, dtype=np.float64)
+        d2scatter = np.array(scatter_points['drug2.conc'], copy=True, dtype=np.float64)
         if logscale:
             zero_mask_1 = np.where(d1scatter <= 0)
             pos_mask_1 = np.where(d1scatter > 0)
@@ -314,8 +315,8 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
             y=0.88, 
             z=0.64
         ), 
-        width=1000, 
-        height=800, 
+        width=figsize[0], 
+        height=figsize[1], 
         margin=dict(
             l=100, 
             r=100, 
@@ -329,7 +330,7 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
             aspectmode="cube"
         ),
         font=dict(
-            size=18
+            size=fontsize
         )
     )
 
@@ -344,10 +345,12 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
 
 
 def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
-            cmap='viridis', xlabel="Drug 1", ylabel="Drug 2", zlabel="Drug 3",     \
+            cmap='viridis', xlabel="Drug 1", ylabel="Drug 2", \
+            zlabel="Drug 3",     \
             vmin=None, vmax=None, auto_open=True, opacity=0.6,      \
             logscale=True, isomin=None, isomax=None,                \
-            center_on_zero=False, surface_count=10):
+            center_on_zero=False, surface_count=10, \
+            figsize=(1000,800), fontsize=18):
     
     d1 = np.asarray(d1)
     d2 = np.asarray(d2)
@@ -419,8 +422,8 @@ def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
             y=0.88, 
             z=0.64
         ), 
-        width=1000, 
-        height=800, 
+        width=figsize[0],
+        height=figsize[1],
         margin=dict(
             l=100, 
             r=100, 
@@ -434,7 +437,7 @@ def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
             aspectmode="cube"
         ),
         font=dict(
-            size=18
+            size=fontsize
         )
     )
 

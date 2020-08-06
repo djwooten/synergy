@@ -175,8 +175,8 @@ class ParametricModel(ABC):
         """
 
         if seed is not None: np.random.seed(seed)
-        d1 = np.asarray(d1)
-        d2 = np.asarray(d2)
+        d1 = np.asarray(d1, dtype=np.float64)
+        d2 = np.asarray(d2, dtype=np.float64)
 
         E = np.asarray(E)
 
