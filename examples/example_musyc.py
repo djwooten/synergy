@@ -55,7 +55,7 @@ ax=fig.add_subplot(223)
 model.plot_heatmap(D1, D2, ax=ax, title="Fit")
 
 ax=fig.add_subplot(224)
-model.plot_residual_colormap(D1, D2, Efit, ax=ax, title="Residuals", center_on_zero=True)
+model.plot_residual_heatmap(D1, D2, Efit, ax=ax, title="Residuals", center_on_zero=True)
 
 plt.tight_layout()
 plt.show()

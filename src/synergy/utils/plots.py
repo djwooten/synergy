@@ -35,6 +35,10 @@ try:
 except ImportError as e:
     pass
 
+def get_extension(fname):
+    if not "." in fname: return ""
+    return fname.split(".")[-1]
+
 def plot_heatmap(d1, d2, E, ax=None, fname=None, title="", xlabel="Drug 1", ylabel="Drug 2", figsize=None, cmap="PRGn", aspect='equal', vmin=None, vmax=None, center_on_zero=False, logscale=True, nancolor="#BBBBBB", **kwargs):
         if (not matplotlib_import):
             raise ImportError("matplotlib must be installed to plot")
@@ -202,7 +206,7 @@ def interp(x, x0, x1, y0, y1):
 def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
                  elev=20, azim=19, fname="plot.html", zlim=None, cmap='viridis', logscale=True,         \
                  xlabel="Drug 1", ylabel="Drug 2", zlabel="z", \
-                 vmin=None, vmax=None, auto_open=True, opacity=0.8, \
+                 vmin=None, vmax=None, auto_open=False, opacity=0.8, \
                  center_on_zero=False, figsize=(1000,800), \
                  fontsize=18):
     if (not plotly_import):
@@ -212,6 +216,7 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
     d2 = np.array(d2, copy=True, dtype=np.float64)
     E = np.asarray(E)
 
+    extension = get_extension(fname)
 
     if logscale:
         d1 = utils.remove_zeros(d1)
@@ -339,7 +344,13 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
 
 
     if fname is not None:
-        offline.plot(fig, filename=fname, auto_open=auto_open)
+        if extension=="html":
+            offline.plot(fig, filename=fname, auto_open=auto_open)
+        else:
+            if not extension.lower() in ['png','jpeg','jpg','webp','svg','pdf','eps']:
+                extension='png'
+            from plotly.io import write_image
+            write_image(fig, fname, format=extension)
     else:
         fig.show()
 
@@ -347,7 +358,7 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
 def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
             cmap='viridis', xlabel="Drug 1", ylabel="Drug 2", \
             zlabel="Drug 3",     \
-            vmin=None, vmax=None, auto_open=True, opacity=0.6,      \
+            vmin=None, vmax=None, auto_open=False, opacity=0.6,      \
             logscale=True, isomin=None, isomax=None,                \
             center_on_zero=False, surface_count=10, \
             figsize=(1000,800), fontsize=18):
