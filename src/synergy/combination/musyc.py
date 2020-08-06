@@ -46,7 +46,7 @@ class MuSyC(ParametricModel):
             E2_bounds=(-np.inf,np.inf), E3_bounds=(-np.inf,np.inf), \
             alpha12_bounds=(0,np.inf), alpha21_bounds=(0,np.inf),   \
             gamma12_bounds=(0,np.inf), gamma21_bounds=(0,np.inf),   \
-            r1=1., r2=1., E0=None, E1=None, E2=None, E3=None,   \
+            r1r=1., r2r=1., E0=None, E1=None, E2=None, E3=None,     \
             h1=None, h2=None, C1=None, C2=None, alpha12=None,       \
             alpha21=None, gamma12=None, gamma21=None, variant="full"):
         super().__init__()
@@ -65,8 +65,8 @@ class MuSyC(ParametricModel):
 
         self.variant = variant
 
-        self.r1 = r1
-        self.r2 = r2
+        self.r1r = r1r
+        self.r2r = r2r
         self.E0 = E0
         self.E1 = E1
         self.E2 = E2
@@ -98,16 +98,16 @@ class MuSyC(ParametricModel):
 
 
         if variant == "full":
-            self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1, self.r2, np.exp(logalpha12), np.exp(logalpha21), np.exp(loggamma12), np.exp(loggamma21))
+            self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1r, self.r2r, np.exp(logalpha12), np.exp(logalpha21), np.exp(loggamma12), np.exp(loggamma21))
 
-            self.jacobian_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: jacobian(d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1, self.r2, logalpha12, logalpha21, loggamma12, loggamma21)
+            self.jacobian_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: jacobian(d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1r, self.r2r, logalpha12, logalpha21, loggamma12, loggamma21)
 
             self.bounds = tuple(zip(self.E0_bounds, self.E1_bounds, self.E2_bounds, self.E3_bounds, self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.logalpha12_bounds, self.logalpha21_bounds, self.loggamma12_bounds, self.loggamma21_bounds))
         
         elif variant == "no_gamma":
-            self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1, self.r2, np.exp(logalpha12), np.exp(logalpha21), 1, 1)
+            self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), self.r1r, self.r2r, np.exp(logalpha12), np.exp(logalpha21), 1, 1)
 
-            self.jacobian_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: jacobian(d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1, self.r2, logalpha12, logalpha21, 0, 0)[:,:-2]
+            self.jacobian_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: jacobian(d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1r, self.r2r, logalpha12, logalpha21, 0, 0)[:,:-2]
 
             self.bounds = tuple(zip(self.E0_bounds, self.E1_bounds, self.E2_bounds, self.E3_bounds, self.logh1_bounds, self.logh2_bounds, self.logC1_bounds, self.logC2_bounds, self.logalpha12_bounds, self.logalpha21_bounds))
 
@@ -200,10 +200,10 @@ class MuSyC(ParametricModel):
             return None
 
         if self.variant == "no_gamma":
-            return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21, 1, 1)
+            return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1r, self.r2r, self.alpha12, self.alpha21, 1, 1)
         
         else:
-            return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, self.alpha12, self.alpha21, self.gamma12, self.gamma21)
+            return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.r1r, self.r2r, self.alpha12, self.alpha21, self.gamma12, self.gamma21)
 
     def _get_parameters(self):
         if self.variant == "no_gamma":
@@ -220,24 +220,32 @@ class MuSyC(ParametricModel):
     def _get_single_drug_classes(self):
         return Hill, Hill
 
+    def _C_to_r1(self, C, h, r1r):
+        return r1r/np.power(C,h)
+
+    @DeprecationWarning
     def _C_to_r1r(self, C, h, r1):
         return r1*C**h
 
+    @DeprecationWarning
     def _r_to_C(self, h, r1r):
         return (r1r/r1)**(1./h)
 
     def _reference_E(self, d1, d2):
         if not self._is_parameterized():
             return None
-        return self._model(d1, d2, self.E0, self.E1, self.E2, min(self.E1,self.E2), self.h1, self.h2, self.C1, self.C2, self.r1, self.r2, 1, 1, 1, 1)
+        return self._model(d1, d2, self.E0, self.E1, self.E2, min(self.E1,self.E2), self.h1, self.h2, self.C1, self.C2, self.r1r, self.r2r, 1, 1, 1, 1)
 
-    def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, r1, r2, alpha12, alpha21, gamma12, gamma21):
+    def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, r1r, r2r, alpha12, alpha21, gamma12, gamma21):
 
         d1h1 = np.power(d1,h1)
         d2h2 = np.power(d2,h2)
 
         C1h1 = np.power(C1,h1)
         C2h2 = np.power(C2,h2)
+
+        r1 = r1r/C1h1
+        r2 = r2r/C2h2
 
         alpha21d1gamma21h1 = np.power(alpha21*d1, gamma21*h1)
         alpha12d2gamma12h2 = np.power(alpha12*d2, gamma12*h2)
@@ -247,15 +255,15 @@ class MuSyC(ParametricModel):
 
         # ********** U ********
 
-        U = (r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)
+        U=(r1*r2*np.power((r1*C1h1),gamma21)*C1h1*C2h2+r1*r2*np.power((r2*C2h2),gamma12)*C1h1*C2h2+np.power(r1,(gamma21+1))*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)*C1h1+np.power(r2,(gamma12+1))*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)*C2h2)/(d1h1*r1*r2*np.power((r1*C1h1),gamma21)*C2h2+d1h1*r1*r2*np.power((r2*C2h2),gamma12)*C2h2+d1h1*r1*np.power(r2,(gamma12+1))*alpha12d2gamma12h2*C2h2+d1h1*r1*np.power(r2,gamma12)*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)+d1h1*np.power(r1,(gamma21+1))*np.power(r2,gamma12)*alpha21d1gamma21h1*alpha12d2gamma12h2+d1h1*np.power(r1,(gamma21+1))*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)+d2h2*r1*r2*np.power((r1*C1h1),gamma21)*C1h1+d2h2*r1*r2*np.power((r2*C2h2),gamma12)*C1h1+d2h2*np.power(r1,(gamma21+1))*r2*alpha21d1gamma21h1*C1h1+d2h2*np.power(r1,gamma21)*r2*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)+d2h2*np.power(r1,gamma21)*np.power(r2,(gamma12+1))*alpha21d1gamma21h1*alpha12d2gamma12h2+d2h2*np.power(r2,(gamma12+1))*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)+r1*r2*np.power((r1*C1h1),gamma21)*C1h1*C2h2+r1*r2*np.power((r2*C2h2),gamma12)*C1h1*C2h2+np.power(r1,(gamma21+1))*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)*C1h1+np.power(r2,(gamma12+1))*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)*C2h2)
 
-        # ********** E1 ********
+        #**********E1********
 
-        A1 = (d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)
+        A1=(d1h1*r1*r2*np.power((r1*C1h1),gamma21)*C2h2+d1h1*r1*r2*np.power((r2*C2h2),gamma12)*C2h2+d1h1*np.power(r1,(gamma21+1))*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)+d2h2*np.power(r1,gamma21)*r2*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12))/(d1h1*r1*r2*np.power((r1*C1h1),gamma21)*C2h2+d1h1*r1*r2*np.power((r2*C2h2),gamma12)*C2h2+d1h1*r1*np.power(r2,(gamma12+1))*alpha12d2gamma12h2*C2h2+d1h1*r1*np.power(r2,gamma12)*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)+d1h1*np.power(r1,(gamma21+1))*np.power(r2,gamma12)*alpha21d1gamma21h1*alpha12d2gamma12h2+d1h1*np.power(r1,(gamma21+1))*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)+d2h2*r1*r2*np.power((r1*C1h1),gamma21)*C1h1+d2h2*r1*r2*np.power((r2*C2h2),gamma12)*C1h1+d2h2*np.power(r1,(gamma21+1))*r2*alpha21d1gamma21h1*C1h1+d2h2*np.power(r1,gamma21)*r2*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)+d2h2*np.power(r1,gamma21)*np.power(r2,(gamma12+1))*alpha21d1gamma21h1*alpha12d2gamma12h2+d2h2*np.power(r2,(gamma12+1))*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)+r1*r2*np.power((r1*C1h1),gamma21)*C1h1*C2h2+r1*r2*np.power((r2*C2h2),gamma12)*C1h1*C2h2+np.power(r1,(gamma21+1))*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)*C1h1+np.power(r2,(gamma12+1))*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)*C2h2)
 
-        # ********** E2 ********
+        #**********E2********
 
-        A2 = (d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)
+        A2=(d1h1*r1*np.power(r2,gamma12)*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)+d2h2*r1*r2*np.power((r1*C1h1),gamma21)*C1h1+d2h2*r1*r2*np.power((r2*C2h2),gamma12)*C1h1+d2h2*np.power(r2,(gamma12+1))*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21))/(d1h1*r1*r2*np.power((r1*C1h1),gamma21)*C2h2+d1h1*r1*r2*np.power((r2*C2h2),gamma12)*C2h2+d1h1*r1*np.power(r2,(gamma12+1))*alpha12d2gamma12h2*C2h2+d1h1*r1*np.power(r2,gamma12)*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)+d1h1*np.power(r1,(gamma21+1))*np.power(r2,gamma12)*alpha21d1gamma21h1*alpha12d2gamma12h2+d1h1*np.power(r1,(gamma21+1))*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)+d2h2*r1*r2*np.power((r1*C1h1),gamma21)*C1h1+d2h2*r1*r2*np.power((r2*C2h2),gamma12)*C1h1+d2h2*np.power(r1,(gamma21+1))*r2*alpha21d1gamma21h1*C1h1+d2h2*np.power(r1,gamma21)*r2*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)+d2h2*np.power(r1,gamma21)*np.power(r2,(gamma12+1))*alpha21d1gamma21h1*alpha12d2gamma12h2+d2h2*np.power(r2,(gamma12+1))*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)+r1*r2*np.power((r1*C1h1),gamma21)*C1h1*C2h2+r1*r2*np.power((r2*C2h2),gamma12)*C1h1*C2h2+np.power(r1,(gamma21+1))*alpha21d1gamma21h1*np.power((r2*C2h2),gamma12)*C1h1+np.power(r2,(gamma12+1))*alpha12d2gamma12h2*np.power((r1*C1h1),gamma21)*C2h2)
 
         
         return U*E0 + A1*E1 + A2*E2 + (1-(U+A1+A2))*E3

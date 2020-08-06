@@ -138,7 +138,7 @@ class ParametricModel(ABC):
         except:
             return None
 
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, bootstrap_iterations=0, **kwargs):
+    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, bootstrap_iterations=0, seed=None, **kwargs):
         """Fit the model to data.
 
         Parameters
@@ -166,11 +166,15 @@ class ParametricModel(ABC):
 
         p0 : tuple, default=None
             Initial guess for the parameters. If p0 is None (default), drug1_model and drug2_model will be used to obtain an initial guess. If they are also None, they will be fit to the data. If they fail to fit, the initial guess will be E0=max(E), Emax=min(E), h=1, C=median(d), and all synergy parameters are additive (i.e., at the boundary between antagonistic and synergistic)
+
+        seed : int, default=None
+            If not None, used as numpy.random.seed(start_seed) at the beginning of bootstrap resampling
         
         kwargs
             kwargs to pass to scipy.optimize.curve_fit()
         """
 
+        if seed is not None: np.random.seed(seed)
         d1 = np.asarray(d1)
         d2 = np.asarray(d2)
 
@@ -261,7 +265,7 @@ class ParametricModel(ABC):
         pass
 
     
-    def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs):
+    def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, seed=None, **kwargs):
         """Internal function to identify confidence intervals for parameters
         """
 
@@ -278,7 +282,9 @@ class ParametricModel(ABC):
 
         xdata = np.vstack((d1,d2))
 
+        #if start_seed is not None: np.random.seed(start_seed)
         for iteration in range(bootstrap_iterations):
+            #if start_seed is not None: np.random.seed(start_seed + iteration)
             residuals_step = norm.rvs(loc=0, scale=sigma_residuals, size=n_data_points)
 
             # Add random noise to model prediction

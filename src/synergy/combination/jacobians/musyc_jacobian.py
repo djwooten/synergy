@@ -15,7 +15,7 @@
 
 import numpy as np
 
-def jacobian(d1, d2, E0, E1, E2, E3, logh1, logh2, logC1, logC2, r1, r2, logalpha12, logalpha21, loggamma12, loggamma21):
+def jacobian(d1, d2, E0, E1, E2, E3, logh1, logh2, logC1, logC2, r1r, r2r, logalpha12, logalpha21, loggamma12, loggamma21):
     """Evaluates Jacobian of MuSyC (gamma)
     
     Returns:
@@ -47,6 +47,9 @@ def jacobian(d1, d2, E0, E1, E2, E3, logh1, logh2, logC1, logC2, r1, r2, logalph
     #C2h2 = C2**h2
     C1h1 = np.power(C1,h1)
     C2h2 = np.power(C2,h2)
+
+    r1 = r1r/C1h1
+    r2 = r2r/C2h2
 
     #alpha21d1gamma21h1 = (alpha21*d1)**(gamma21*h1)
     #alpha12d2gamma12h2 = (alpha12*d2)**(gamma12*h2)
