@@ -1,4 +1,5 @@
 *.html
+development/contributed_models/
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
