@@ -77,7 +77,7 @@ from synergy.utils.dose_tools import grid
 import numpy as np
 
 model = MuSyC(E0=1, E1=0.6, E2=0.4, E3=0, h1=2, h2=0.8, C1=1e-2, C2=1e-1, \
-              oalpha12=2, oalpha21=1, gamma12=2.5, gamma21=0.7)
+              alpha12=2, alpha21=1, gamma12=2.5, gamma21=0.7)
 
 # d1min, d1max, d2min, d2max, npoints1, npoints2
 d1, d2 = grid(1e-3, 1e0, 1e-3, 1e0, 8, 8)
