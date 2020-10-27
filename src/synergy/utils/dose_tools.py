@@ -84,6 +84,27 @@ def get_num_replicates(d1, d2):
     -----------
     replicates : numpy.array
         Counts of each unique dose combination
-
     """
     return np.unique(np.asarray([d1,d2]), axis=1, return_counts=True)[1]
+
+def remove_replicates(d1, d2):
+    """Given 1d dose arrays d1 and d2, remove replicates. This is needed sometimes for plotting, since some plot functions expect a single d1, d2 -> E for each dose.
+
+    Parameters:
+    -----------
+    d1 : array_like, float
+        Doses of drug 1
+
+    d2 : array_like, float
+        Doses of drug 2
+
+    Returns:
+    -----------
+    d1 : array_like, float
+        Doses of drug 1 without replicates
+
+    d2 : array_like, float
+        Doses of drug 2 without replicates
+    """
+    d = np.asarray(list(set(zip(d1, d2))))
+    return d[:,0], d[:,1]
