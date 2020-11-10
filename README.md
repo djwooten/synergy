@@ -4,6 +4,12 @@
 
 A python package to calculate, analyze, and visualize drug combination synergy and antagonism. Currently supports multiple models of synergy, including MuSyC, Bliss, Loewe, Combination Index, ZIP, Zimmer, BRAID, Schindler, and HSA.
 
+#### Citation
+
+If you use, please cite:
+
+Wooten, David J, and Albert, Réka. synergy - A Python library for calculating, analyzing, and visualizing drug combination synergy. (2020) Bioinformatics. https://doi.org/10.1093/bioinformatics/btaa826
+
 ## Installation
 
 Using PIP
@@ -27,6 +33,18 @@ pip install -e .
 ### Parametric Models
 
 #### Fit to data
+
+For this, I assume you have access to a drug response data set that has (at least) the following columns.
+
+| drug1.conc | drug2.conc | effect |
+| ---------- | ---------- | ------ |
+| 0          | 0          | 1      |
+| 0          | 0.01       | 0.97   |
+| 0          | 0.1        | 0.9    |
+| 0          | 1          | 0.7    |
+| ...        | ...        | ...    |
+
+An example dataset can be found at https://raw.githubusercontent.com/djwooten/synergy/master/datasets/sample_data_1.csv
 
 ```python
 from synergy.combination import MuSyC # or BRAID, Zimmer
@@ -88,6 +106,8 @@ E = model.E(d1, d2)
 ### Nonparametric (dose dependent) synergy models
 
 #### Fit to data
+
+See above for an example dataset.
 
 ```python
 from synergy.combination import Loewe # or Bliss, ZIP, HSA, Schindler, CombinationIndex

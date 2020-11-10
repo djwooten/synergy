@@ -1,6 +1,6 @@
-__version__="0.3.6"
+__version__="0.4.0"
 __author__="David J. Wooten"
-__citation__="Wooten, DJ and Albert, RA. synergy: A Python library for calculating drug combination synergy. In preparation."
+__citation__="Wooten, DJ and Albert, RA. synergy - A Python library for calculating drug combination synergy. (2020) Bioinformatics. https://doi.org/10.1093/bioinformatics/btaa826"
 
 from . import combination
 from . import single

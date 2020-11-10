@@ -49,3 +49,17 @@ def test_loewe_msp_3():
 
     synergy = model.fit(d, E)
     assert np.nanmax(np.abs(np.log(synergy)))>1
+
+
+
+def test_loewe_delta_variant():
+    import numpy as np
+    from synergy.combination import Loewe
+    from synergy.datasets import sham
+
+    d1, d2, E = sham()
+
+    model = Loewe(variant="delta")
+
+    synergy = model.fit(d1, d2, E)
+    assert np.nanmax(np.abs(synergy))<0.1
