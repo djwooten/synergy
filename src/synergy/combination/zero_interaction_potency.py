@@ -64,7 +64,7 @@ class ZIP(DoseDependentModel):
         d1 = np.asarray(d1)
         d2 = np.asarray(d2)
         E = np.asarray(E)
-        super().fit(d1,d2,E, drug1_model=drug1_model, drug2_model=drug2_model, ues_jacobian=use_jacobian, **kwargs)
+        super().fit(d1,d2,E, drug1_model=drug1_model, drug2_model=drug2_model, use_jacobian=use_jacobian, **kwargs)
 
         drug1_model = self.drug1_model
         drug2_model = self.drug2_model

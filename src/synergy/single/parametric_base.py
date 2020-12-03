@@ -45,7 +45,8 @@ class ParameterizedModel1D:
             if True in np.isnan(popt):
                 return None
             return self._transform_params_from_fit(popt)
-        except:
+        except Exception as err:
+            print("Exception during single drug response fit: %s"%err)
         #else:
             return None
 
