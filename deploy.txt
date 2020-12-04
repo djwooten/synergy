@@ -14,7 +14,7 @@ Deploy to pypi:
 
 python3 setup.py sdist bdist_wheel
 pip install --upgrade twine
-twine upload dist/*
+twine upload dist/*X.X.X*
 
 
 Note, I don't need to manually enter password information if I create $HOME/.pypirc with:

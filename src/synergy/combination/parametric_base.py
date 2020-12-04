@@ -136,6 +136,7 @@ class ParametricModel(ABC):
                 return None
             return self._transform_params_from_fit(popt)
         except:
+            print("Exception during combination drug response fit: %s"%err)
             return None
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, bootstrap_iterations=0, seed=None, **kwargs):

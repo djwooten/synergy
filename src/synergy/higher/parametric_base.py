@@ -43,8 +43,8 @@ class ParametricHigher(ABC):
         try:
             popt, pcov = curve_fit(self.fit_function, d, E, bounds=self.bounds, **kwargs)
             return self._transform_params_from_fit(popt)
-        except Exception as e:
-            print("Exception:", e)
+        except Exception as err:
+            print("Exception during single drug response fit: %s"%err)
             return None
 
     def fit(self, d, E, bootstrap_iterations=0, **kwargs):
