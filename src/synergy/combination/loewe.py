@@ -133,22 +133,60 @@ class Loewe(DoseDependentModel):
         """Calculates a reference (null) model for Loewe for drug1 and drug2.
         
         Contributed by Mark Russo at Bristol Myers Squibb
+        Modified by David Wooten
         """
 
         # Compute the reference model
         with np.errstate(divide='ignore', invalid='ignore'):
             ref  = 0*d1
 
+            pa1 = drug1_model.get_parameters()
+            pa2 = drug2_model.get_parameters()
+
+            weakest_E = max(pa1[1], pa2[1])
+
+            stronger_drug = drug1_model
+            if pa1[1] > pa2[1]: # pa[1] is Emax
+                stronger_drug = drug2_model
+
+            # Loewe becomes undefined for effects past the weaker drug's Emax
+            # We implement several variants to handle this case:
+            #  1) variant="delta" - this will set E_reference to weakest_E
+            #  2) variant="delta_HSA" - this will set E_r to min(E1, E2)
+            #  3) variant="delta_nan" - this will set E_r to nan
+            #  4) variant="synergyfinder" - sets E_r to stronger.E(d1+d2)
+            if self.variant=="delta": option=1
+            elif self.variant=="delta_hsa": option=2
+            elif self.variant=="delta_nan": option=3
+            elif self.variant=="delta_synergyfinder": option=4
+            else: option=1
+
             for i in range(len(ref)):
                 X1, X2 = d1[i], d2[i]
                 E1, E2 = drug1_model.E(X1), drug2_model.E(X2)
                 
+                # No drug
                 if X1 == 0.0 and X2 == 0.0:
                     ref[i] = 0.5 * (E2 + E1)
+
+                # Single drugs
                 elif X2 == 0:
                     ref[i] = E1
                 elif X1 == 0:
                     ref[i] = E2
+
+                # If the combo E is stronger than the weaker drug is capable of, don't bother trying to fit
+                elif E1 < weakest_E or E2 < weakest_E:
+                    if option==1:
+                        ref[i] = weakest_E
+                    elif option==2:
+                        ref[i] = min(E1,E2)
+                    elif option==3:
+                        ref[i] = np.nan
+                    elif option==4:
+                        ref[i] = stronger_drug.E(X1+X2)
+                    else:
+                        ref[i] = np.nan
                 else:
                     # Numerically solve the value for Loewe
                     res = self._fit_Loewe_reference(X1, X2, drug1_model, drug2_model)
