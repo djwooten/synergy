@@ -124,7 +124,7 @@ class ParametricModel(ABC):
         """
         pass
 
-    def _internal_fit(self, d, E, use_jacobian, **kwargs):
+    def _internal_fit(self, d, E, use_jacobian, verbose=True, **kwargs):
         """Internal method to fit the model to data (d,E)
         """
         try:
@@ -136,7 +136,8 @@ class ParametricModel(ABC):
                 return None
             return self._transform_params_from_fit(popt)
         except Exception as err:
-            print("Exception during combination drug response fit: %s"%err)
+            if verbose:
+                print("Exception during combination drug response fit: %s"%err)
             return None
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian = True, p0=None, bootstrap_iterations=0, seed=None, **kwargs):
@@ -293,7 +294,7 @@ class ParametricModel(ABC):
 
             # Fit noisy data
             with np.errstate(divide='ignore', invalid='ignore', over='ignore'):
-                popt1 = self._internal_fit(xdata, E_iteration, use_jacobian=use_jacobian, **kwargs)
+                popt1 = self._internal_fit(xdata, E_iteration, verbose=False, use_jacobian=use_jacobian, **kwargs)
             
             if popt1 is not None:
                 bootstrap_parameters.append(popt1)

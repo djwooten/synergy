@@ -33,7 +33,7 @@ class ParameterizedModel1D:
         self.bic = None
         self.bootstrap_parameters = None
     
-    def _internal_fit(self, d, E, use_jacobian, **kwargs):
+    def _internal_fit(self, d, E, use_jacobian, verbose=True, **kwargs):
         """Internal method to fit the model to data (d,E)
         """
         try:
@@ -46,8 +46,8 @@ class ParameterizedModel1D:
                 return None
             return self._transform_params_from_fit(popt)
         except Exception as err:
-            print("Exception during single drug response fit: %s"%err)
-        #else:
+            if verbose:
+                print("Exception during single drug response fit: %s"%err)
             return None
 
     def _get_initial_guess(self, d, E, p0=None):
@@ -235,7 +235,7 @@ class ParameterizedModel1D:
 
             # Fit noisy data
             with np.errstate(divide='ignore', invalid='ignore'):
-                popt1 = self._internal_fit(d, E_iteration, use_jacobian=use_jacobian, **kwargs)
+                popt1 = self._internal_fit(d, E_iteration, verbose=False, use_jacobian=use_jacobian, **kwargs)
             
             if popt1 is not None:
                 bootstrap_parameters.append(popt1)
