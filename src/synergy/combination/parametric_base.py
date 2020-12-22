@@ -135,7 +135,7 @@ class ParametricModel(ABC):
             if True in np.isnan(popt):
                 return None
             return self._transform_params_from_fit(popt)
-        except:
+        except Exception as err:
             print("Exception during combination drug response fit: %s"%err)
             return None
 
