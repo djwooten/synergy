@@ -208,7 +208,7 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
                  xlabel="Drug 1", ylabel="Drug 2", zlabel="z", \
                  vmin=None, vmax=None, auto_open=False, opacity=0.8, \
                  center_on_zero=False, figsize=(1000,800), \
-                 fontsize=18):
+                 fontsize=18, title=None):
     if (not plotly_import):
         raise ImportError("plot_surface_plotly() requires plotly to be installed.")
     
@@ -308,9 +308,11 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
 
     #fig.update_traces(contours_z=dict(show=True, usecolormap=True, highlightcolor="limegreen", project_z=True))
 
-    title = ""
-    if fname is not None:
-        title = fname
+    if title is None:
+        if fname is not None:
+            title = fname
+        else:
+            title = ""
 
     fig.update_layout(
         title=title,
@@ -361,7 +363,7 @@ def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
             vmin=None, vmax=None, auto_open=False, opacity=0.6,      \
             logscale=True, isomin=None, isomax=None,                \
             center_on_zero=False, surface_count=10, \
-            figsize=(1000,800), fontsize=18):
+            figsize=(1000,800), fontsize=18, title=None):
     
     d1 = np.asarray(d1)
     d2 = np.asarray(d2)
@@ -421,9 +423,11 @@ def plotly_isosurfaces(d1, d2, d3, E, fname=None,     \
         caps=dict(x_show=False, y_show=False, z_show=True)
     ))
 
-    title = ""
-    if fname is not None:
-        title = fname
+    if title is None:
+        if fname is not None:
+            title = fname
+        else:
+            title = ""
 
     fig.update_layout(
         title=title,
