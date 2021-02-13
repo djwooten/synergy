@@ -68,7 +68,7 @@ class Loewe(DoseDependentModel):
         drug2_model = self.drug2_model
 
 
-        if self.variant == "delta":
+        if self.variant.startswith("delta"):
             self.reference = self._E_reference(d1, d2, drug1_model, drug2_model)
             self.synergy = self._get_synergy_delta(d1, d2, E, drug1_model, drug2_model)
         else:
