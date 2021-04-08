@@ -134,7 +134,12 @@ class Hill(ParameterizedModel1D):
         return E0 + (Emax-E0)*dh/(np.power(C,h)+dh)
 
     def _model_inv(self, E, E0, Emax, h, C):
-        d = np.float_power((E0-Emax)/(E-Emax)-1.,1./h)*C
+        E_ratio = (E-E0)/(Emax-E)
+        d = np.float_power(E_ratio, 1./h)*C
+        if hasattr(E,"__iter__"):
+            d[E_ratio<0] = np.nan
+            return d
+        elif d < 0: return np.nan
         return d
 
     def _model_jacobian(self, d, E0, Emax, logh, logC):
