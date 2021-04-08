@@ -246,4 +246,5 @@ class ParameterizedModel1D:
             self.bootstrap_parameters = None
 
     def is_fit(self):
-        return self._fit
+        return self._is_parameterized()
+        #return self._fit

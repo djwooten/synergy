@@ -83,7 +83,8 @@ class Loewe(DoseDependentModel):
             self.reference = self._E_reference(d1, d2, drug1_model, drug2_model)
         synergy = self.reference - E
 
-        synergy[(d1==0) | (d2==0)] = 0
+        if hasattr(synergy,"__iter__"): synergy[(d1==0) | (d2==0)] = 0
+        elif d1==0 or d2==0: synergy=0
         return synergy
 
     def _get_synergy_CI(self, d1, d2, E, drug1_model, drug2_model):
@@ -91,7 +92,9 @@ class Loewe(DoseDependentModel):
             d1_alone = drug1_model.E_inv(E)
             d2_alone = drug2_model.E_inv(E)
             synergy = d1/d1_alone + d2/d2_alone
-        synergy[(d1==0) | (d2==0)] = 1
+        
+        if hasattr(synergy,"__iter__"): synergy[(d1==0) | (d2==0)] = 1
+        elif d1==0 or d2==0: synergy=1
         return synergy
 
     def _get_single_drug_classes(self):
