@@ -99,8 +99,8 @@ class Loewe(DoseDependentModel):
 
     def _get_single_drug_classes(self):
         # The delta model ONLY works when single drugs are fit with Hill equation
-        if self.variant=="delta":
-            return Hill, Hill
+        #if self.variant.startswith("delta"):
+        #    return Hill, Hill
 
         # Otherwise, default to Hill, but allow anything
         return Hill, None
@@ -115,19 +115,30 @@ class Loewe(DoseDependentModel):
         Returns scipy.optimize.minimize_scalar object
         """
         # Unpack single drug parameters
-        pa_r = drug1_model.get_parameters()
-        pa_c = drug2_model.get_parameters()
-        [Emin_r, Emax_r, h_r, m_r] = pa_r
-        [Emin_c, Emax_c, h_c, m_c] = pa_c
+        #pa_r = drug1_model.get_parameters()
+        #pa_c = drug2_model.get_parameters()
+        #[Emin_r, Emax_r, h_r, m_r] = pa_r
+        #[Emin_c, Emax_c, h_c, m_c] = pa_c
 
         # Compute the bounds within which Y_Loewe is valid.
         # Any value outside these bounds causes algorithm to take a root of a negative.
-        bounds_r = [Emin_r, Emax_r]; bounds_r.sort()
-        bounds_c = [Emin_c, Emax_c]; bounds_c.sort()
-        bounds   = [max(bounds_r[0], bounds_c[0]), min(bounds_r[1], bounds_c[1])]
+        #bounds_r = [Emin_r, Emax_r]; bounds_r.sort()
+        #bounds_c = [Emin_c, Emax_c]; bounds_c.sort()
+        #bounds   = [max(bounds_r[0], bounds_c[0]), min(bounds_r[1], bounds_c[1])]
+
+
+        
+        bounds1 = sorted([drug1_model.E0, drug1_model.Emax])
+        bounds2 = sorted([drug2_model.E0, drug2_model.Emax])
+
+        bounds   = [max(bounds1[0], bounds2[0]), min(bounds1[1], bounds2[1])]
+        
+
 
         # Quadratic function with a minimum at CI=1
-        f  = lambda Y: ((X_r/(m_r*(((Y-Emin_r)/(Emax_r-Y))**(1/h_r))) + X_c/(m_c*(((Y-Emin_c)/(Emax_c-Y))**(1/h_c)))) - 1.0)**2
+        #f  = lambda Y: ((X_r/(m_r*(((Y-Emin_r)/(Emax_r-Y))**(1/h_r))) + X_c/(m_c*(((Y-Emin_c)/(Emax_c-Y))**(1/h_c)))) - 1.0)**2
+
+        f = lambda Y : ((X_r / drug1_model.E_inv(Y)) + (X_c / drug2_model.E_inv(Y)) -1.0)**2
 
         # Perform constrained minimization to find Y as close as possible to CI == 1 and return result.
         return minimize_scalar(f, method='bounded', bounds=bounds)
@@ -143,13 +154,18 @@ class Loewe(DoseDependentModel):
         with np.errstate(divide='ignore', invalid='ignore'):
             ref  = 0*d1
 
-            pa1 = drug1_model.get_parameters()
-            pa2 = drug2_model.get_parameters()
+            #pa1 = drug1_model.get_parameters()
+            #pa2 = drug2_model.get_parameters()
 
-            weakest_E = max(pa1[1], pa2[1])
+            Emax_1 = drug1_model.Emax
+            Emax_2 = drug2_model.Emax
+
+            #weakest_E = max(pa1[1], pa2[1])
+            weakest_E = max(Emax_1, Emax_2)
 
             stronger_drug = drug1_model
-            if pa1[1] > pa2[1]: # pa[1] is Emax
+            #if pa1[1] > pa2[1]: # pa[1] is Emax
+            if Emax_1 > Emax_2: # pa[1] is Emax
                 stronger_drug = drug2_model
 
             # Loewe becomes undefined for effects past the weaker drug's Emax

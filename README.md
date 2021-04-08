@@ -26,7 +26,21 @@ cd synergy
 pip install -e .
 ```
 
+<!---
+## How to choose a synergy model
 
+See examples at https://github.com/djwooten/synergy/tree/master/examples
+
+<img src="synergy_flowchart.svg" />
+
+### Parametric VS Nonparametric models
+
+Parametric models (MuSyC, BRAID, and Zimmer) fit a multidimensional Hill equation to the dose-response data. These equations have parameters that describe the drugs' interactions. For example, MuSyC has parameters describing (a) how much more efficacious the combo is than the strongest single drug, (b) how much more potent each drug becomes in the presence of the other, and (c) how much more switchlike (steep Hill coefficient) a drug's response becomes in the presence of the other.
+
+Conversely, nonparametric models (Bliss, Loewe, HSA, ZIP, Schindler, and Combination Index) define an "expected" response for the combination. They then quantify synergy independently at each concentration tested, based on how much stronger or weaker the combination was than the model's "expected" value.
+
+For parametric models, synergy (or antagonism) is intrinsic to the combination, and independent of the doses. However, a combination may be deemed synergistic by one parameter but antagonistic by another (_e.g._ by MuSyC, synergistically efficacious but antagonistically potent). Conversely, in nonparametric models, synergy is not intrinsic to the combination - it also depends on the doses of the combination. Consequently a combination may be deemed synergistic at one concentration, but antagonistic at another.
+-->
 
 ## Example Usage
 
@@ -86,7 +100,7 @@ model.plot_surface_plotly(df['drug1.conc'], df['drug2.conc'], xlabel="Drug1", 	\
                           scatter_points=df)
 ```
 
-Visualization requires the doses for drug 1 and drug 2 to be sampled on a complete rectangular grid. So for instance, if drug 1 is sampled at 0, 0.01, 0.1, 1, 10 uM (a total of 5 concentrations), and drug 1 is sampled at 0, 0.1, 1, 10 uM (a total of 4 concentrations), the doses and effects must cover all pairwise combinations (e.g., 5*4=20 points must be given). `scatter_points` is optional, but if given, it should be a pandas.DataFrame with (at least) columns "drug1.conc", "drug2.conc", and "effect".
+Visualization requires the doses for drug 1 and drug 2 to be sampled on a complete rectangular grid. So for instance, if drug 1 is sampled at 0, 0.01, 0.1, 1, 10 uM (a total of 5 concentrations), and drug 1 is sampled at 0, 0.1, 1, 10 uM (a total of 4 concentrations), the doses and effects must cover all pairwise combinations (_e.g.,_ 5*4=20 points must be given). `scatter_points` is optional, but if given, it should be a pandas.DataFrame with (at least) columns "drug1.conc", "drug2.conc", and "effect".
 
 #### Generate synthetic data
 
