@@ -15,6 +15,7 @@
 
 import numpy as np
 from . import base as utils
+from .dose_tools import get_num_replicates
 
 matplotlib_import = False
 try:
@@ -50,19 +51,36 @@ def plot_heatmap(d1, d2, E, ax=None, fname=None, title="", xlabel="Drug 1", ylab
             d1 = np.array(d1, copy=True)
             d2 = np.array(d2, copy=True)
         E = np.asarray(E)
-
-
         sorted_indices = np.lexsort((d1,d2))
         D1 = d1[sorted_indices]
         D2 = d2[sorted_indices]
         E = E[sorted_indices]
         
+        # Replicates
+        n_replicates = np.unique(get_num_replicates(d1,d2))
+        if len(n_replicates)>1:
+            raise ValueError("plot_heatmap() expects the same number of replicates for each dose")
+        n_replicates = n_replicates[0]
+        
+        if n_replicates != 1:
+            aggfunc = kwargs.get('aggfunc', np.median)
+            print(F'Number of replicates : {n_replicates}. plot_heatmap() aggregates the data using the {aggfunc.__name__}')
+            E_agg = []
+            for e2 in np.unique(D2):
+                for e1 in np.unique(D1):
+                    ix = (D1==e1) & (D2==e2)
+                    E_agg.append(aggfunc(E[ix]))
+            E = np.array(E_agg)
+            D1 = np.unique(D1)
+            D2 = np.unique(D2)
+            title += (F'({aggfunc.__name__})')
+
         n_d1 = len(np.unique(D1))
         n_d2 = len(np.unique(D2))
-        
-
-        if len(d1) != n_d1*n_d2:
+    
+        if len(d1) != n_d1*n_d2*n_replicates :
             raise ValueError("plot_heatmap() requires d1, d2 to represent a dose grid")
+      
         
         created_ax = False
         if ax is None:
