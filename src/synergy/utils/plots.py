@@ -40,91 +40,96 @@ def get_extension(fname):
     if not "." in fname: return ""
     return fname.split(".")[-1]
 
-def plot_heatmap(d1, d2, E, ax=None, fname=None, title="", xlabel="Drug 1", ylabel="Drug 2", figsize=None, cmap="PRGn", aspect='equal', vmin=None, vmax=None, center_on_zero=False, logscale=True, nancolor="#BBBBBB", **kwargs):
-        if (not matplotlib_import):
-            raise ImportError("matplotlib must be installed to plot")
-        
-        if logscale:
-            d1 = utils.remove_zeros(d1)
-            d2 = utils.remove_zeros(d2)
-        else:
-            d1 = np.array(d1, copy=True)
-            d2 = np.array(d2, copy=True)
-        E = np.asarray(E)
-        sorted_indices = np.lexsort((d1,d2))
-        D1 = d1[sorted_indices]
-        D2 = d2[sorted_indices]
-        E = E[sorted_indices]
-        
-        # Replicates
-        n_replicates = np.unique(get_num_replicates(d1,d2))
-        if len(n_replicates)>1:
-            raise ValueError("plot_heatmap() expects the same number of replicates for each dose")
-        n_replicates = n_replicates[0]
-        
-        if n_replicates != 1:
-            aggfunc = kwargs.get('aggfunc', np.median)
-            print(F'Number of replicates : {n_replicates}. plot_heatmap() aggregates the data using the {aggfunc.__name__}')
-            E_agg = []
-            for e2 in np.unique(D2):
-                for e1 in np.unique(D1):
-                    ix = (D1==e1) & (D2==e2)
-                    E_agg.append(aggfunc(E[ix]))
-            E = np.array(E_agg)
-            D1 = np.unique(D1)
-            D2 = np.unique(D2)
-            title += (F'({aggfunc.__name__})')
-
-        n_d1 = len(np.unique(D1))
-        n_d2 = len(np.unique(D2))
+def plot_heatmap(d1, d2, E, ax=None, fname=None, title="", xlabel="Drug 1", \
+                 ylabel="Drug 2", figsize=None, cmap="PRGn", aspect='equal', \
+                 vmin=None, vmax=None, center_on_zero=False, logscale=True, \
+                 nancolor="#BBBBBB", **kwargs):
+    if (not matplotlib_import):
+        raise ImportError("matplotlib must be installed to plot")
     
-        if len(d1) != n_d1*n_d2*n_replicates :
-            raise ValueError("plot_heatmap() requires d1, d2 to represent a dose grid")
-      
-        
-        created_ax = False
-        if ax is None:
-            fig = plt.figure(figsize=figsize)
-            ax = fig.add_subplot(111)
-            created_ax=True
-
-
-        if center_on_zero:
-            if vmin is None or vmax is None:
-                zmax = max(abs(np.nanmin(E)), abs(np.nanmax(E)))
-                vmin = -zmax
-                vmax = zmax
-            else:
-                zmax = max(abs(vmin), abs(vmax))
-                vmin = -zmax
-                vmax = zmax
-
-
-        current_cmap = get_cmap(name=cmap)
-        current_cmap.set_bad(color=nancolor)
-
-        if not logscale:
-            pco = ax.pcolormesh(D1.reshape(n_d2,n_d1), D2.reshape(n_d2, n_d1), E.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=cmap)
-        else:
-            pco = ax.pcolormesh(E.reshape(n_d2, n_d1), cmap=cmap, vmin=vmin, vmax=vmax)
-            relabel_log_ticks(ax, np.unique(D1), np.unique(D2))
-
-        divider = make_axes_locatable(ax)
-        cax = divider.append_axes("right", size=max(2/n_d1, 2/n_d2, 0.05), pad=0.1)
-        plt.colorbar(pco, cax=cax)
+    if logscale:
+        d1 = utils.remove_zeros(d1)
+        d2 = utils.remove_zeros(d2)
+    else:
+        d1 = np.array(d1, copy=True)
+        d2 = np.array(d2, copy=True)
+    E = np.asarray(E)
+    sorted_indices = np.lexsort((d1,d2))
+    D1 = d1[sorted_indices]
+    D2 = d2[sorted_indices]
+    E = E[sorted_indices]
     
-        ax.set_aspect(aspect)
-        ax.set_xlabel(xlabel)
-        ax.set_ylabel(ylabel)
-        ax.set_title(title)
-        
-        if (fname is not None):
-            plt.tight_layout()
-            plt.savefig(fname)
-            plt.close()
-        elif (created_ax):
-            plt.tight_layout()
-            plt.show()
+    # Replicates
+    n_replicates = np.unique(get_num_replicates(d1,d2))
+    if len(n_replicates)>1:
+        raise ValueError("plot_heatmap() expects the same number of replicates for each dose")
+    n_replicates = n_replicates[0]
+    
+    if n_replicates != 1:
+        aggfunc = kwargs.get('aggfunc', np.median)
+        print(F'Number of replicates : {n_replicates}. plot_heatmap() aggregates the data using the {aggfunc.__name__}')
+        E_agg = []
+        for e2 in np.unique(D2):
+            for e1 in np.unique(D1):
+                ix = (D1==e1) & (D2==e2)
+                E_agg.append(aggfunc(E[ix]))
+        E = np.array(E_agg)
+        D1 = np.unique(D1)
+        D2 = np.unique(D2)
+        title += (F'({aggfunc.__name__})')
+
+    n_d1 = len(np.unique(D1))
+    n_d2 = len(np.unique(D2))
+
+    if len(d1) != n_d1*n_d2*n_replicates :
+        raise ValueError("plot_heatmap() requires d1, d2 to represent a dose grid")
+    
+    
+    created_ax = False
+    if ax is None:
+        fig = plt.figure(figsize=figsize)
+        ax = fig.add_subplot(111)
+        created_ax=True
+
+
+    if center_on_zero:
+        if vmin is None or vmax is None:
+            zmax = max(abs(np.nanmin(E)), abs(np.nanmax(E)))
+            vmin = -zmax
+            vmax = zmax
+        else:
+            zmax = max(abs(vmin), abs(vmax))
+            vmin = -zmax
+            vmax = zmax
+
+
+    current_cmap = get_cmap(name=cmap)
+    current_cmap.set_bad(color=nancolor)
+
+    if not logscale:
+        D1, D2 = np.meshgrid(D1, D2)
+        #pco = ax.pcolormesh(D1.reshape(n_d2,n_d1), D2.reshape(n_d2, n_d1), E.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=cmap)
+        pco = ax.pcolormesh(D1, D2, E.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=cmap)
+    else:
+        pco = ax.pcolormesh(E.reshape(n_d2, n_d1), cmap=cmap, vmin=vmin, vmax=vmax)
+        relabel_log_ticks(ax, np.unique(D1), np.unique(D2))
+
+    divider = make_axes_locatable(ax)
+    cax = divider.append_axes("right", size=max(2/n_d1, 2/n_d2, 0.05), pad=0.1)
+    plt.colorbar(pco, cax=cax)
+
+    ax.set_aspect(aspect)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    
+    if (fname is not None):
+        plt.tight_layout()
+        plt.savefig(fname)
+        plt.close()
+    elif (created_ax):
+        plt.tight_layout()
+        plt.show()
 
 
 
@@ -221,12 +226,12 @@ def relabel_log_ticks(ax, d1, d2):
 def interp(x, x0, x1, y0, y1):
     return (np.asarray(x)-x0)*(y1-y0)/(x1-x0)+y0
 
-def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
-                 elev=20, azim=19, fname="plot.html", zlim=None, cmap='viridis', logscale=True,         \
+def plot_surface_plotly(d1, d2, E, scatter_points=None, elev=20, azim=19, \
+                 fname="plot.html", zlim=None, cmap='viridis', logscale=True, \
                  xlabel="Drug 1", ylabel="Drug 2", zlabel="z", \
                  vmin=None, vmax=None, auto_open=False, opacity=0.8, \
                  center_on_zero=False, figsize=(1000,800), \
-                 fontsize=18, title=None):
+                 fontsize=18, title=None, **kwargs):
     if (not plotly_import):
         raise ImportError("plot_surface_plotly() requires plotly to be installed.")
     
@@ -243,15 +248,46 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
         d2 = np.log10(d2)
 
     sorted_indices = np.lexsort((d1,d2))
-    d1 = d1[sorted_indices]
-    d2 = d2[sorted_indices]
+    D1 = d1[sorted_indices]
+    D2 = d2[sorted_indices]
     E = E[sorted_indices]
 
-    n_d1 = len(np.unique(d1))
-    n_d2 = len(np.unique(d2))
-    d1 = d1.reshape(n_d2,n_d1)
-    d2 = d2.reshape(n_d2,n_d1)
-    E = E.reshape(n_d2,n_d1)
+    if title is None:
+        if fname is not None:
+            title = fname
+        else:
+            title = ""
+
+    # Replicates
+    n_replicates = np.unique(get_num_replicates(D1,D2))
+    if len(n_replicates)>1:
+        raise ValueError("plot_surface_plotly() expects the same number of replicates for each dose")
+    n_replicates = n_replicates[0]
+    
+    if n_replicates != 1:
+        aggfunc = kwargs.get('aggfunc', np.median)
+        print(F'Number of replicates : {n_replicates}. plot_surface_plotly() aggregates the data using the {aggfunc.__name__}')
+        E_agg = []
+        for e2 in np.unique(D2):
+            for e1 in np.unique(D1):
+                ix = (D1==e1) & (D2==e2)
+                E_agg.append(aggfunc(E[ix]))
+        E = np.array(E_agg)
+        D1 = np.unique(D1)
+        D2 = np.unique(D2)
+        title += (F'({aggfunc.__name__})')
+
+        d1, d2 = np.meshgrid(D1, D2)
+
+        n_d1 = len(np.unique(D1))
+        n_d2 = len(np.unique(D2))
+        E = E.reshape(n_d2,n_d1)
+    else:
+        n_d1 = len(np.unique(d1))
+        n_d2 = len(np.unique(d2))
+        d1 = d1.reshape(n_d2,n_d1)
+        d2 = d2.reshape(n_d2,n_d1)
+        E = E.reshape(n_d2,n_d1)
 
     if center_on_zero:
         if vmin is None or vmax is None:
@@ -325,12 +361,6 @@ def plot_surface_plotly(d1, d2, E, scatter_points=None,       \
     fig = go.Figure(data=data_to_plot)
 
     #fig.update_traces(contours_z=dict(show=True, usecolormap=True, highlightcolor="limegreen", project_z=True))
-
-    if title is None:
-        if fname is not None:
-            title = fname
-        else:
-            title = ""
 
     fig.update_layout(
         title=title,
