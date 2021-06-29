@@ -50,3 +50,21 @@ def test_plotly_linearscale():
 
     plot_surface_plotly(d1, d2, E, fname="x.html", logscale=False)
     assert 1==1
+
+def test_parametric_model_plotly_replicates():
+    from synergy.utils.dose_tools import grid
+    from synergy.combination import MuSyC
+
+    d1, d2 = grid(0.01,10,0.01,10,5,5,include_zero=True, replicates=3)
+    model = MuSyC(E0=1, E1=0.2, E2=0.5, E3=0.1, h1=1.4, h2=0.9, C1=0.2, C2=0.2, alpha12=2, alpha21=0.5, gamma12=1, gamma21=1)
+    model.plot_surface_plotly(d1, d2, fname="parametric.html")
+    assert 1==1
+
+def test_parametric_model_heatmap_replicates():
+    from synergy.utils.dose_tools import grid
+    from synergy.combination import MuSyC
+
+    d1, d2 = grid(0.01,10,0.01,10,5,5,include_zero=True, replicates=3)
+    model = MuSyC(E0=1, E1=0.2, E2=0.5, E3=0.1, h1=1.4, h2=0.9, C1=0.2, C2=0.2, alpha12=2, alpha21=0.5, gamma12=1, gamma21=1)
+    model.plot_heatmap(d1, d2, fname="parametric.pdf")
+    assert 1==1

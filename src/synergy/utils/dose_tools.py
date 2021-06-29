@@ -87,6 +87,7 @@ def get_num_replicates(d1, d2):
     """
     return np.unique(np.asarray([d1,d2]), axis=1, return_counts=True)[1]
 
+@DeprecationWarning
 def remove_replicates(d1, d2):
     """Given 1d dose arrays d1 and d2, remove replicates. This is needed sometimes for plotting, since some plot functions expect a single d1, d2 -> E for each dose.
 

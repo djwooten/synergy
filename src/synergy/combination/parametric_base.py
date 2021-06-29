@@ -428,6 +428,6 @@ class ParametricModel(ABC):
             return
         
         # d1 and d2 may come from data, and have replicates. This would cause problems with surface plots (replicates in scatter_points are fine, but replicates in the surface itself are not)
-        d1, d2 = dose_tools.remove_replicates(d1, d2)
+        #d1, d2 = dose_tools.remove_replicates(d1, d2)
         E = self.E(d1, d2)
         plots.plot_surface_plotly(d1, d2, E, cmap=cmap, **kwargs)
