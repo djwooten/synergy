@@ -15,41 +15,43 @@
 
 import numpy as np
 
-from ..single import MarginalLinear
+from ..single import LogLinear
 from .nonparametric_base import DoseDependentHigher
+
 
 class HSA(DoseDependentHigher):
     """Highest single agent (HSA)
 
     HSA says that any improvement a combination gives over the strongest single agent counts as synergy.
     """
-    
+
     def fit(self, d, E, single_models=None, **kwargs):
         d = np.asarray(d)
         E = np.asarray(E)
         n = d.shape[1]
 
         super().fit(d, E, single_models=single_models, **kwargs)
-        
+
         # Fit single drugs
         if single_models is None:
             single_models = []
-            
+
             for i in range(n):
                 # Mask where all other drugs are minimum (ideally 0)
-                mask = d[:,i]>=0 # This should always be true
+                mask = d[:, i] >= 0  # This should always be true
                 for j in range(n):
-                    if i==j: continue
-                    mask = mask & (d[:,j]==np.min(d[:,j]))
+                    if i == j:
+                        continue
+                    mask = mask & (d[:, j] == np.min(d[:, j]))
                 mask = np.where(mask)
-                single = MarginalLinear()
-                single.fit(d[mask,i].flatten(), E[mask], **kwargs)
+                single = LogLinear()
+                single.fit(d[mask, i].flatten(), E[mask], **kwargs)
                 single_models.append(single)
         self.single_models = single_models
 
-        E_singles = d*0
+        E_singles = d * 0
         for i in range(n):
-            E_singles[:,i] = single_models[i].E(d[:,i])
+            E_singles[:, i] = single_models[i].E(d[:, i])
         E_HSA = np.min(E_singles, axis=1)
 
         # Calculate synergy as excess over HSA
@@ -57,15 +59,16 @@ class HSA(DoseDependentHigher):
 
         # Ensure all single-drug HSA scores are 1
         for i in range(n):
-                # Mask where all other drugs are minimum (ideally 0)
-                mask = d[:,i]>=0 # This should always be true
-                for j in range(n):
-                    if i==j: continue
-                    mask = mask & (d[:,j]==np.min(d[:,j]))
-                mask = np.where(mask)
-                self.synergy[mask] = 0
+            # Mask where all other drugs are minimum (ideally 0)
+            mask = d[:, i] >= 0  # This should always be true
+            for j in range(n):
+                if i == j:
+                    continue
+                mask = mask & (d[:, j] == np.min(d[:, j]))
+            mask = np.where(mask)
+            self.synergy[mask] = 0
 
         return self.synergy
 
     def _get_single_drug_classes(self):
-        return MarginalLinear, None
+        return LogLinear, None

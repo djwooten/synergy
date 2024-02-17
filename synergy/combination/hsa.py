@@ -17,7 +17,7 @@ import numpy as np
 import warnings
 
 from .. import utils
-from ..single import MarginalLinear
+from ..single import LogLinear
 from .nonparametric_base import DoseDependentModel
 
 
@@ -28,22 +28,24 @@ class HSA(DoseDependentModel):
     """
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
-        
+
         d1 = np.asarray(d1)
         d2 = np.asarray(d2)
         E = np.asarray(E)
-        super().fit(d1,d2,E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
+        super().fit(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
 
         drug1_model = self.drug1_model
         drug2_model = self.drug2_model
 
-        #self.synergy = []
+        # self.synergy = []
         d1_min = np.min(d1)
         d2_min = np.min(d2)
 
-        if (d1_min > 0 or d2_min > 0):
-            warnings.warn("WARNING: HSA expects single-drug information for both drugs. min(d1)=%0.2e, min(d2)=%0.2e"%(d1_min, d2_min))
-        
+        if d1_min > 0 or d2_min > 0:
+            warnings.warn(
+                "WARNING: HSA expects single-drug information for both drugs. min(d1)=%0.2e, min(d2)=%0.2e"
+                % (d1_min, d2_min)
+            )
 
         self.drug1_model = drug1_model
         self.drug2_model = drug2_model
@@ -52,11 +54,11 @@ class HSA(DoseDependentModel):
         E2_alone = drug2_model.E(d2)
 
         self.reference = np.minimum(E1_alone, E2_alone)
-        #self.synergy = np.minimum(E1_alone-E, E2_alone-E)
+        # self.synergy = np.minimum(E1_alone-E, E2_alone-E)
         self.synergy = self.reference - E
-        
-        self.synergy[(d1==0) | (d2==0)] = 0
+
+        self.synergy[(d1 == 0) | (d2 == 0)] = 0
         return self.synergy
 
     def _get_single_drug_classes(self):
-        return MarginalLinear, None
+        return LogLinear, None

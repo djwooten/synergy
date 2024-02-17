@@ -1,4 +1,4 @@
-#    Copyright (C) 2020 David J. Wooten
+#    Copyright (C) 2024 David J. Wooten
 #
 #    This program is free software: you can redistribute it and/or modify
 #    it under the terms of the GNU General Public License as published by
@@ -16,30 +16,28 @@
 import numpy as np
 
 
-class MarginalLinear:
+class LogLinear:
     """A model that fits dose response curves as piecewise linear interpolations of E vs log(dose).
 
     This model is useful for drugs whose dose response do not follow some known parametric equation.
-
-    Parameters
-    ----------
-    aggregation_function : function, default=np.mean
-        If d contains repeated values (e.g., experimental replicates using the same dose many times), E at these repeated doses will be averaged using aggregation_function(E[d==X])
-
-    strict_inverse : bool, default=False
-        Dose response curves are typically strictly monotonic, however due to measurement noise or intrinsic biology, a piecewise linear model of the dose-response curve may not be strictly monotonic (e.g., non-invertible). If strict_inverse==True, all E's that do not correspond to a unique d will return E_inv(E)=NaN. If strict_inverse=False, non-monotonic regions will be cut out and replaced with a monotonic, log-linear curve so that E_inv can be uniquely calculated.
     """
 
     # NOTE on __init__() and fit(): **kwargs is only present to avoid errors
     # people may run into when reusing code for fitting Hill functions in which
     # they set kwargs. There are no kwargs used for these methods
-    def __init__(self, aggregation_function=np.mean, strict_inverse=False, **kwargs):
+    def __init__(self, aggregation_function=np.mean, enforce_invertability=False, **kwargs):
+        """Ctor.
+
+        :param Callable aggregation_function: Used to compute "average" effect given replicate dose measurements (default=np.mean)
+        :param bool enforce_invertability: If True, the fit model
+        Dose response curves are typically strictly monotonic, however due to measurement noise or intrinsic biology, a piecewise linear model of the dose-response curve may not be strictly monotonic (e.g., non-invertible). If enforce_invertability==True, all E's that do not correspond to a unique d will return E_inv(E)=NaN. If enforce_invertability=False, non-monotonic regions will be cut out and replaced with a monotonic, log-linear curve so that E_inv can be uniquely calculated.
+        """
         self._d = None
         self._E = None
         self._logd = None
-        self._aggregation_function = aggregation_function
         self._fit = False
-        self._strict_inverse = strict_inverse
+        self._aggregation_function = aggregation_function
+        self._enforce_invertability = enforce_invertability
 
         self.E0 = None
         self.Emax = None
@@ -141,8 +139,8 @@ class MarginalLinear:
         # These effects are below the minimum or above the maximum, and therefore cannot be used for interpolation
         invalid_mask = (E < min(self._E)) | (E > max(self._E))
 
-        if self._strict_inverse:
-            # Any E inside a domain we have found to be un-invertible is also invalid. If _strict_inverse is False (default), the entire un-invertible domain will just be filled with a straight line. In this region, the model would have E_inv(E(d))!=d. If strict_inverse is True, this whole region is exlucded (np.nan)
+        if self._enforce_invertability:
+            # Any E inside a domain we have found to be un-invertible is also invalid. If _enforce_invertability is False (default), the entire un-invertible domain will just be filled with a straight line. In this region, the model would have E_inv(E(d))!=d. If enforce_invertability is True, this whole region is exlucded (np.nan)
             for domain in self._uninvertible_domains:
                 a, b = sorted(domain)
                 invalid_mask = invalid_mask | ((E > a) & (E < b))
@@ -162,7 +160,7 @@ class MarginalLinear:
         data. Initializes a model using the provided aggregation function, then
         fits.
         """
-        drug = MarginalLinear(aggregation_function=aggregation_function)
+        drug = LogLinear(aggregation_function=aggregation_function)
         drug.fit(d, E)
         return drug
 

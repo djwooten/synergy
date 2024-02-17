@@ -15,24 +15,25 @@
 
 import numpy as np
 
-from ..single import MarginalLinear
+from ..single import LogLinear
 from .. import utils
 from .nonparametric_base import DoseDependentModel
 
+
 class Bliss(DoseDependentModel):
     """Bliss independence model
-    
+
     Bliss synergy is defined as the difference between the observed E and the E predicted by the Bliss Independence assumption (E_pred = E_drug1_alone * E_drug2_alone).
 
     synergy : array_like, float
         (-inf,0)=antagonism, (0,inf)=synergism
     """
-    
+
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
         d1 = np.asarray(d1)
         d2 = np.asarray(d2)
         E = np.asarray(E)
-        super().fit(d1,d2,E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
+        super().fit(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
 
         drug1_model = self.drug1_model
         drug2_model = self.drug2_model
@@ -40,11 +41,11 @@ class Bliss(DoseDependentModel):
         E1_alone = drug1_model.E(d1)
         E2_alone = drug2_model.E(d2)
 
-        self.reference = E1_alone*E2_alone
+        self.reference = E1_alone * E2_alone
         self.synergy = self.reference - E
-        self.synergy[(d1==0) | (d2==0)] = 0
+        self.synergy[(d1 == 0) | (d2 == 0)] = 0
 
         return self.synergy
 
     def _get_single_drug_classes(self):
-        return MarginalLinear, None
+        return LogLinear, None

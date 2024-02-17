@@ -17,31 +17,36 @@ from abc import ABC, abstractmethod
 
 import numpy as np
 
-from .. import utils
-from ..utils import plots
-from ..single import Hill
+from synergy import utils
+from synergy.utils import plots
 
 
 class DoseDependentModel(ABC):
-    """These are models for which synergy is defined independently at each individual dose.
-    """
-    def __init__(self, h1_bounds=(0,np.inf), h2_bounds=(0,np.inf),  \
-            C1_bounds=(0,np.inf), C2_bounds=(0,np.inf),             \
-            E0_bounds=(-np.inf,np.inf), E1_bounds=(-np.inf,np.inf), \
-            E2_bounds=(-np.inf,np.inf)):
+    """These are models for which synergy is defined independently at each individual dose."""
+
+    def __init__(
+        self,
+        h1_bounds=(0, np.inf),
+        h2_bounds=(0, np.inf),
+        C1_bounds=(0, np.inf),
+        C2_bounds=(0, np.inf),
+        E0_bounds=(-np.inf, np.inf),
+        E1_bounds=(-np.inf, np.inf),
+        E2_bounds=(-np.inf, np.inf),
+    ):
         """Creates a DoseDependentModel
 
         Parameters
         ----------
         E0_bounds: tuple, default=(-np.inf, np.inf)
             Bounds to use for E0 to fit drug1_model and drug2_model if they are not supplied directly in .fit()
-        
+
         E{X}_bounds: tuple, default=(-np.inf, np.inf)
             Bounds to use for Emax to fit drug{X}_model if it is not supplied directly in .fit() (e.g., E1_bounds will constrain drug 1's Emax)
-        
+
         h{X}_bounds: tuple, default=(0, np.inf)
             Bounds to use for hill slope to fit drug{X}_model if it is not supplied directly in .fit()
-        
+
         C{X}_bounds: tuple, default=(0, np.inf)
             Bounds to use for EC50 to fit drug{X}_model if it is not supplied directly in .fit()
         """
@@ -68,7 +73,7 @@ class DoseDependentModel(ABC):
         ----------
         d1 : array_like
             Doses of drug 1
-        
+
         d2 : array_like
             Doses of drug 2
 
@@ -80,7 +85,7 @@ class DoseDependentModel(ABC):
 
         drug2_model : single-drug-model, default=None
             Same as drug1_model, for drug 2.
-        
+
         kwargs
             kwargs to pass to Hill.fit() (or whichever single-drug model is used)
 
@@ -91,24 +96,39 @@ class DoseDependentModel(ABC):
         """
         self.d1 = d1
         self.d2 = d2
-        self.synergy = 0*d1
+        self.synergy = 0 * d1
         self.synergy[:] = np.nan
 
         default_class, expected_superclass = self._get_single_drug_classes()
 
         # Sanitize single-drug models
-        self.drug1_model = utils.sanitize_single_drug_model(drug1_model, default_class, expected_superclass=expected_superclass, E0_bounds=self.E0_bounds, Emax_bounds=self.E1_bounds, h_bounds=self.h1_bounds, C_bounds=self.C1_bounds)
+        self.drug1_model = utils.sanitize_single_drug_model(
+            drug1_model,
+            default_class,
+            expected_superclass=expected_superclass,
+            E0_bounds=self.E0_bounds,
+            Emax_bounds=self.E1_bounds,
+            h_bounds=self.h1_bounds,
+            C_bounds=self.C1_bounds,
+        )
 
-        self.drug2_model = utils.sanitize_single_drug_model(drug2_model, default_class, expected_superclass=expected_superclass, E0_bounds=self.E0_bounds, Emax_bounds=self.E2_bounds, h_bounds=self.h2_bounds, C_bounds=self.C2_bounds)
+        self.drug2_model = utils.sanitize_single_drug_model(
+            drug2_model,
+            default_class,
+            expected_superclass=expected_superclass,
+            E0_bounds=self.E0_bounds,
+            Emax_bounds=self.E2_bounds,
+            h_bounds=self.h2_bounds,
+            C_bounds=self.C2_bounds,
+        )
 
         # Fit the single drug models if they were not pre-fit by the user
         if not self.drug1_model.is_fit():
-            mask = np.where(d2==min(d2))
+            mask = np.where(d2 == min(d2))
             self.drug1_model.fit(d1[mask], E[mask], **kwargs)
         if not self.drug2_model.is_fit():
-            mask = np.where(d1==min(d1))
+            mask = np.where(d1 == min(d1))
             self.drug2_model.fit(d2[mask], E[mask], **kwargs)
-
 
         return self.synergy
 
@@ -123,7 +143,6 @@ class DoseDependentModel(ABC):
         expected_single_superclass : class
             The required type for single-drug models. If a single-drug model is passed that is not an instance of this superclass, it will be re-instantiated using default_model
         """
-        pass
 
     def plot_heatmap(self, cmap="PRGn", neglog=False, center_on_zero=True, **kwargs):
         """Plots the synergy as a heatmap
@@ -144,9 +163,18 @@ class DoseDependentModel(ABC):
         """
         if neglog:
             with np.errstate(invalid="ignore"):
-                plots.plot_heatmap(self.d1, self.d2, -np.log(self.synergy), cmap=cmap, center_on_zero=center_on_zero, **kwargs)
+                plots.plot_heatmap(
+                    self.d1,
+                    self.d2,
+                    -np.log(self.synergy),
+                    cmap=cmap,
+                    center_on_zero=center_on_zero,
+                    **kwargs,
+                )
         else:
-            plots.plot_heatmap(self.d1, self.d2, self.synergy, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
+            plots.plot_heatmap(
+                self.d1, self.d2, self.synergy, cmap=cmap, center_on_zero=center_on_zero, **kwargs
+            )
 
     def plot_reference_heatmap(self, cmap="YlGnBu", **kwargs):
         if self.reference is not None:
@@ -168,6 +196,8 @@ class DoseDependentModel(ABC):
         """
         if neglog:
             with np.errstate(invalid="ignore"):
-                plots.plot_surface_plotly(self.d1, self.d2, -np.log(self.synergy), cmap=cmap, **kwargs)
+                plots.plot_surface_plotly(
+                    self.d1, self.d2, -np.log(self.synergy), cmap=cmap, **kwargs
+                )
         else:
             plots.plot_surface_plotly(self.d1, self.d2, self.synergy, cmap=cmap, **kwargs)
