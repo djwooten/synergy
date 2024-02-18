@@ -1,21 +1,34 @@
 from synergy.combination import MuSyC, CombinationIndex, BRAID, Zimmer
-from synergy.utils.dose_tools import grid
+from synergy.utils.dose_tools import make_dose_grid
 from synergy.utils import plots
 from matplotlib import pyplot as plt
 import numpy as np
 
-mtrue = MuSyC(E0=1, E1=0.05, E2=0.75, E3=0.1, h1=0.8, h2=1, C1=5e1, C2=1e3, alpha12=1, alpha21=20, gamma21=0.5, gamma12=1)
+mtrue = MuSyC(
+    E0=1,
+    E1=0.05,
+    E2=0.75,
+    E3=0.1,
+    h1=0.8,
+    h2=1,
+    C1=5e1,
+    C2=1e3,
+    alpha12=1,
+    alpha21=20,
+    gamma21=0.5,
+    gamma12=1,
+)
 model = CombinationIndex()
 
-d1, d2 = grid(1, 1e4, 1., 1e4, 10, 10, include_zero=True)
-E = mtrue.E(d1, d2)*(1+0.05*(2*(np.random.rand(len(d1)))-1))
+d1, d2 = make_dose_grid(1, 1e4, 1.0, 1e4, 10, 10, include_zero=True)
+E = mtrue.E(d1, d2) * (1 + 0.05 * (2 * (np.random.rand(len(d1))) - 1))
 
 
 model.fit(d1, d2, E)
 
 
 fig, (ax1, ax2, ax3) = plt.subplots(nrows=1, ncols=3)
-fig.set_size_inches(14,4)
+fig.set_size_inches(14, 4)
 fig.tight_layout(pad=3.0)
 
 # Plot raw data heatmap
@@ -29,11 +42,11 @@ ax2.set_title("CI Model")
 # Plot synergy
 model.plot_heatmap(ax=ax3, cmap="RdYlGn")
 ax3.set_title("CI Synergy")
-#plt.show()
+# plt.show()
 
 
 def analyze_parametric(model, d1, d2, E, bootstrap_iterations=0):
-    #d1, d2, E = dfa['conc_c'], dfa['conc_r'], dfa['response']
+    # d1, d2, E = dfa['conc_c'], dfa['conc_r'], dfa['response']
 
     name = model.__class__.__name__
     model.fit(d1, d2, E, bootstrap_iterations=bootstrap_iterations)
@@ -43,16 +56,16 @@ def analyze_parametric(model, d1, d2, E, bootstrap_iterations=0):
     print("\nSummary:")
     print(model.summary())
 
-    print(f'\nAverage Delta: {np.nanmean(model._reference_E(d1,d2)-model.E(d1,d2))}')
+    print(f"\nAverage Delta: {np.nanmean(model._reference_E(d1,d2)-model.E(d1,d2))}")
 
-    print(f'Maximum Delta: {np.nanmax(model._reference_E(d1,d2)-model.E(d1,d2))}')
+    print(f"Maximum Delta: {np.nanmax(model._reference_E(d1,d2)-model.E(d1,d2))}")
 
-    print(f'Minimum Delta: {np.nanmin(model._reference_E(d1,d2)-model.E(d1,d2))}')
+    print(f"Minimum Delta: {np.nanmin(model._reference_E(d1,d2)-model.E(d1,d2))}")
 
     fig, axes = plt.subplots(nrows=2, ncols=3)
     ax1, ax2, ax3 = axes[0]
     ax4, ax5, ax6 = axes[1]
-    fig.set_size_inches(14,8)
+    fig.set_size_inches(14, 8)
     fig.tight_layout(pad=3.0)
 
     # Plot raw data
