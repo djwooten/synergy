@@ -291,9 +291,7 @@ class LogLinear:
                     # Does this overlap with any regions we have seen before?
                     previous_overlaps = []  # We will merge these all together
                     for _i, prev_olap in enumerate(self._uninvertible_domains):
-                        overlap_2 = self._interval_intersection(
-                            overlap, prev_olap, border_is_overlap=True
-                        )
+                        overlap_2 = self._interval_intersection(overlap, prev_olap, border_is_overlap=True)
                         if overlap_2 is not None:
                             previous_overlaps.append(prev_olap)
 

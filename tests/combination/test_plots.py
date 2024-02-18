@@ -1,6 +1,6 @@
 def test_heatmap_replicates():
     import numpy as np
-    from synergy.datasets import sham
+    from tests.testing_utils.synthetic_data import sham
     from synergy.utils.plots import plot_heatmap
 
     d1, d2, E = sham()
@@ -14,7 +14,7 @@ def test_heatmap_replicates():
 
 def test_heatmap_linearscale():
     import numpy as np
-    from synergy.datasets import sham
+    from tests.testing_utils.synthetic_data import sham
     from synergy.utils.plots import plot_heatmap
 
     d1, d2, E = sham()
@@ -28,7 +28,7 @@ def test_heatmap_linearscale():
 
 def test_plotly_replicates():
     import numpy as np
-    from synergy.datasets import sham
+    from tests.testing_utils.synthetic_data import sham
     from synergy.utils.plots import plot_surface_plotly
 
     d1, d2, E = sham()
@@ -42,7 +42,7 @@ def test_plotly_replicates():
 
 def test_plotly_linearscale():
     import numpy as np
-    from synergy.datasets import sham
+    from tests.testing_utils.synthetic_data import sham
     from synergy.utils.plots import plot_surface_plotly
 
     d1, d2, E = sham()

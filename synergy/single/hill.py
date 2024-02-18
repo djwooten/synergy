@@ -16,7 +16,7 @@
 import numpy as np
 from scipy.stats import linregress
 
-from synergy import utils
+from synergy.utils import base as utils
 from synergy.exceptions import ModelNotParameterizedError
 from synergy.single.parametric_base import ParameterizedModel1D
 
@@ -68,6 +68,11 @@ class Hill(ParameterizedModel1D):
         """
 
         super().__init__()
+
+        if h is not None and h <= 0:
+            raise ValueError(f"h must be > 0 ({h})")
+        if C is not None and C <= 0:
+            raise ValueError(f"C must be > 0 ({C})")
         self.E0 = E0
         self.Emax = Emax
         self.h = h
@@ -86,9 +91,7 @@ class Hill(ParameterizedModel1D):
         self.fit_function = self._model_to_fit
         self.jacobian_function = self._model_jacobian_for_fit
 
-        self.bounds = tuple(
-            zip(self.E0_bounds, self.Emax_bounds, self.logh_bounds, self.logC_bounds)
-        )
+        self.bounds = tuple(zip(self.E0_bounds, self.Emax_bounds, self.logh_bounds, self.logC_bounds))
 
     def E(self, d):
         """Evaluate this model at dose d. If the model is not parameterized, returns 0.
@@ -146,8 +149,8 @@ class Hill(ParameterizedModel1D):
         self.C = C
 
     def _model(self, d, E0, Emax, h, C):
-        dh = np.power(d, h)
-        return E0 + (Emax - E0) * dh / (np.power(C, h) + dh)
+        dh = np.float_power(d, h)
+        return E0 + (Emax - E0) * (dh / (C**h + dh))
 
     def _model_to_fit(self, d, E0, Emax, logh, logC):
         return self._model(d, E0, Emax, np.exp(logh), np.exp(logC))
@@ -193,9 +196,7 @@ class Hill(ParameterizedModel1D):
             / ((C_pow_h + d_pow_h) * (C_pow_h + d_pow_h))
         )
 
-        jac = np.hstack(
-            (jE0.reshape(-1, 1), jEmax.reshape(-1, 1), jh.reshape(-1, 1), jC.reshape(-1, 1))
-        )
+        jac = np.hstack((jE0.reshape(-1, 1), jEmax.reshape(-1, 1), jh.reshape(-1, 1), jC.reshape(-1, 1)))
         jac[np.isnan(jac)] = 0
         return jac
 
@@ -212,24 +213,6 @@ class Hill(ParameterizedModel1D):
 
     def _transform_params_to_fit(self, params):
         return params[0], params[1], np.log(params[2]), np.log(params[3])
-
-    def create_fit(
-        d,
-        E,
-        E0_bounds=None,
-        Emax_bounds=None,
-        h_bounds=None,
-        C_bounds=None,
-        **kwargs,
-    ):
-        """Factory function to build a Hill model directly from data.
-        Initializes a model using the provided bounds, then fits.
-        """
-        drug = Hill(
-            E0_bounds=E0_bounds, Emax_bounds=Emax_bounds, h_bounds=h_bounds, C_bounds=C_bounds
-        )
-        drug.fit(d, E, **kwargs)
-        return drug
 
     def __repr__(self):
         if not self.is_parameterized:
@@ -252,8 +235,7 @@ class Hill_2P(Hill):
     def __init__(self, E0=1, Emax=0, **kwargs):
         super().__init__(E0=E0, Emax=Emax, **kwargs)
 
-        self.jacobian_function = lambda d, logh, logC: self._model_jacobian(d, logh, logC)
-
+        self.jacobian_function = self._model_jacobian_for_fit
         self.bounds = tuple(zip(self.logh_bounds, self.logC_bounds))
 
     def _model_to_fit(self, d, logh, logC):
@@ -263,20 +245,16 @@ class Hill_2P(Hill):
         h = np.exp(logh)
         d_pow_h = d**h
         C_pow_h = np.exp(logC) ** h
+        squared_sum = np.float_power(C_pow_h + d_pow_h, 2.0)
+
         logd = np.log(d)
 
         E0 = self.E0
         Emax = self.Emax
 
-        jC = (E0 - Emax) * d_pow_h * h * C_pow_h / ((C_pow_h + d_pow_h) * (C_pow_h + d_pow_h))
+        jC = (E0 - Emax) * (d_pow_h * h * C_pow_h / squared_sum)
 
-        jh = (
-            (Emax - E0)
-            * d_pow_h
-            * h
-            * ((C_pow_h + d_pow_h) * logd - (logC * C_pow_h + logd * d_pow_h))
-            / ((C_pow_h + d_pow_h) * (C_pow_h + d_pow_h))
-        )
+        jh = (Emax - E0) * d_pow_h * h * ((C_pow_h + d_pow_h) * logd - (logC * C_pow_h + logd * d_pow_h)) / squared_sum
 
         jac = np.hstack((jh.reshape(-1, 1), jC.reshape(-1, 1)))
         jac[np.isnan(jac)] = 0
@@ -290,11 +268,6 @@ class Hill_2P(Hill):
         utils.sanitize_initial_guess(p0, self.bounds)
 
         return p0
-
-    def create_fit(d, E, E0=1, Emax=0, h_bounds=None, C_bounds=None, **kwargs):
-        drug = Hill_2P(E0=E0, Emax=Emax, h_bounds=h_bounds, C_bounds=C_bounds)
-        drug.fit(d, E, **kwargs)
-        return drug
 
     def get_parameters(self):
         """Gets the model's parameters
@@ -350,11 +323,6 @@ class Hill_CI(Hill_2P):
 
         return (h, C)
 
-    def create_fit(d, E):
-        drug = Hill_CI()
-        drug.fit(d, E)
-        return drug
-
     def plot_linear_fit(self, d, E, ax=None):
         if not self.is_parameterized:
             raise ModelNotParameterizedError()
@@ -381,9 +349,9 @@ class Hill_CI(Hill_2P):
         ax.plot(np.log(d), np.log(d) * self.h - self.h * np.log(self.C))
 
         # Draw bootstraps with low opacity
-        for i in range(self.bootstrap_parameters.shape[0]):
-            h, C = self.bootstrap_parameters[i, :]
-            ax.plot(np.log(d), np.log(d) * h - h * np.log(C), c="k", alpha=0.1, lw=0.5)
+        # for i in range(self.bootstrap_parameters.shape[0]):
+        #     h, C = self.bootstrap_parameters[i, :]
+        #     ax.plot(np.log(d), np.log(d) * h - h * np.log(C), c="k", alpha=0.1, lw=0.5)
 
         ax.set_ylabel("h * log(d) - h * log(C)")
         ax.set_xlabel("log(d)")
@@ -392,9 +360,7 @@ class Hill_CI(Hill_2P):
             plt.tight_layout()
             plt.show()
 
-    def _bootstrap_resample(
-        self, d, E, use_jacobian, bootstrap_iterations, confidence_interval, **kwargs
-    ):
+    def _bootstrap_resample(self, d, E, use_jacobian, bootstrap_iterations, confidence_interval, **kwargs):
         """Bootstrap resampling is not yet implemented for CI"""
 
     def __repr__(self):

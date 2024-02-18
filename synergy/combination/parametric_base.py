@@ -92,7 +92,7 @@ class ParametricModel(ABC):
         If the model was fit to data with bootstrap_iterations > 0, this will also return the specified confidence interval.
         """
 
-    @abstractmethod
+    # @abstractmethod
     def summary(self, confidence_interval=95, tol=0.01):
         """Summarizes the model's synergy conclusions.
 
@@ -256,9 +256,7 @@ class ParametricModel(ABC):
         is_parameterzed : bool
             True if all of the parameters are set. False if any are None or nan.
         """
-        return not (
-            None in self._get_parameters() or True in np.isnan(np.asarray(self._get_parameters()))
-        )
+        return not (None in self._get_parameters() or True in np.isnan(np.asarray(self._get_parameters())))
 
     @abstractmethod
     def _set_parameters(self, popt):
@@ -286,9 +284,7 @@ class ParametricModel(ABC):
         """Internal method to format and/or guess p0"""
         pass
 
-    def _bootstrap_resample(
-        self, d1, d2, E, use_jacobian, bootstrap_iterations, seed=None, **kwargs
-    ):
+    def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, seed=None, **kwargs):
         """Internal function to identify confidence intervals for parameters"""
 
         if not self._is_parameterized():
@@ -316,9 +312,7 @@ class ParametricModel(ABC):
 
             # Fit noisy data
             with np.errstate(divide="ignore", invalid="ignore", over="ignore"):
-                popt1 = self._internal_fit(
-                    xdata, E_iteration, verbose=False, use_jacobian=use_jacobian, **kwargs
-                )
+                popt1 = self._internal_fit(xdata, E_iteration, verbose=False, use_jacobian=use_jacobian, **kwargs)
 
             if popt1 is not None:
                 bootstrap_parameters.append(popt1)
@@ -420,18 +414,14 @@ class ParametricModel(ABC):
             return
         Ereference = self._reference_E(d1, d2)
         Emodel = self.E(d1, d2)
-        plots.plot_heatmap(
-            d1, d2, Ereference - Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs
-        )
+        plots.plot_heatmap(d1, d2, Ereference - Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
 
     def plot_delta_surface(self, d1, d2, cmap="PRGn", center_on_zero=True, **kwargs):
         if not self._is_parameterized():
             return
         Ereference = self._reference_E(d1, d2)
         Emodel = self.E(d1, d2)
-        plots.plot_surface_plotly(
-            d1, d2, Ereference - Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs
-        )
+        plots.plot_surface_plotly(d1, d2, Ereference - Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
 
     def plot_surface_plotly(self, d1, d2, cmap="YlGnBu", **kwargs):
         """Plots the model's effect, E(d1, d2) as a surface using synergy.utils.plots.plot_surface_plotly()

@@ -1,65 +1,63 @@
 def test_loewe_sham():
     import numpy as np
     from synergy.combination import Loewe
-    from synergy.datasets import sham
+    from tests.testing_utils.synthetic_data import sham
 
     d1, d2, E = sham()
 
     model = Loewe()
 
     synergy = model.fit(d1, d2, E)
-    assert np.abs(np.nanmean(np.log(synergy)))<0.1
+    assert np.abs(np.nanmean(np.log(synergy))) < 0.1
+
 
 def test_loewe_msp():
     import numpy as np
     from synergy.combination import Loewe
-    from synergy.datasets import bliss_independent
+    from tests.testing_utils.synthetic_data import bliss_independent
 
     d1, d2, E = bliss_independent()
 
     model = Loewe()
 
     synergy = model.fit(d1, d2, E)
-    assert np.nanmax(np.abs(np.log(synergy)))>1
-
-
-
+    assert np.nanmax(np.abs(np.log(synergy))) > 1
 
 
 def test_loewe_sham_3():
     import numpy as np
     from synergy.higher import Loewe
-    from synergy.datasets import sham_3
+    from tests.testing_utils.synthetic_data import sham_3
 
     d, E = sham_3(noise=0.03)
 
     model = Loewe()
 
     synergy = model.fit(d, E)
-    assert np.abs(np.nanmean(np.log(synergy)))<0.1
+    assert np.abs(np.nanmean(np.log(synergy))) < 0.1
+
 
 def test_loewe_msp_3():
     import numpy as np
     from synergy.higher import Loewe
-    from synergy.datasets import bliss_independent_3
+    from tests.testing_utils.synthetic_data import bliss_independent_3
 
     d, E = bliss_independent_3()
 
     model = Loewe()
 
     synergy = model.fit(d, E)
-    assert np.nanmax(np.abs(np.log(synergy)))>1
-
+    assert np.nanmax(np.abs(np.log(synergy))) > 1
 
 
 def test_loewe_delta_variant():
     import numpy as np
     from synergy.combination import Loewe
-    from synergy.datasets import sham
+    from tests.testing_utils.synthetic_data import sham
 
     d1, d2, E = sham()
 
     model = Loewe(variant="delta")
 
     synergy = model.fit(d1, d2, E)
-    assert np.nanmax(np.abs(synergy))<0.1
+    assert np.nanmax(np.abs(synergy)) < 0.1

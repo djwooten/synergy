@@ -18,8 +18,8 @@ import numpy as np
 from .jacobians.musyc_jacobian import jacobian
 from .parametric_base import ParametricModel
 
-from .. import utils
-from ..single import Hill
+from synergy import utils
+from synergy.single import Hill
 
 
 class MuSyC(ParametricModel):
@@ -187,45 +187,47 @@ class MuSyC(ParametricModel):
             )
 
         elif variant == "no_gamma":
-            self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(
-                d[0],
-                d[1],
-                E0,
-                E1,
-                E2,
-                E3,
-                np.exp(logh1),
-                np.exp(logh2),
-                np.exp(logC1),
-                np.exp(logC2),
-                self.r1r,
-                self.r2r,
-                np.exp(logalpha12),
-                np.exp(logalpha21),
-                1,
-                1,
+            self.fit_function = (
+                lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(
+                    d[0],
+                    d[1],
+                    E0,
+                    E1,
+                    E2,
+                    E3,
+                    np.exp(logh1),
+                    np.exp(logh2),
+                    np.exp(logC1),
+                    np.exp(logC2),
+                    self.r1r,
+                    self.r2r,
+                    np.exp(logalpha12),
+                    np.exp(logalpha21),
+                    1,
+                    1,
+                )
             )
 
-            self.jacobian_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: jacobian(
-                d[0],
-                d[1],
-                E0,
-                E1,
-                E2,
-                E3,
-                logh1,
-                logh2,
-                logC1,
-                logC2,
-                self.r1r,
-                self.r2r,
-                logalpha12,
-                logalpha21,
-                0,
-                0,
-            )[
-                :, :-2
-            ]
+            self.jacobian_function = (
+                lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: jacobian(
+                    d[0],
+                    d[1],
+                    E0,
+                    E1,
+                    E2,
+                    E3,
+                    logh1,
+                    logh2,
+                    logC1,
+                    logC2,
+                    self.r1r,
+                    self.r2r,
+                    logalpha12,
+                    logalpha21,
+                    0,
+                    0,
+                )[:, :-2]
+            )
 
             self.bounds = tuple(
                 zip(
@@ -497,9 +499,7 @@ class MuSyC(ParametricModel):
             1,
         )
 
-    def _model(
-        self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, r1r, r2r, alpha12, alpha21, gamma12, gamma21
-    ):
+    def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, r1r, r2r, alpha12, alpha21, gamma12, gamma21):
         # Precompute some terms that are used repeatedly
         d1_pow_h1 = np.power(d1, h1)
         d2_pow_h2 = np.power(d2, h2)
@@ -529,21 +529,13 @@ class MuSyC(ParametricModel):
             + d1_pow_h1 * r1 * r2 * r2_C2h2_pow_gamma12 * C2_pow_h2
             + d1_pow_h1 * r1 * r2_pow_gamma12_plus_1 * alpha12_d2_pow_gamma12_h2 * C2_pow_h2
             + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12_d2_pow_gamma12_h2 * r1_C1h1_pow_gamma21
-            + d1_pow_h1
-            * r1_pow_gamma21_plus_1
-            * r2_pow_gamma12
-            * alpha21_d1_pow_gamma21_h1
-            * alpha12_d2_pow_gamma12_h2
+            + d1_pow_h1 * r1_pow_gamma21_plus_1 * r2_pow_gamma12 * alpha21_d1_pow_gamma21_h1 * alpha12_d2_pow_gamma12_h2
             + d1_pow_h1 * r1_pow_gamma21_plus_1 * alpha21_d1_pow_gamma21_h1 * r2_C2h2_pow_gamma12
             + d2_pow_h2 * r1 * r2 * r1_C1h1_pow_gamma21 * C1_pow_h1
             + d2_pow_h2 * r1 * r2 * r2_C2h2_pow_gamma12 * C1_pow_h1
             + d2_pow_h2 * r1_pow_gamma21_plus_1 * r2 * alpha21_d1_pow_gamma21_h1 * C1_pow_h1
             + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21_d1_pow_gamma21_h1 * r2_C2h2_pow_gamma12
-            + d2_pow_h2
-            * r1_pow_gamma21
-            * r2_pow_gamma12_plus_1
-            * alpha21_d1_pow_gamma21_h1
-            * alpha12_d2_pow_gamma12_h2
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12_plus_1 * alpha21_d1_pow_gamma21_h1 * alpha12_d2_pow_gamma12_h2
             + d2_pow_h2 * r2_pow_gamma12_plus_1 * alpha12_d2_pow_gamma12_h2 * r1_C1h1_pow_gamma21
             + r1 * r2 * r1_C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
             + r1 * r2 * r2_C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
@@ -562,21 +554,13 @@ class MuSyC(ParametricModel):
             + d1_pow_h1 * r1 * r2 * r2_C2h2_pow_gamma12 * C2_pow_h2
             + d1_pow_h1 * r1 * r2_pow_gamma12_plus_1 * alpha12_d2_pow_gamma12_h2 * C2_pow_h2
             + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12_d2_pow_gamma12_h2 * r1_C1h1_pow_gamma21
-            + d1_pow_h1
-            * r1_pow_gamma21_plus_1
-            * r2_pow_gamma12
-            * alpha21_d1_pow_gamma21_h1
-            * alpha12_d2_pow_gamma12_h2
+            + d1_pow_h1 * r1_pow_gamma21_plus_1 * r2_pow_gamma12 * alpha21_d1_pow_gamma21_h1 * alpha12_d2_pow_gamma12_h2
             + d1_pow_h1 * r1_pow_gamma21_plus_1 * alpha21_d1_pow_gamma21_h1 * r2_C2h2_pow_gamma12
             + d2_pow_h2 * r1 * r2 * r1_C1h1_pow_gamma21 * C1_pow_h1
             + d2_pow_h2 * r1 * r2 * r2_C2h2_pow_gamma12 * C1_pow_h1
             + d2_pow_h2 * r1_pow_gamma21_plus_1 * r2 * alpha21_d1_pow_gamma21_h1 * C1_pow_h1
             + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21_d1_pow_gamma21_h1 * r2_C2h2_pow_gamma12
-            + d2_pow_h2
-            * r1_pow_gamma21
-            * r2_pow_gamma12_plus_1
-            * alpha21_d1_pow_gamma21_h1
-            * alpha12_d2_pow_gamma12_h2
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12_plus_1 * alpha21_d1_pow_gamma21_h1 * alpha12_d2_pow_gamma12_h2
             + d2_pow_h2 * r2_pow_gamma12_plus_1 * alpha12_d2_pow_gamma12_h2 * r1_C1h1_pow_gamma21
             + r1 * r2 * r1_C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
             + r1 * r2 * r2_C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
@@ -595,21 +579,13 @@ class MuSyC(ParametricModel):
             + d1_pow_h1 * r1 * r2 * r2_C2h2_pow_gamma12 * C2_pow_h2
             + d1_pow_h1 * r1 * r2_pow_gamma12_plus_1 * alpha12_d2_pow_gamma12_h2 * C2_pow_h2
             + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12_d2_pow_gamma12_h2 * r1_C1h1_pow_gamma21
-            + d1_pow_h1
-            * r1_pow_gamma21_plus_1
-            * r2_pow_gamma12
-            * alpha21_d1_pow_gamma21_h1
-            * alpha12_d2_pow_gamma12_h2
+            + d1_pow_h1 * r1_pow_gamma21_plus_1 * r2_pow_gamma12 * alpha21_d1_pow_gamma21_h1 * alpha12_d2_pow_gamma12_h2
             + d1_pow_h1 * r1_pow_gamma21_plus_1 * alpha21_d1_pow_gamma21_h1 * r2_C2h2_pow_gamma12
             + d2_pow_h2 * r1 * r2 * r1_C1h1_pow_gamma21 * C1_pow_h1
             + d2_pow_h2 * r1 * r2 * r2_C2h2_pow_gamma12 * C1_pow_h1
             + d2_pow_h2 * r1_pow_gamma21_plus_1 * r2 * alpha21_d1_pow_gamma21_h1 * C1_pow_h1
             + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21_d1_pow_gamma21_h1 * r2_C2h2_pow_gamma12
-            + d2_pow_h2
-            * r1_pow_gamma21
-            * r2_pow_gamma12_plus_1
-            * alpha21_d1_pow_gamma21_h1
-            * alpha12_d2_pow_gamma12_h2
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12_plus_1 * alpha21_d1_pow_gamma21_h1 * alpha12_d2_pow_gamma12_h2
             + d2_pow_h2 * r2_pow_gamma12_plus_1 * alpha12_d2_pow_gamma12_h2 * r1_C1h1_pow_gamma21
             + r1 * r2 * r1_C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
             + r1 * r2 * r2_C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
@@ -769,9 +745,7 @@ class MuSyC(ParametricModel):
         if len(ret) > 0:
             return "\n".join(ret)
         else:
-            return "No synergy or antagonism detected with %d percent confidence interval" % (
-                int(confidence_interval)
-            )
+            return "No synergy or antagonism detected with %d percent confidence interval" % (int(confidence_interval))
 
     def __repr__(self):
         if not self._is_parameterized():

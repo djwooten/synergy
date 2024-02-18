@@ -79,7 +79,7 @@ synergy = ["py.typed"]
 version = {attr = "synergy.version.VERSION"}
 
 [tool.black]
-line-length = 100
+line-length = 120
 include = '\.pyi?$'
 exclude = '''
 (
@@ -104,9 +104,22 @@ reportPrivateImportUsage = false
 
 [tool.ruff]
 line-length = 120
-target-version = "py37"
+target-version = "py38"
+exclude = [
+    "build",
+    "_build",
+    "venv",
+    ".git",
+]
 
-[tool.ruff.per-file-ignores]
+[tool.ruff.lint]
+# Enable Pyflakes (`F`) and a subset of the pycodestyle (`E`)  codes by default.
+# Unlike Flake8, Ruff doesn't enable pycodestyle warnings (`W`) or
+# McCabe complexity (`C901`) by default.
+select = ["E4", "E5", "E7", "E9", "F"]
+ignore = []
+
+[tool.ruff.lint.per-file-ignores]
 "__init__.py" = ["F401"]
 
 [tool.mypy]
