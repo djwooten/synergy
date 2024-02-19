@@ -15,6 +15,8 @@
 
 import numpy as np
 
+from synergy.exceptions import ModelNotParameterizedError
+
 
 class LogLinear:
     """A model that fits dose response curves as piecewise linear interpolations of E vs log(dose).
@@ -25,26 +27,29 @@ class LogLinear:
     # NOTE on __init__() and fit(): **kwargs is only present to avoid errors
     # people may run into when reusing code for fitting Hill functions in which
     # they set kwargs. There are no kwargs used for these methods
-    def __init__(self, aggregation_function=np.mean, enforce_invertability=False, **kwargs):
+    def __init__(self, aggregation_function=np.median, nan_inverses=False, **kwargs):
         """Ctor.
 
-        :param Callable aggregation_function: Used to compute "average" effect given replicate dose measurements (default=np.mean)
-        :param bool enforce_invertability: If True, the fit model
-        Dose response curves are typically strictly monotonic, however due to measurement noise or intrinsic biology, a piecewise linear model of the dose-response curve may not be strictly monotonic (e.g., non-invertible). If enforce_invertability==True, all E's that do not correspond to a unique d will return E_inv(E)=NaN. If enforce_invertability=False, non-monotonic regions will be cut out and replaced with a monotonic, log-linear curve so that E_inv can be uniquely calculated.
+        Dose response curves are typically strictly monotonic, however due to measurement noise or intrinsic biology, a
+        piecewise linear model of the dose-response curve may not be strictly monotonic (e.g., non-invertible). If
+        nan_inverses==True, all E's that do not correspond to a unique d will return E_inv(E)=NaN. If
+        nan_inverses=False, non-monotonic regions will be cut out and replaced with a monotonic, log-linear curve so
+        that E_inv can be uniquely calculated.
+
+        :param Callable aggregation_function: Used to compute a representative effect given replicate dose measurements
+        :param bool nan_inverses: If True, the fit model
+
         """
-        self._d = None
-        self._E = None
-        self._logd = None
+        self._d = np.asarray([])
+        self._E = np.asarray([])
+        self._logd = np.asarray([])
         self._fit = False
         self._aggregation_function = aggregation_function
-        self._enforce_invertability = enforce_invertability
-
-        self.E0 = None
-        self.Emax = None
+        self._nan_inverses = nan_inverses
 
         # These will be filled based on which regions are invertible
-        self._logd_for_inverse = None
-        self._E_for_inverse = None
+        self._logd_for_inverse = np.asarray([])  # This stores all the log(d)'s used to construct a monotonic inverse
+        self._E_for_inverse = np.asarray([])  # Thisi stores all the E's used to construct a monotonic inverse
         self._uninvertible_domains = []
         self._ready_for_inverse = False
 
@@ -63,31 +68,29 @@ class LogLinear:
         self._ready_for_inverse = False
 
         if len(d) > len(np.unique(d)):
-            self._d = []
-            self._E = []
+            d_uniques = []
+            E_represntatives = []
 
             # Given repeated dose measurements, average E for each
             for val in np.unique(d):
-                self._d.append(val)
-                self._E.append(self._aggregation_function(E[d == val]))
+                d_uniques.append(val)
+                E_represntatives.append(self._aggregation_function(E[d == val]))
 
-            self._d = np.asarray(self._d)
-            self._E = np.asarray(self._E)
+            self._d = np.asarray(d_uniques)
+            self._E = np.asarray(E_represntatives)
 
         else:
             self._d = np.array(d, copy=True)
             self._E = np.array(E, copy=True)
 
-        # Replace 0 doses with the minimum float value
+        # Replace d=0 with the minimum (positive) float value (required for log-linearization)
+        # TODO: A better solution would be to linearly interpolate between d=0 and the next dose up
         self._d[self._d == 0] = np.nextafter(0, 1)
 
         # Sort doses and E
         sorted_indices = np.argsort(self._d)
         self._d = self._d[sorted_indices]
         self._E = self._E[sorted_indices]
-
-        self.E0 = self._E[0]
-        self.Emax = self._E[-1]
 
         # Get log-transformed dose (used for interpolation)
         self._logd = np.log(self._d)
@@ -106,7 +109,7 @@ class LogLinear:
             Evaluate's the model at dose in d
         """
         if not self._fit:
-            return d * np.nan
+            raise ModelNotParameterizedError("Must call fit() before calling E().")
 
         d = np.array(d, copy=True)
         d[d == 0] = np.nextafter(0, 1)
@@ -117,7 +120,7 @@ class LogLinear:
         return E
 
     def E_inv(self, E):
-        """Find the dose that will achieve effects in E. Only works for dose responses with strictly increasing or strictly decreasing E.
+        """Find the inverse of the dose response model.
 
         Parameters
         ----------
@@ -130,17 +133,21 @@ class LogLinear:
             Doses which achieve effects E using this model.
         """
         if not self._fit:
-            return E * np.nan
+            raise ModelNotParameterizedError("Must call fit() before calling E_inv().")
+
         if not self._ready_for_inverse:
             self._prepare_inverse()
+
         if len(self._logd_for_inverse) == 0:
             return E * np.nan
 
         # These effects are below the minimum or above the maximum, and therefore cannot be used for interpolation
         invalid_mask = (E < min(self._E)) | (E > max(self._E))
 
-        if self._enforce_invertability:
-            # Any E inside a domain we have found to be un-invertible is also invalid. If _enforce_invertability is False (default), the entire un-invertible domain will just be filled with a straight line. In this region, the model would have E_inv(E(d))!=d. If enforce_invertability is True, this whole region is exlucded (np.nan)
+        if self._nan_inverses:
+            # Any E inside a domain we have found to be un-invertible is also invalid. If _nan_inverses is False
+            # (default), the entire un-invertible domain will just be filled with a straight line. In this region, the
+            # model will have E_inv(E(d)) != d. If nan_inverses is True, this whole region is exlucded (np.nan)
             for domain in self._uninvertible_domains:
                 a, b = sorted(domain)
                 invalid_mask = invalid_mask | ((E > a) & (E < b))
@@ -169,8 +176,9 @@ class LogLinear:
 
     def _prepare_inverse(self):
         if not self._fit:
-            return
-        self._get_invertible_domains(self._E)
+            raise ModelNotParameterizedError("Must run fit() before preparing for inverse.")
+
+        self._get_uninvertible_domains(self._E)
 
         # Which data points fall inside which uninvertable domains?
         index_to_udomain = dict()
@@ -178,7 +186,8 @@ class LogLinear:
         # Which data points are outside of uninvertable domains?
         valid_indices = []
 
-        # These are the points we will use for interpolation. We will later extend them by the boundaries of the uninvertible domains
+        # These are the points we will use for interpolation. We will later extend them by the boundaries of the
+        # uninvertible domains
         valid_E = []
         valid_d = []
 
@@ -186,7 +195,7 @@ class LogLinear:
         for i, E in enumerate(self._E):
             found = False
             for domain in self._uninvertible_domains:
-                if E >= min(domain) and E <= max(domain):
+                if min(domain) <= E <= max(domain):
                     index_to_udomain[i] = domain
                     found = True
                     break
@@ -196,7 +205,7 @@ class LogLinear:
                 valid_d.append(self._logd[i])
 
         # Imagine 6 data points [0, 1, 2, 3, 4, 5]
-        # If valid_indices = [0,1,5] then bad_indices = [2, 3, 4]
+        # If valid_indices = [0, 1, 5] then bad_indices = [2, 3, 4]
         # 2 is adjacent to a valid index, so we interpolate between them
         # Likewise for 4
         # General strategy - loop over bad_indices, loop over +/-1 neighbors, if in valid_indices, find boundary point
@@ -278,21 +287,35 @@ class LogLinear:
         self._logd_for_inverse = np.asarray(valid_d)[sorted_indices]
         self._ready_for_inverse = True
 
-    def _get_invertible_domains(self, E):
+    def _get_uninvertible_domains(self, E):
+        """Determine which interpolations between E's overlap
+
+        For example, given a dose response that looks like
+        ```
+        5  E
+        4  |-
+        3  |   -    -
+        2  |     -      -
+        1  |                 -
+        0  +------------------d
+        ```
+        there is no way to uniquely invert the range 2 <= E <= 3
+        """
         if not self._fit:
-            return
+            raise ModelNotParameterizedError("Model must be fit before it can be inverted")
+
         self._uninvertible_domains = []
-        for i in range(len(E) - 2):
-            for j in range(i + 1, len(E) - 1):
-                r1 = [E[i], E[i + 1]]
-                r2 = [E[j], E[j + 1]]
-                overlap = self._interval_intersection(r2, r1)
-                if overlap is not None:
+        for E_idx_1 in range(len(E) - 2):
+            for E_idx_2 in range(E_idx_1 + 1, len(E) - 1):
+                E_interval_1 = E[E_idx_1], E[E_idx_1 + 1]
+                E_interval_2 = E[E_idx_2], E[E_idx_2 + 1]
+                overlap = self._interval_intersection(E_interval_1, E_interval_2)
+                if overlap:
                     # Does this overlap with any regions we have seen before?
                     previous_overlaps = []  # We will merge these all together
-                    for _i, prev_olap in enumerate(self._uninvertible_domains):
-                        overlap_2 = self._interval_intersection(overlap, prev_olap, border_is_overlap=True)
-                        if overlap_2 is not None:
+                    for prev_olap in self._uninvertible_domains:
+                        intersection_with_prev_olap = self._interval_intersection(overlap, prev_olap, inclusive=True)
+                        if intersection_with_prev_olap:
                             previous_overlaps.append(prev_olap)
 
                     if len(previous_overlaps) == 0:  # No previous overlap
@@ -300,41 +323,73 @@ class LogLinear:
                     else:  # Merge this set with all previous overlaps
                         for po in previous_overlaps:  # remove previous ones
                             self._uninvertible_domains.remove(po)
-                        self._uninvertible_domains.append(
-                            self._interval_union_multiple(
-                                previous_overlaps
-                                + [
-                                    overlap,
-                                ]
-                            )
-                        )
+                        self._uninvertible_domains.append(self._interval_hull_multiple(previous_overlaps + [overlap]))
 
-    def _interval_intersection(self, r1, r2, border_is_overlap=False):
-        r1 = sorted(r1)  # low -> high
-        r2 = sorted(r2)  # low -> high
+    def _interval_intersection(self, interval_1: tuple, interval_2: tuple, inclusive: bool = False) -> tuple:
+        """Find the intersection between two intervals.
+
+        Inputs like
+        ```
+        |--int_1--|
+                     |--int_2--|
+        ```
+        will return an empty interval ().
+
+        Inputs like
+        ```
+        |----int_1----|
+           |------int_2-----|
+           a          b
+        ```
+        will return the interval (a, b).
+
+        Inputs like
+        ```
+        |--int_1--|
+                  |--int_2--|
+                  a
+        ```
+        will return the interval (a, a) only if inclusive == True, otherwise will return an empty interval.
+
+        Interval order does not matter.
+
+        :param tuple interval_1: A 2-tuple of floats
+        :param tuple interval_2: A 2-tuple of floats
+        :param bool inclusive: If True, will include the boundary points as a potential intersection
+        """
+        interval_1 = tuple(sorted(interval_1))  # (low, high)
+        interval_2 = tuple(sorted(interval_2))  # (low, high)
 
         # If the low value of one interval is above the high value of the other, there can be no overlap
-        if not border_is_overlap:
-            if r2[0] >= r1[1] or r1[0] >= r2[1]:
-                return None
+        if not inclusive:
+            if interval_2[0] >= interval_1[1] or interval_1[0] >= interval_2[1]:
+                return ()  # No overlap
         else:
-            if r2[0] > r1[1] or r1[0] > r2[1]:
-                return None
+            if interval_2[0] > interval_1[1] or interval_1[0] > interval_2[1]:
+                return ()  # No overlap
 
         # The low value is the max of the two low values, and the high value is the min of the two high values
-        return (max(r1[0], r2[0]), min(r1[1], r2[1]))
+        return max(interval_1[0], interval_2[0]), min(interval_1[1], interval_2[1])
 
-    def _interval_union(self, r1, r2):
-        r1 = sorted(r1)
-        r2 = sorted(r2)
-        return (min(r1[0], r2[0]), max(r1[1], r2[1]))
+    def _interval_hull_multiple(self, intervals: list) -> tuple:
+        """Find the convex hull of all the given intervals.
+        Inputs like
+        ```
+        |--int_1--|
+                     |--int_2--|
+        a                      b
+        ```
+        will return the interval (a, b)
+        """
+        if len(intervals) == 0:
+            return ()
 
-    def _interval_union_multiple(self, sets):
-        if len(sets) == 0:
-            return None
-        if len(sets) == 1:
-            return sets[0]
-        r1 = sets[0]
-        for r2 in sets[1:]:
-            r1 = self._interval_union(r1, r2)
-        return r1
+        if len(intervals) == 1:
+            return intervals[0]
+
+        min_val, max_val = intervals[0]
+        for interval in intervals[1:]:
+            min_val = min(min_val, min(interval))
+            max_val = max(max_val, max(interval))
+
+        return min_val, max_val
