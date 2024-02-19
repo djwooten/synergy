@@ -5,7 +5,6 @@ from unittest import TestCase
 import numpy as np
 
 from synergy.single.nonparametric import LogLinear
-from synergy.testing_utils.synthetic_data_loader import load_synthetic_data
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
