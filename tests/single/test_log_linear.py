@@ -12,8 +12,22 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 class LogLinearTests(TestCase):
     """Tests for the log linear model."""
 
+    def test_is_specified(self):
+        """Ensure that is_specified is false until model.fit is called"""
+        model = LogLinear()
+
+        # Ensure the model is not yet marked as specified
+        self.assertFalse(model.is_specified)
+
+        d = np.asarray([1, 10])
+        E = np.asarray([0, 1])
+        model.fit(d, E)
+
+        # Ensure the model is now specified
+        self.assertTrue(model.is_specified)
+
     def test_log_linearization(self):
-        """-"""
+        """Ensure the model correctly computes log-linearization."""
         model = LogLinear()
         #   |         X
         #   |
@@ -50,7 +64,7 @@ class LogLinearTests(TestCase):
         self.assertTrue(np.isnan(obs_E).all(), msg=f"LogLinear should be NaN outside of trained range ({obs_E})")
 
     def test_inverse_monotonic(self):
-        """-"""
+        """Ensure monotonic response curves are invertible in the entire range."""
         model = LogLinear()
         #   |         X
         #   |
@@ -75,7 +89,7 @@ class LogLinearTests(TestCase):
         np.testing.assert_allclose(observed_d, expected_d)
 
     def test_inverse_nans_outside_of_bounds(self):
-        """-"""
+        """Ensure E_inv(E) is NaN at E above and below the trained range."""
         model = LogLinear()
         d = np.asarray([1, 10, 100])
         E = np.asarray([0, 1, 5])
@@ -86,7 +100,7 @@ class LogLinearTests(TestCase):
         self.assertTrue(np.isnan(obs_d).all(), msg=f"LogLinear should be NaN outside of trained range ({obs_d})")
 
     def test_inverse_linearize_nans_in_middle(self):
-        """-"""
+        """Ensure non-invertible regions in a response curve are smoothed via an invertible linear approximation."""
         #    |---||----||---|
         #   |               X
         # _ |             X
@@ -117,7 +131,7 @@ class LogLinearTests(TestCase):
         np.testing.assert_allclose(observed_d, expected_d)
 
     def test_inverse_linearize_nans_on_edges(self):
-        """Ensure that nonmonotonic regions at the boundary use their inner edges for inverses.
+        """Ensure non-invertible regions at the boundary use their inner edges for inverses.
 
         TODO: It seems like there could be a more clever solution, like linearizing from the boundary to the median?
         """
@@ -151,7 +165,7 @@ class LogLinearTests(TestCase):
         np.testing.assert_allclose(observed_d, expected_d)
 
     def test_inverse_linearize_with_joined_intervals(self):
-        """Ensure that non-invertible regions that overlap are linearized like a single non-invertible region"""
+        """Ensure  non-invertible regions that overlap are linearized like a single non-invertible region"""
         #    |--||---||--|
         # _ |           X
         #   |       X
@@ -190,7 +204,7 @@ class LogLinearTests(TestCase):
         np.testing.assert_allclose(observed_d, expected_d)
 
     def test_inverse_with_nan_inverses(self):
-        """Ensure that when nan_inverses==True, nonmonotonic regions return NaN for their inverse"""
+        """Ensure that when nan_inverses==True, non-invertible regions return NaN for their inverse"""
         #    |---||----||---|
         #   |             X
         # _ |           X   X
