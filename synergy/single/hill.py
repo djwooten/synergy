@@ -64,7 +64,8 @@ class Hill(ParameterizedModel1D):
             creating a synthetic Hill model, rather than fitting from data
 
         X_bounds: tuple
-            Bounds to use for Hill equation parameters during fitting. Valid options are E0_bounds, Emax_bounds, h_bounds, C_bounds.
+            Bounds to use for Hill equation parameters during fitting. Valid options are E0_bounds, Emax_bounds,
+            h_bounds, C_bounds.
         """
 
         super().__init__()
@@ -106,7 +107,7 @@ class Hill(ParameterizedModel1D):
         effect : array_like
             Evaluate's the model at dose in d
         """
-        if not self.is_parameterized:
+        if not self.is_specified:
             return super().E(d)
 
         return self._model(d, self.E0, self.Emax, self.h, self.C)
@@ -125,7 +126,7 @@ class Hill(ParameterizedModel1D):
             Doses which achieve effects E using this model. Effects that are
             outside the range [E0, Emax] will return np.nan for the dose
         """
-        if not self.is_parameterized:
+        if not self.is_specified:
             return super().E_inv(E)
 
         return self._model_inv(E, self.E0, self.Emax, self.h, self.C)
@@ -215,7 +216,7 @@ class Hill(ParameterizedModel1D):
         return params[0], params[1], np.log(params[2]), np.log(params[3])
 
     def __repr__(self):
-        if not self.is_parameterized:
+        if not self.is_specified:
             return "Hill()"
 
         return "Hill(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)" % (self.E0, self.Emax, self.h, self.C)
@@ -292,7 +293,7 @@ class Hill_2P(Hill):
         return np.log(params[0]), np.log(params[1])
 
     def __repr__(self):
-        if not self.is_parameterized:
+        if not self.is_specified:
             return "Hill_2P()"
 
         return "Hill_2P(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)" % (
@@ -304,7 +305,11 @@ class Hill_2P(Hill):
 
 
 class Hill_CI(Hill_2P):
-    """Mathematically equivalent two-parameter Hill equation with E0=1 and Emax=0. However, Hill_CI.fit() uses the log-linearization approach to dose-response fitting used by the Combination Index."""
+    """Model used to calculate Combination Index synergy.
+
+    Mathematically this equivalent two-parameter Hill equation with E0=1 and Emax=0. However, Hill_CI.fit() uses a
+    log-linearization approach to dose-response fitting used by the Combination Index.
+    """
 
     def __init__(self, h=None, C=None):
         super().__init__(h=h, C=C, E0=1.0, Emax=0.0)
@@ -324,12 +329,12 @@ class Hill_CI(Hill_2P):
         return (h, C)
 
     def plot_linear_fit(self, d, E, ax=None):
-        if not self.is_parameterized:
+        if not self.is_specified:
             raise ModelNotParameterizedError()
 
         try:
             from matplotlib import pyplot as plt
-        except:
+        except ImportError:
             # TODO: Error
             # TODO: Move this whole function to utils.plot
             return
@@ -364,7 +369,7 @@ class Hill_CI(Hill_2P):
         """Bootstrap resampling is not yet implemented for CI"""
 
     def __repr__(self):
-        if not self.is_parameterized:
+        if not self.is_specified:
             return "Hill_CI()"
 
         return "Hill_CI(h=%0.2f, C=%0.2e)" % (self.h, self.C)

@@ -19,7 +19,7 @@ import numpy as np
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 
-from synergy import utils
+from synergy.utils import base as utils
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 
 
@@ -76,18 +76,12 @@ class ParameterizedModel1D(ABC):
         Returns
         ----------
         doses : array_like
-            Doses which achieve effects E using this model. Will return np.nan for effects outside of the model's effect range, or for non-invertable models
+            Doses which achieve effects E using this model. Will return np.nan for effects outside of the model's effect
+            range, or for non-invertable models
         """
 
-    def fit(
-        self,
-        d,
-        E,
-        use_jacobian=True,
-        bootstrap_iterations=0,
-        **kwargs,
-    ):
-        """Fit the Hill equation to data. Fitting algorithm searches for h and C in a log-scale, but all bounds and guesses should be provided in a linear scale.
+    def fit(self, d, E, use_jacobian=True, bootstrap_iterations=0, **kwargs):
+        """Fit the model to data.
 
         Parameters
         ----------
@@ -143,7 +137,7 @@ class ParameterizedModel1D(ABC):
                     **kwargs,
                 )
 
-    def get_parameter_range(self, confidence_interval: float = 95):
+    def get_confidence_intervals(self, confidence_interval: float = 95):
         """Returns the lower bound and upper bound estimate for each parameter.
 
         Parameters:
@@ -151,14 +145,12 @@ class ParameterizedModel1D(ABC):
         confidence_interval : float, default=95
             % confidence interval to return. Must be between 0 and 100.
         """
-        if not self.is_parameterized:
+        if not self.is_specified:
             raise ModelNotParameterizedError()
         if not self.converged:
             raise ModelNotFitToDataError()
         if confidence_interval < 0 or confidence_interval > 100:
-            raise ValueError(
-                f"confidence_interval must be between 0 and 100 ({confidence_interval})"
-            )
+            raise ValueError(f"confidence_interval must be between 0 and 100 ({confidence_interval})")
         if self.bootstrap_parameters is None:
             raise ValueError(
                 "Model must have been fit with bootstrap_iterations > 0 to get parameter confidence intervals"
@@ -169,7 +161,7 @@ class ParameterizedModel1D(ABC):
         return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0)
 
     @property
-    def is_parameterized(self):
+    def is_specified(self):
         """True if all parameters are set"""
         parameters = self.get_parameters()
         if parameters is None:
@@ -213,9 +205,13 @@ class ParameterizedModel1D(ABC):
         return params
 
     def _score(self, d, E):
-        """Calculate goodness of fit and model quality scores, including sum-of-squares residuals, R^2, Akaike Information Criterion (AIC), and Bayesian Information Criterion (BIC).
+        """Calculate goodness of fit and model quality scores
 
-        If model is not yet paramterized, does nothing
+        This calculations
+        - `sum_of_squares_residuals`
+        - `r_squared`
+        - `aic` (Akaike Information Criterion)
+        - `bic` (Bayesian Information Criterion)
 
         Called automatically during model.fit(d1, d2, E)
 
@@ -227,7 +223,7 @@ class ParameterizedModel1D(ABC):
         E : array_like
             Measured dose-response at doses d
         """
-        if self.is_parameterized:
+        if self.is_specified:
             n_parameters = len(self.get_parameters())
 
             self.sum_of_squares_residuals = utils.residual_ss_1d(d, E, self.E)
@@ -239,9 +235,10 @@ class ParameterizedModel1D(ABC):
         """Identify confidence intervals for parameters using bootstrap resampling.
 
         Residuals are randomly sampled from a normal distribution with :math:`\sigma = \sqrt{\frac{RSS}{n - N}}`
-        where :math:`RSS` is the residual sum of square, :math:`n` is the number of data points, and :math:`N` is the number of parameters.
+        where :math:`RSS` is the residual sum of square, :math:`n` is the number of data points, and :math:`N` is the
+        number of parameters.
         """
-        if not self.is_parameterized:
+        if not self.is_specified:
             raise ModelNotParameterizedError()
         if not self.converged:
             raise ModelNotFitToDataError()
@@ -262,9 +259,7 @@ class ParameterizedModel1D(ABC):
 
             # Fit noisy data
             with np.errstate(divide="ignore", invalid="ignore"):
-                popt1 = self._internal_fit(
-                    d, E_iteration, verbose=False, use_jacobian=use_jacobian, **kwargs
-                )
+                popt1 = self._internal_fit(d, E_iteration, verbose=False, use_jacobian=use_jacobian, **kwargs)
 
             if popt1 is not None:
                 bootstrap_parameters.append(popt1)

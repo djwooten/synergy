@@ -43,7 +43,6 @@ class LogLinear:
         self._d = np.asarray([])
         self._E = np.asarray([])
         self._logd = np.asarray([])
-        self._fit = False
         self._aggregation_function = aggregation_function
         self._nan_inverses = nan_inverses
 
@@ -52,6 +51,10 @@ class LogLinear:
         self._E_for_inverse = np.asarray([])  # Thisi stores all the E's used to construct a monotonic inverse
         self._uninvertible_domains = []
         self._ready_for_inverse = False
+
+    @property
+    def is_specified(self):
+        return len(self._logd) > 0 and len(self._E) > 0
 
     def fit(self, d, E, **kwargs):
         """Calls __init__(d, E, aggregation_function)
@@ -64,7 +67,6 @@ class LogLinear:
         E : array_like
             Array of effects measured at doses d
         """
-        self._fit = True
         self._ready_for_inverse = False
 
         if len(d) > len(np.unique(d)):
@@ -108,7 +110,7 @@ class LogLinear:
         effect : array_like
             Evaluate's the model at dose in d
         """
-        if not self._fit:
+        if not self.is_specified:
             raise ModelNotParameterizedError("Must call fit() before calling E().")
 
         d = np.array(d, copy=True)
@@ -132,7 +134,7 @@ class LogLinear:
         doses : array_like
             Doses which achieve effects E using this model.
         """
-        if not self._fit:
+        if not self.is_specified:
             raise ModelNotParameterizedError("Must call fit() before calling E_inv().")
 
         if not self._ready_for_inverse:
@@ -171,11 +173,8 @@ class LogLinear:
         drug.fit(d, E)
         return drug
 
-    def is_fit(self):
-        return self._fit
-
     def _prepare_inverse(self):
-        if not self._fit:
+        if not self.is_specified:
             raise ModelNotParameterizedError("Must run fit() before preparing for inverse.")
 
         self._get_uninvertible_domains(self._E)
@@ -236,7 +235,8 @@ class LogLinear:
                         dupper = ld
                     logd_target = np.interp(E_target, [Elower, Eupper], [dlower, dupper])
 
-                    # These are new points that exist along the log-linear interpolation, where (d,E) exist at the boundary of un-invertible domains
+                    # These are new points that exist along the log-linear interpolation, where (d, E) exist at the
+                    # boundary of un-invertible domains
                     valid_d.append(logd_target)
                     valid_E.append(E_target)
 
@@ -301,7 +301,7 @@ class LogLinear:
         ```
         there is no way to uniquely invert the range 2 <= E <= 3
         """
-        if not self._fit:
+        if not self.is_specified:
             raise ModelNotParameterizedError("Model must be fit before it can be inverted")
 
         self._uninvertible_domains = []

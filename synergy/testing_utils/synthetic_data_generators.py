@@ -16,14 +16,56 @@
 import sys
 
 import numpy as np
+from scipy.stats import norm
 
 from synergy.combination import MuSyC
-from synergy.higher import MuSyC as MuSyC_higher
-from synergy.utils import base as utils, dose_utils
+from synergy.utils import dose_utils
 from synergy.single import Hill
 
 
 FLOAT_MAX = sys.float_info.max
+
+
+class HillDataGenerator:
+    """Tools to simulate data from a Hill equation."""
+
+    @staticmethod
+    def get_data(
+        E0: float = 1.0,
+        Emax: float = 0.0,
+        h: float = 1.0,
+        C: float = 1.0,
+        dmin: float = None,
+        dmax: float = None,
+        n_points: int = 6,
+        replicates: int = 1,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
+    ):
+        if replicates < 1:
+            raise ValueError(f"Must have at least 1 replicate ({replicates}).")
+        if dmin is None:
+            dmin = C / 20.0
+        if dmax is None:
+            dmax = C * 20.0
+
+        if dmin >= dmax:
+            raise ValueError(f"dmin ({dmin}) must be less than dmax ({dmax}).")
+        if dmin < 0:
+            raise ValueError(f"dmin ({dmin}) must be >= 0.")
+        if dmin == 0:
+            dmin = np.nextafter(0.0)
+
+        d = np.logspace(np.log10(dmin), np.log10(dmax), num=n_points)
+        d = np.hstack([d] * replicates)
+
+        d_noisy = d + norm.rvs(scale=d * d_noise)
+        d_noisy[d_noisy < 0] = 0
+
+        model = Hill(E0=E0, Emax=Emax, h=h, C=C)
+        E = model.E(d_noisy)
+        E = E + norm.rvs(scale=E * E_noise)
+        return d, E
 
 
 class ShamDataGenerator:
@@ -46,7 +88,7 @@ class ShamDataGenerator:
             E0 = drug_model.E(0)
             Emax = drug_model.E(FLOAT_MAX / 1e50)  # For most cases, this is probably safe to get Emax without overflows
             noise = noise * (E0 - Emax)
-            E = E + noise * (2 * np.random.rand(n_points) - 1)
+            E = E + noise * (2 * np.random.rand(len(E)) - 1)
 
         return d1, d2, E
 
@@ -66,7 +108,7 @@ class ShamDataGenerator:
             E0 = drug_model.E(0)
             Emax = drug_model.E(FLOAT_MAX / 1e50)  # For most cases, this is probably safe to get Emax without overflows
             noise = noise * (E0 - Emax)
-            E = E + noise * (2 * np.random.rand(n_points) - 1)
+            E = E + noise * (2 * np.random.rand(len(E)) - 1)
 
         return doses, E
 
@@ -91,6 +133,13 @@ class MuSyCDataGenerator:
         alpha21: float = 1.0,
         gamma12: float = 1.0,
         gamma21: float = 1.0,
+        d1min=None,
+        d1max=None,
+        d2min=None,
+        d2max=None,
+        n_points1: int = 6,
+        n_points2: int = 6,
+        replicates: int = 1,
         noise: float = 0.05,
     ):
         model = MuSyC(
@@ -108,12 +157,23 @@ class MuSyCDataGenerator:
             gamma21=gamma21,
         )
 
-        d1, d2 = dose_utils.make_dose_grid(C1 / 20, C1 * 20, C2 / 20, C2 * 20, 6, 6, include_zero=True)
+        if d1min is None:
+            d1min = C1 / 20.0
+        if d1max is None:
+            d1max = C1 * 20.0
+        if d2min is None:
+            d2min = C2 / 20.0
+        if d2max is None:
+            d2max = C2 * 20.0
+
+        d1, d2 = dose_utils.make_dose_grid(
+            d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates, include_zero=True
+        )
 
         E = model.E(d1, d2)
         noise = noise * (E0 - E3)
 
-        E = E + noise * (2 * np.random.rand(len(d1)) - 1)
+        E = E + noise * (2 * np.random.rand(len(E)) - 1)
 
         return d1, d2, E
 
