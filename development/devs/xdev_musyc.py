@@ -28,16 +28,14 @@ truemodel = MuSyC(
 
 npoints = 8
 npoints2 = 8
-d1, d2 = make_dose_grid(
-    C1 / 1e2, C1 * 1e2, C2 / 1e2, C2 * 1e2, npoints, npoints2, include_zero=True
-)
+d1, d2 = make_dose_grid(C1 / 1e2, C1 * 1e2, C2 / 1e2, C2 * 1e2, npoints, npoints2, include_zero=True)
 
 E = truemodel.E(d1, d2)
 
 noise = 0.05
 E_fit = E + noise * (E0 - E3) * (2 * np.random.rand(len(E)) - 1)
 
-model = MuSyC(variant="no_gamma")
+model = MuSyC(fit_gamma="no_gamma")
 model.fit(d1, d2, E_fit, bootstrap_iterations=100)
 
 print(model.summary())

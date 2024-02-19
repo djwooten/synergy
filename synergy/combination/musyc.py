@@ -18,8 +18,9 @@ import numpy as np
 from .jacobians.musyc_jacobian import jacobian
 from .parametric_base import ParametricModel
 
-from synergy import utils
+from synergy.utils import base as utils
 from synergy.single import Hill
+from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 
 
 class MuSyC(ParametricModel):
@@ -73,7 +74,7 @@ class MuSyC(ParametricModel):
         alpha21=None,
         gamma12=None,
         gamma21=None,
-        variant="full",
+        fit_gamma=True,
     ):
         """Ctor.
 
@@ -97,7 +98,7 @@ class MuSyC(ParametricModel):
         self.gamma12_bounds = gamma12_bounds
         self.gamma21_bounds = gamma21_bounds
 
-        self.variant = variant
+        self.fit_gamma = fit_gamma
 
         self.r1r = r1r
         self.r2r = r2r
@@ -130,7 +131,7 @@ class MuSyC(ParametricModel):
             self.loggamma12_bounds = (np.log(gamma12_bounds[0]), np.log(gamma12_bounds[1]))
             self.loggamma21_bounds = (np.log(gamma21_bounds[0]), np.log(gamma21_bounds[1]))
 
-        if variant == "full":
+        if fit_gamma:
             self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: self._model(
                 d[0],
                 d[1],
@@ -186,7 +187,7 @@ class MuSyC(ParametricModel):
                 )
             )
 
-        elif variant == "no_gamma":
+        else:
             self.fit_function = (
                 lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(
                     d[0],
@@ -295,7 +296,7 @@ class MuSyC(ParametricModel):
 
             p0 = [(E0_1 + E0_2) / 2.0, E1, E2, E3, h1, h2, C1, C2, 1, 1, 1, 1]
 
-            if self.variant == "no_gamma":
+            if not self.fit_gamma:
                 p0 = p0[:-2]
 
         p0 = list(self._transform_params_to_fit(p0))
@@ -304,7 +305,7 @@ class MuSyC(ParametricModel):
 
     def _transform_params_from_fit(self, params):
 
-        if self.variant == "no_gamma":
+        if not self.fit_gamma:
             E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21 = params
         else:
             (
@@ -331,14 +332,14 @@ class MuSyC(ParametricModel):
         alpha12 = np.exp(logalpha12)
         alpha21 = np.exp(logalpha21)
 
-        if self.variant == "no_gamma":
+        if not self.fit_gamma:
             return E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21
 
         return E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21
 
     def _transform_params_to_fit(self, params):
 
-        if self.variant == "no_gamma":
+        if not self.fit_gamma:
             E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21 = params
         else:
             E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21 = params
@@ -352,7 +353,7 @@ class MuSyC(ParametricModel):
         logalpha12 = np.log(alpha12)
         logalpha21 = np.log(alpha21)
 
-        if self.variant == "no_gamma":
+        if not self.fit_gamma:
             return E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21
 
         return (
@@ -371,10 +372,10 @@ class MuSyC(ParametricModel):
         )
 
     def E(self, d1, d2):
-        if not self._is_parameterized():
-            return None
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
 
-        if self.variant == "no_gamma":
+        if not self.fit_gamma:
             return self._model(
                 d1,
                 d2,
@@ -415,7 +416,7 @@ class MuSyC(ParametricModel):
             )
 
     def _get_parameters(self):
-        if self.variant == "no_gamma":
+        if not self.fit_gamma:
             return (
                 self.E0,
                 self.E1,
@@ -445,7 +446,7 @@ class MuSyC(ParametricModel):
             )
 
     def _set_parameters(self, popt):
-        if self.variant == "no_gamma":
+        if not self.fit_gamma:
             (
                 self.E0,
                 self.E1,
@@ -478,8 +479,9 @@ class MuSyC(ParametricModel):
         return Hill, Hill
 
     def _reference_E(self, d1, d2):
-        if not self._is_parameterized():
-            return None
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
+
         return self._model(
             d1,
             d2,
@@ -606,8 +608,8 @@ class MuSyC(ParametricModel):
         return beta
 
     def get_parameters(self, confidence_interval=95):
-        if not self._is_parameterized():
-            return None
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
 
         beta = MuSyC._get_beta(self.E0, self.E1, self.E2, self.E3)
 
@@ -650,7 +652,7 @@ class MuSyC(ParametricModel):
         params["alpha21"] = [
             self.alpha21,
         ]
-        if self.variant != "no_gamma":
+        if self.fit_gamma:
             params["gamma12"] = [
                 self.gamma12,
             ]
@@ -669,14 +671,14 @@ class MuSyC(ParametricModel):
             params["C2"].append(parameter_ranges[:, 7])
             params["alpha12"].append(parameter_ranges[:, 8])
             params["alpha21"].append(parameter_ranges[:, 9])
-            if self.variant != "no_gamma":
+            if self.fit_gamma:
                 params["gamma12"].append(parameter_ranges[:, 10])
                 params["gamma21"].append(parameter_ranges[:, 11])
 
-            bsE0 = self.bootstrap_parameters[:, 0]
-            bsE1 = self.bootstrap_parameters[:, 1]
-            bsE2 = self.bootstrap_parameters[:, 2]
-            bsE3 = self.bootstrap_parameters[:, 3]
+            bsE0 = self.bootstrap_parameters[:, 0]  # type: ignore
+            bsE1 = self.bootstrap_parameters[:, 1]  # type: ignore
+            bsE2 = self.bootstrap_parameters[:, 2]  # type: ignore
+            bsE3 = self.bootstrap_parameters[:, 3]  # type: ignore
             beta_bootstrap = MuSyC._get_beta(bsE0, bsE1, bsE2, bsE3)
 
             beta_bootstrap = np.percentile(
@@ -748,13 +750,13 @@ class MuSyC(ParametricModel):
             return "No synergy or antagonism detected with %d percent confidence interval" % (int(confidence_interval))
 
     def __repr__(self):
-        if not self._is_parameterized():
+        if not self.is_specified():
             return "MuSyC()"
 
         # beta = (min(self.E1,self.E2)-self.E3) / (self.E0 - min(self.E1,self.E2))
         beta = MuSyC._get_beta(self.E0, self.E1, self.E2, self.E3)
 
-        if self.variant == "no_gamma":
+        if not self.fit_gamma:
             return (
                 "MuSyC(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, alpha12=%0.2f, alpha21=%0.2f, beta=%0.2f)"
                 % (

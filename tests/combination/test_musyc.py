@@ -59,7 +59,7 @@ def test_musyc_no_gamma():
         C2=C2,
         alpha12=alpha12,
         alpha21=alpha21,
-        variant="no_gamma",
+        fit_gamma="no_gamma",
     )
 
     npoints = 8
@@ -103,9 +103,7 @@ def test_musyc_higher():
     noise = 0.05
     E_fit = E + noise * (E_params[0] - E_params[-1]) * (2 * np.random.rand(len(E)) - 1)
 
-    model = MuSyC(
-        E_bounds=(0, 2), h_bounds=(1e-3, 1e3), alpha_bounds=(1e-5, 1e5), gamma_bounds=(1e-5, 1e5)
-    )
+    model = MuSyC(E_bounds=(0, 2), h_bounds=(1e-3, 1e3), alpha_bounds=(1e-5, 1e5), gamma_bounds=(1e-5, 1e5))
     model.fit(d, E_fit)
 
     assert model.r_squared > 0.9

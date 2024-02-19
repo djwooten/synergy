@@ -148,7 +148,7 @@ class ParameterizedModel1D(ABC):
         """
         if not self.is_specified:
             raise ModelNotParameterizedError()
-        if not self.converged:
+        if not self.is_fit:
             raise ModelNotFitToDataError()
         if confidence_interval < 0 or confidence_interval > 100:
             raise ValueError(f"confidence_interval must be between 0 and 100 ({confidence_interval})")

@@ -13,16 +13,15 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from abc import ABC, abstractmethod
-from typing import Union
+from typing import Optional
 
 import numpy as np
 from numpy.typing import ArrayLike
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 
-from synergy import utils
-from synergy.exceptions import ModelNotParameterizedError
-from synergy.utils import plots
+from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
+from synergy.utils import base as utils, dose_utils, plots
 
 
 class ParametricModel(ABC):
@@ -36,10 +35,10 @@ class ParametricModel(ABC):
 
         self.converged = False
 
-        self.sum_of_squares_residuals = None
-        self.r_squared = None
-        self.aic = None
-        self.bic = None
+        self.sum_of_squares_residuals: Optional[float]
+        self.r_squared: Optional[float]
+        self.aic: Optional[float]
+        self.bic: Optional[float]
         self.bootstrap_parameters = None
 
     def _score(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike):
@@ -64,14 +63,15 @@ class ParametricModel(ABC):
         E : array_like
             Dose-response at doses d1 and d2
         """
-        if self._is_parameterized():
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
 
-            n_parameters = len(self._get_parameters())
+        n_parameters = len(self._get_parameters())
 
-            self.sum_of_squares_residuals = utils.residual_ss(d1, d2, E, self.E)
-            self.r_squared = utils.r_squared(E, self.sum_of_squares_residuals)
-            self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, len(E))
-            self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
+        self.sum_of_squares_residuals = utils.residual_ss(d1, d2, E, self.E)
+        self.r_squared = utils.r_squared(E, self.sum_of_squares_residuals)
+        self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, len(E))
+        self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
 
     @abstractmethod
     def _get_parameters(self):
@@ -87,29 +87,76 @@ class ParametricModel(ABC):
     def get_parameters(self, confidence_interval=95):
         """Return a dict of the model's parameters.
 
-        When relevant, it will also return meaningful derived parameters. For instance, MuSyC has several parameters for E, but defines a synergy parameter beta as a function of E parameters. Thus, beta will also be included.
+        TODO: Iffy on doing this VVV
+        When relevant, it will also return meaningful derived parameters. For instance, MuSyC has several parameters for
+        E, but defines a synergy parameter beta as a function of E parameters. Thus, beta will also be included.
 
-        If the model was fit to data with bootstrap_iterations > 0, this will also return the specified confidence interval.
+        TODO: Don't do this VVV
+        If the model was fit to data with bootstrap_iterations > 0, this will also return the specified confidence
+        interval.
         """
+
+    @property
+    def is_specified(self):
+        """True if all parameters are set."""
+        parameters = self.get_parameters()
+        if parameters is None:
+            return False
+
+        return None not in parameters and not np.isnan(np.asarray(parameters)).any()
+
+    @property
+    def is_fit(self):
+        """True if it was fit to data and converged."""
+        return self.is_specified and self.converged
+
+    def get_confidence_intervals(self, confidence_interval: float = 95):
+        """Returns the lower bound and upper bound estimate for each parameter.
+
+        Parameters:
+        -----------
+        confidence_interval : float, default=95
+            % confidence interval to return. Must be between 0 and 100.
+        """
+        if not self.is_specified:
+            raise ModelNotParameterizedError()
+        if not self.is_fit:
+            raise ModelNotFitToDataError()
+        if confidence_interval < 0 or confidence_interval > 100:
+            raise ValueError(f"confidence_interval must be between 0 and 100 ({confidence_interval})")
+        if self.bootstrap_parameters is None:
+            raise ValueError(
+                "Model must have been fit with bootstrap_iterations > 0 to get parameter confidence intervals"
+            )
+
+        lb = (100 - confidence_interval) / 2.0
+        ub = 100 - lb
+        return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
 
     # @abstractmethod
     def summary(self, confidence_interval=95, tol=0.01):
         """Summarizes the model's synergy conclusions.
 
-        For each synergy parameters, determines whether it indicates synergy or antagonism. When the model has been fit with bootstrap_parameters>0, the best fit, lower bound, and upper bound must all agree on synergy or antagonism.
+        For each synergy parameters, determines whether it indicates synergy or antagonism. When the model has been fit
+        with bootstrap_parameters>0, the best fit, lower bound, and upper bound must all agree on synergy or antagonism.
 
         Parameters
         ----------
         confidence_interval : float, optional (default=95)
-            If the model was fit() with bootstrap_parameters>0, confidence_interval will be used to get the upper and lower bounds.
+            If the model was fit() with bootstrap_parameters>0, confidence_interval will be used to get the upper and
+            lower bounds.
 
         tol : float, optional (default=0.01)
-            Tolerance to determine synergy or antagonism. The parameter must exceed the threshold by at least tol (some parameters, like MuSyC's alpha which is antagonistic from 0 to 1, and synergistic from 1 to inf, will be log-scaled prior to comparison with tol)
+            Tolerance to determine synergy or antagonism. The parameter must exceed the threshold by at least tol (some
+            parameters, like MuSyC's alpha which is antagonistic from 0 to 1, and synergistic from 1 to inf, will be
+            log-scaled prior to comparison with tol)
 
         Returns
         ----------
         summary : str
-            Tab-separated string. If the model has been bootstrapped, columns are [parameter, value, (lower,upper), synergism/antagonism]. If the model has not been bootstrapped, columns are [parameter, value, synergism/antagonism].
+            Tab-separated string.
+            If the model has been bootstrapped, columns are [parameter, value, (lower,upper), synergism/antagonism].
+            If the model has not been bootstrapped, columns are [parameter, value, synergism/antagonism].
         """
         pass
 
@@ -122,7 +169,8 @@ class ParametricModel(ABC):
             The default class type to use for single-drug models
 
         expected_single_superclass : class
-            The required type for single-drug models. If a single-drug model is passed that is not an instance of this superclass, it will be re-instantiated using default_model
+            The required type for single-drug models. If a single-drug model is passed that is not an instance of this
+            superclass, it will be re-instantiated using default_model
         """
         pass
 
@@ -130,7 +178,7 @@ class ParametricModel(ABC):
         """Internal method to fit the model to data (d,E)"""
         try:
             if use_jacobian and self.jacobian_function is not None:
-                popt, pcov = curve_fit(
+                popt, _ = curve_fit(
                     self.fit_function,
                     d,
                     E,
@@ -175,19 +223,24 @@ class ParametricModel(ABC):
             Dose-response at doses d1 and d2
 
         drug1_model : single-drug-model, default=None
-            Only used when p0 is None. Pre-defined, or fit, model (e.g., Hill()) of drug 1 alone. Parameters from this model are used to provide an initial guess of E0, E1, h1, and C1 for the 2D-model fit. If None (and p0 is None), then d1 and E will be masked where d2==min(d2), and used to fit a model for drug 1.
+            Only used when p0 is None. Pre-defined, or fit, model (e.g., Hill()) of drug 1 alone. Parameters from this
+            model are used to provide an initial guess of E0, E1, h1, and C1 for the 2D-model fit. If None (and p0 is
+            None), then d1 and E will be masked where d2==min(d2), and used to fit a model for drug 1.
 
         drug2_model : single-drug-model, default=None
             Same as drug1_model, for drug 2.
 
         use_jacobian : bool, default=True
-            If True, will use the Jacobian to help guide fit (ONLY MuSyC, Hill, and Hill_2P have Jacobian implemented yet). When the number
-            of data points is less than a few hundred, this makes the fitting
-            slower. However, it also improves the reliability with which a fit
-            can be found. If drug1_model or drug2_model are None, use_jacobian will also be applied for their fits.
+            If True, will use the Jacobian to help guide fit (ONLY MuSyC, Hill, and Hill_2P have Jacobian implemented
+            yet). When the number of data points is less than a few hundred, this makes the fitting slower. However, it
+            also improves the reliability with which a fit can be found. If drug1_model or drug2_model are None,
+            use_jacobian will also be applied for their fits.
 
         p0 : tuple, default=None
-            Initial guess for the parameters. If p0 is None (default), drug1_model and drug2_model will be used to obtain an initial guess. If they are also None, they will be fit to the data. If they fail to fit, the initial guess will be E0=max(E), Emax=min(E), h=1, C=median(d), and all synergy parameters are additive (i.e., at the boundary between antagonistic and synergistic)
+            Initial guess for the parameters. If p0 is None (default), drug1_model and drug2_model will be used to
+            obtain an initial guess. If they are also None, they will be fit to the data. If they fail to fit, the
+            initial guess will be E0=max(E), Emax=min(E), h=1, C=median(d), and all synergy parameters are additive
+            (i.e., at the boundary between antagonistic and synergistic)
 
         seed : int, default=None
             If not None, used as numpy.random.seed(start_seed) at the beginning of bootstrap resampling
@@ -206,7 +259,7 @@ class ParametricModel(ABC):
         xdata = np.vstack((d1, d2))
 
         if "p0" in kwargs:
-            p0 = list(kwargs.get("p0"))
+            p0 = list(kwargs.get("p0"))  # type: ignore
         else:
             p0 = None
 
@@ -287,15 +340,15 @@ class ParametricModel(ABC):
     def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, seed=None, **kwargs):
         """Internal function to identify confidence intervals for parameters"""
 
-        if not self._is_parameterized():
-            return
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
         if not self.converged:
             return
 
         n_data_points = len(E)
         n_parameters = len(self._get_parameters())
 
-        sigma_residuals = np.sqrt(self.sum_of_squares_residuals / (n_data_points - n_parameters))
+        sigma_residuals = np.sqrt(self.sum_of_squares_residuals / (n_data_points - n_parameters))  # type: ignore
 
         E_model = self.E(d1, d2)
         bootstrap_parameters = []
@@ -329,8 +382,8 @@ class ParametricModel(ABC):
         confidence_interval : int, float, default=95
             % confidence interval to return. Must be between 0 and 100.
         """
-        if not self._is_parameterized():
-            return None
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
         if not self.converged:
             return None
         if confidence_interval < 0 or confidence_interval > 100:
@@ -356,9 +409,8 @@ class ParametricModel(ABC):
         kwargs
             kwargs passed to synergy.utils.plots.plot_heatmap()
         """
-        if not self._is_parameterized():
-            # raise ModelNotParameterizedError()
-            return
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
 
         E = self.E(d1, d2)
         plots.plot_heatmap(d1, d2, E, cmap=cmap, **kwargs)
@@ -383,9 +435,8 @@ class ParametricModel(ABC):
         kwargs
             kwargs passed to synergy.utils.plots.plot_heatmap()
         """
-        if not self._is_parameterized():
-            # raise ModelNotParameterizedError()
-            return
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
 
         Emodel = self.E(d1, d2)
         plots.plot_heatmap(d1, d2, E - Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
@@ -395,30 +446,28 @@ class ParametricModel(ABC):
         pass
 
     def plot_reference_heatmap(self, d1, d2, cmap="YlGnBu", **kwargs):
-        if not self._is_parameterized():
-            # raise ModelNotParameterizedError()
-            return
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
 
         Ereference = self._reference_E(d1, d2)
         plots.plot_heatmap(d1, d2, Ereference, cmap=cmap, **kwargs)
 
     def plot_reference_surface(self, d1, d2, cmap="YlGnBu", **kwargs):
-        if not self._is_parameterized():
-            return
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
         Ereference = self._reference_E(d1, d2)
         plots.plot_surface_plotly(d1, d2, Ereference, cmap=cmap, **kwargs)
 
     def plot_delta_heatmap(self, d1, d2, cmap="PRGn", center_on_zero=True, **kwargs):
-        if not self._is_parameterized():
-            # raise ModelNotParameterizedError()
-            return
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
         Ereference = self._reference_E(d1, d2)
         Emodel = self.E(d1, d2)
         plots.plot_heatmap(d1, d2, Ereference - Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
 
     def plot_delta_surface(self, d1, d2, cmap="PRGn", center_on_zero=True, **kwargs):
-        if not self._is_parameterized():
-            return
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
         Ereference = self._reference_E(d1, d2)
         Emodel = self.E(d1, d2)
         plots.plot_surface_plotly(d1, d2, Ereference - Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
@@ -440,11 +489,11 @@ class ParametricModel(ABC):
         kwargs
             kwargs passed to synergy.utils.plots.plot_heatmap()
         """
-        if not self._is_parameterized():
-            # raise ModelNotParameterizedError()
-            return
+        if not self.is_specified():
+            raise ModelNotParameterizedError()
 
-        # d1 and d2 may come from data, and have replicates. This would cause problems with surface plots (replicates in scatter_points are fine, but replicates in the surface itself are not)
-        # d1, d2 = dose_tools.remove_replicates(d1, d2)
+        # d1 and d2 may come from data, and have replicates. This would cause problems with surface plots (replicates in
+        # scatter_points are fine, but replicates in the surface itself are not)
+        # d1, d2 = dose_utils.remove_replicates(d1, d2)
         E = self.E(d1, d2)
         plots.plot_surface_plotly(d1, d2, E, cmap=cmap, **kwargs)
