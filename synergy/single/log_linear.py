@@ -56,6 +56,11 @@ class LogLinear:
     def is_specified(self):
         return len(self._logd) > 0 and len(self._E) > 0
 
+    @property
+    def is_fit(self):
+        """Unlike parametric models, LogLinear is only fit if it is specified"""
+        return self.is_specified
+
     def fit(self, d, E, **kwargs):
         """Calls __init__(d, E, aggregation_function)
 

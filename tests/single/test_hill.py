@@ -1,3 +1,5 @@
+# TODO: Ensure proper behavior of bounds when fitting
+
 import os
 import sys
 import unittest
@@ -26,6 +28,39 @@ class HillTests(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.MODEL = Hill
+
+    def test_is_specified_and_fit_at_creation(self):
+        """Ensure expected behaviors of is_specified and is_fit when creating (but not fitting) models."""
+        non_specified_model = self.MODEL()
+
+        if self.MODEL is Hill_CI:
+            specified_model = self.MODEL(h=1, C=1)
+            nan_model = self.MODEL(h=1, C=np.nan)
+            none_model = self.MODEL(h=None, C=1)
+        else:
+            specified_model = self.MODEL(E0=1, Emax=0, h=1, C=1)
+            nan_model = self.MODEL(E0=1, Emax=0, h=1, C=np.nan)
+            none_model = self.MODEL(E0=1, Emax=0, h=None, C=1)
+
+        for model in [non_specified_model, nan_model, none_model]:
+            self.assertFalse(model.is_specified)
+            self.assertFalse(model.is_fit)
+
+        for model in [specified_model]:
+            self.assertTrue(model.is_specified)
+            self.assertFalse(model.is_fit)
+
+    def test_no_scores_if_model_specified(self):
+        """Ensure the model scores are not present if the model was not fit to data."""
+        if self.MODEL is Hill_CI:
+            model = self.MODEL(h=1, C=1)
+        else:
+            model = self.MODEL(E0=1, Emax=0, h=1, C=1)
+
+        self.assertFalse(hasattr(model, "aic"))
+        self.assertFalse(hasattr(model, "bic"))
+        self.assertFalse(hasattr(model, "r_squared"))
+        self.assertFalse(hasattr(model, "sum_of_squares_residuals"))
 
     @seed(0)
     @given(
@@ -147,28 +182,30 @@ class HillFitTests(TestCase):
         expected_parameters = self.EXPECTED_PARAMETERS[fname]
 
         d, E = load_synthetic_data(os.path.join(TEST_DATA_DIR, fname))
-        hill = self.MODEL(**self.INIT_KWARGS)
-        hill.fit(d, E)
+        model = self.MODEL(**self.INIT_KWARGS)
+        model.fit(d, E)
 
         # Ensure the hill is fit
-        self.assertTrue(hill.is_specified)
+        self.assertTrue(model.is_specified)
+        self.assertTrue(model.is_fit)
+        self.assertTrue(model.converged)
 
         # Ensure the parameters are approximately correct
-        observed = np.asarray(hill.get_parameters())
+        observed = np.asarray(model.get_parameters())
         expected = np.asarray(expected_parameters)
         np.testing.assert_allclose(observed, expected, atol=0.2)
 
         # Ensure the scores were calculated
-        self.assertIsNotNone(hill.aic)
-        self.assertIsNotNone(hill.bic)
-        self.assertGreaterEqual(hill.r_squared, 0, msg="r_squared should be between 0 and 1")
-        self.assertLessEqual(hill.r_squared, 1, msg="r_squared should be less than 1")
-        self.assertGreaterEqual(hill.sum_of_squares_residuals, 0, msg="sum_of_squares_residuals should be >= 0")
+        self.assertIsNotNone(model.aic)
+        self.assertIsNotNone(model.bic)
+        self.assertGreaterEqual(model.r_squared, 0, msg="r_squared should be between 0 and 1")
+        self.assertLessEqual(model.r_squared, 1, msg="r_squared should be less than 1")
+        self.assertGreaterEqual(model.sum_of_squares_residuals, 0, msg="sum_of_squares_residuals should be >= 0")
 
         # Ensure there were no bootstrap iterations
-        self.assertIsNone(hill.bootstrap_parameters)
+        self.assertIsNone(model.bootstrap_parameters)
         with self.assertRaises(ValueError):
-            _ = hill.get_confidence_intervals()
+            _ = model.get_confidence_intervals()
 
     @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.differing_executors])
     @given(sampled_from(["synthetic_hill_1.csv"]))
@@ -177,21 +214,21 @@ class HillFitTests(TestCase):
         expected_parameters = self.EXPECTED_PARAMETERS[fname]
 
         d, E = load_synthetic_data(os.path.join(TEST_DATA_DIR, fname))
-        hill = self.MODEL(**self.INIT_KWARGS)
-        hill.fit(d, E, bootstrap_iterations=100)
+        model = self.MODEL(**self.INIT_KWARGS)
+        model.fit(d, E, bootstrap_iterations=100)
 
         # Ensure there were bootstrap iterations
-        self.assertIsNotNone(hill.bootstrap_parameters)
+        self.assertIsNotNone(model.bootstrap_parameters)
 
         # Ensure true values are within confidence intervals
-        confidence_intervals_95 = hill.get_confidence_intervals()
+        confidence_intervals_95 = model.get_confidence_intervals()
         for interval, true_val in zip(confidence_intervals_95, expected_parameters):
             self.assertTrue(interval[0] <= true_val <= interval[1])
 
         # Ensure that less stringent CI is narrower
         # [=====95=====]  More confidence requires wider interval
         #     [===50==]   Less confidence but tighter interval
-        confidence_intervals_50 = hill.get_confidence_intervals(confidence_interval=50)
+        confidence_intervals_50 = model.get_confidence_intervals(confidence_interval=50)
         for interval_95, interval_50 in zip(confidence_intervals_95, confidence_intervals_50):
             self.assertLessEqual(interval_95[0], interval_50[0])
             self.assertGreaterEqual(interval_95[1], interval_50[1])

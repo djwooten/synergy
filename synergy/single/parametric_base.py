@@ -34,7 +34,7 @@ class ParameterizedModel1D(ABC):
         self.jacobian_function = None
 
         self.converged = False
-        self._fit = False
+        self._is_fit = False
 
         self.sum_of_squares_residuals: Optional[float]
         self.r_squared: Optional[float]
@@ -101,7 +101,7 @@ class ParameterizedModel1D(ABC):
         kwargs
             kwargs to pass to scipy.optimize.curve_fit()
         """
-        self._fit = True
+        self._is_fit = True
         d = np.asarray(d)
         E = np.asarray(E)
 
@@ -163,12 +163,17 @@ class ParameterizedModel1D(ABC):
 
     @property
     def is_specified(self):
-        """True if all parameters are set"""
+        """True if all parameters are set."""
         parameters = self.get_parameters()
         if parameters is None:
             return False
 
-        return None not in parameters and True not in np.isnan(np.asarray(parameters))
+        return None not in parameters and not np.isnan(np.asarray(parameters)).any()
+
+    @property
+    def is_fit(self):
+        """True if it was fit to data and converged."""
+        return self._is_fit and self.converged
 
     def _internal_fit(self, d, E, use_jacobian: bool, **kwargs):
         """Fit the model to data (d, E)"""
@@ -224,13 +229,15 @@ class ParameterizedModel1D(ABC):
         E : array_like
             Measured dose-response at doses d
         """
-        if self.is_specified:
-            n_parameters = len(self.get_parameters())
+        if not (self.is_specified and self.is_fit):
+            raise ModelNotFitToDataError("Must fit the model to data before scoring")
 
-            self.sum_of_squares_residuals = utils.residual_ss_1d(d, E, self.E)
-            self.r_squared = utils.r_squared(E, self.sum_of_squares_residuals)
-            self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, len(E))
-            self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
+        n_parameters = len(self.get_parameters())
+
+        self.sum_of_squares_residuals = utils.residual_ss_1d(d, E, self.E)
+        self.r_squared = utils.r_squared(E, self.sum_of_squares_residuals)
+        self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, len(E))
+        self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
 
     def _bootstrap_resample(self, d, E, use_jacobian, bootstrap_iterations, **kwargs):
         """Identify confidence intervals for parameters using bootstrap resampling.

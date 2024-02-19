@@ -1,7 +1,7 @@
 import numpy as np
 
 from synergy.single.hill import Hill, Hill_2P, Hill_CI
-from synergy.single.nonparametric import LogLinear
+from synergy.single.log_linear import LogLinear
 
 
 def fit_hill(d, E, E0_bounds=None, Emax_bounds=None, h_bounds=None, C_bounds=None, **kwargs) -> Hill:
