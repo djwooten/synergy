@@ -14,6 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from abc import ABC, abstractmethod
+from typing import Optional
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -35,10 +36,10 @@ class ParameterizedModel1D(ABC):
         self.converged = False
         self._fit = False
 
-        self.sum_of_squares_residuals = None
-        self.r_squared = None
-        self.aic = None
-        self.bic = None
+        self.sum_of_squares_residuals: Optional[float]
+        self.r_squared: Optional[float]
+        self.aic: Optional[float]
+        self.bic: Optional[float]
         self.bootstrap_parameters = None
 
     @abstractmethod
@@ -158,7 +159,7 @@ class ParameterizedModel1D(ABC):
 
         lb = (100 - confidence_interval) / 2.0
         ub = 100 - lb
-        return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0)
+        return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
 
     @property
     def is_specified(self):
@@ -246,7 +247,7 @@ class ParameterizedModel1D(ABC):
         n_data_points = len(E)
         n_parameters = len(self.get_parameters())
 
-        sigma_residuals = np.sqrt(self.sum_of_squares_residuals / (n_data_points - n_parameters))
+        sigma_residuals = np.sqrt(self.sum_of_squares_residuals / (n_data_points - n_parameters))  # type: ignore
 
         E_model = self.E(d)
         bootstrap_parameters = []
@@ -259,7 +260,7 @@ class ParameterizedModel1D(ABC):
 
             # Fit noisy data
             with np.errstate(divide="ignore", invalid="ignore"):
-                popt1 = self._internal_fit(d, E_iteration, verbose=False, use_jacobian=use_jacobian, **kwargs)
+                popt1 = self._internal_fit(d, E_iteration, use_jacobian=use_jacobian, **kwargs)
 
             if popt1 is not None:
                 bootstrap_parameters.append(popt1)
@@ -271,6 +272,6 @@ class ParameterizedModel1D(ABC):
 
     def __repr__(self):
         name = type(self).__name__
-        x = {}  # TODO should map parameter name to value
+        x: dict = {}  # TODO should map parameter name to value
         params = [f"{k}={v}" for k, v in x.items()]
         return f"{name}({', '.join(params)})"

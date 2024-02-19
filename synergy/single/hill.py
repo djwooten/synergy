@@ -365,7 +365,7 @@ class Hill_CI(Hill_2P):
             plt.tight_layout()
             plt.show()
 
-    def _bootstrap_resample(self, d, E, use_jacobian, bootstrap_iterations, confidence_interval, **kwargs):
+    def _bootstrap_resample(self, d, E, use_jacobian, bootstrap_iterations, **kwargs):
         """Bootstrap resampling is not yet implemented for CI"""
 
     def __repr__(self):
