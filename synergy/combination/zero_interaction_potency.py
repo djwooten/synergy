@@ -51,18 +51,21 @@ class ZIP(DoseDependentModel):
         The EC50 of drug 2 obtained by holding D1==constant
     """
 
-    def __init__(self, synergyfinder: bool = False, drug1_model=None, drug2_model=None, **kwargs):
+    def __init__(
+        self, synergyfinder: bool = False, use_jacobian: bool = True, drug1_model=None, drug2_model=None, **kwargs
+    ):
 
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
 
         self.synergyfinder = synergyfinder
+        self.use_jacobian = use_jacobian
 
-        self._h_21 = []
-        self._h_12 = []
-        self._C_21 = []
-        self._C_12 = []
-        self._Emax_21 = []
-        self._Emax_12 = []
+        self._h_21: list[float] = []  # h of drug 1, holding drug 2 fixed
+        self._h_12: list[float] = []  # h of drug 2, holding drug 1 fixed
+        self._C_21: list[float] = []  # C of drug 1, holding drug 2 fixed
+        self._C_12: list[float] = []  # C of drug 2, holding drug 1 fixed
+        self._Emax_21: list[float] = []  # Emax of drug 1, holding drug 2 fixed
+        self._Emax_12: list[float] = []  # Emax of drug 2, holding drug 1 fixed
 
     @property
     def _default_single_drug_class(self) -> type:
@@ -74,13 +77,7 @@ class ZIP(DoseDependentModel):
         """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
         return Hill
 
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian=True, **kwargs):
-
-        d1 = np.asarray(d1)
-        d2 = np.asarray(d2)
-        E = np.asarray(E)
-        super().fit(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, use_jacobian=use_jacobian, **kwargs)
-
+    def _get_synergy(self, d1, d2, E):
         drug1_model = self.drug1_model
         drug2_model = self.drug2_model
 
@@ -99,24 +96,28 @@ class ZIP(DoseDependentModel):
             E0 = Emax
             Emax = tmp
 
-        self._h_21 = []  # Hill slope of drug 1, after treated by drug 2
-        self._h_12 = []  # Hill slope of drug 2, after treated by drug 1
-        self._C_21 = []  # EC50 of drug 1, after treated by drug 2
-        self._C_12 = []  # EC50 of drug 2, after treated by drug 1
+        self._h_21 = []
+        self._h_12 = []
+        self._C_21 = []
+        self._C_12 = []
         self._Emax_21 = []
         self._Emax_12 = []
 
         if self.synergyfinder:
-            zip_model = Hill_2P(Emax=0.0)
+            zip_model: Hill = Hill_2P(Emax=0.0)
+            p0_1: list[float] = [h1, C1]
+            p0_2: list[float] = [h2, C2]
         else:
             zip_model = _Hill_3P(Emax_bounds=(0, 1.5))
+            p0_1 = [Emax_1, h1, C1]
+            p0_2 = [Emax_2, h2, C2]
 
         for D1, D2 in zip(d1, d2):
             # Fix d2==D2, and fit hill for D1
             mask = np.where(d2 == D2)
             y2 = drug2_model.E(D2)
             zip_model.E0 = y2
-            zip_model.fit(d1[mask], E[mask], use_jacobian=use_jacobian, p0=[Emax_1, h1, C1])
+            zip_model.fit(d1[mask], E[mask], use_jacobian=self.use_jacobian, p0=p0_1)
             self._h_21.append(zip_model.h)
             self._C_21.append(zip_model.C)
             self._Emax_21.append(zip_model.Emax)
@@ -125,7 +126,7 @@ class ZIP(DoseDependentModel):
             mask = np.where(d1 == D1)
             y1 = drug1_model.E(D1)
             zip_model.E0 = y1
-            zip_model.fit(d2[mask], E[mask], use_jacobian=use_jacobian, p0=[Emax_2, h2, C2])
+            zip_model.fit(d2[mask], E[mask], use_jacobian=self.use_jacobian, p0=p0_2)
             self._h_12.append(zip_model.h)
             self._C_12.append(zip_model.C)
             self._Emax_12.append(zip_model.Emax)
@@ -137,45 +138,47 @@ class ZIP(DoseDependentModel):
         self._Emax_21 = np.asarray(self._Emax_21)
         self._Emax_12 = np.asarray(self._Emax_12)
 
-        self.synergy = self._delta_score(
-            d1,
-            d2,
-            E0,
-            self.drug1_model.Emax,
-            self.drug2_model.Emax,
-            h1,
-            h2,
-            C1,
-            C2,
-            self._Emax_21,
-            self._Emax_12,
-            self._h_21,
-            self._h_12,
-            self._C_21,
-            self._C_12,
-        )
+        synergy = self._delta_score(d1, d2)
 
-        mask = np.where((d1 == 0) | (d2 == 0))
-        self.synergy[mask] = 0
-        self.synergy
+        return self._sanitize_synergy(d1, d2, synergy, 0.0)
 
-        return self.synergy
+    def _E_reference(self, d1, d2):
+        E1_alone, E2_alone = self._get_single_drug_Es(d1, d2)
+        return E1_alone * E2_alone
 
-    def _delta_score(self, d1, d2, E0, E1, E2, h1, h2, C1, C2, Emax_21, Emax_12, h_21, h_12, C_21, C_12):
-        """-"""
-        single_drug_1 = E0 + (E1 - E0) * np.float_power(d1, h1) / (np.float_power(C1, h1) + np.float_power(d1, h1))
-        single_drug_2 = E0 + (E2 - E0) * np.float_power(d2, h2) / (np.float_power(C2, h2) + np.float_power(d2, h2))
-        zip_fit_1 = single_drug_2 + (Emax_21 - single_drug_2) * np.float_power(d1, h_21) / (
-            np.float_power(C_21, h_21) + np.float_power(d1, h_21)
-        )
-        zip_fit_2 = single_drug_1 + (Emax_12 - single_drug_1) * np.float_power(d2, h_12) / (
-            np.float_power(C_12, h_12) + np.float_power(d2, h_12)
-        )
-        zip_fit = (zip_fit_1 + zip_fit_2) / 2.0
-        zip_ind = single_drug_1 * single_drug_2
-        self.reference = zip_ind
+    def _delta_score(self, d1, d2):
+        """Calculate the difference between the Bliss reference surface and the (averaged) fit 1D slices used by ZIP
 
-        return zip_ind - zip_fit
+        drug2_alone  drug2
+             |         |
+             |         |
+             |=========X==== drug1
+             |         |
+             +--------------- drug1_alone
+
+        Notice that E0 of "drug1" starts at E of drug2_alone, and vice versa for "drug2"
+        "X" marks (d1, d2)
+        """
+        E1_alone, E2_alone = self._get_single_drug_Es(d1, d2)
+
+        hill = Hill()
+        zip_drug_1 = hill._model(d1, E2_alone, self._Emax_21, self._h_21, self._C_21)
+        zip_drug_2 = hill._model(d2, E1_alone, self._Emax_12, self._h_12, self._C_12)
+        zip_fit = (zip_drug_1 + zip_drug_2) / 2.0
+
+        return self.reference - zip_fit
+
+    def _get_single_drug_Es(self, d1, d2):
+        """Calculate these manually so that E0 uses the average, rather than E0_1 and E0_2"""
+        E0_1 = self.drug1_model.E0
+        E0_2 = self.drug2_model.E0
+        E0 = (E0_1 + E0_2) / 2.0
+
+        hill = Hill()
+        E1_alone = hill._model(d1, E0, self.drug1_model.Emax, self.drug1_model.h, self.drug1_model.C)
+        E2_alone = hill._model(d2, E0, self.drug2_model.Emax, self.drug2_model.h, self.drug2_model.C)
+
+        return E1_alone, E2_alone
 
 
 class _Hill_3P(Hill):
@@ -186,9 +189,12 @@ class _Hill_3P(Hill):
     ):
         """-"""
         super().__init__(h=h, C=C, E0=E0, Emax=Emax, Emax_bounds=Emax_bounds, h_bounds=h_bounds, C_bounds=C_bounds)
-        self.fit_function = lambda d, Emax, logh, logC: self._model(d, self.E0, Emax, np.exp(logh), np.exp(logC))
-        self.jacobian_function = lambda d, Emax, logh, logC: self._model_jacobian(d, Emax, logh, logC)
+        self.fit_function = self._model_to_fit
+        self.jacobian_function = self._model_jacobian
         self.bounds = tuple(zip(self.Emax_bounds, self.logh_bounds, self.logC_bounds))
+
+    def _model_to_fit(self, d, Emax, logh, logC):
+        return self._model(d, self.E0, Emax, np.exp(logh), np.exp(logC))
 
     def _model_jacobian(self, d, Emax, logh, logC):
         dh = d ** (np.exp(logh))
@@ -203,7 +209,6 @@ class _Hill_3P(Hill):
         return jac
 
     def _get_initial_guess(self, d, E, p0=None):
-
         if p0 is None:
             p0 = [np.nanmin(E), 1, np.median(d)]
 
@@ -236,7 +241,7 @@ class _Hill_3P(Hill):
         return params[0], np.log(params[1]), np.log(params[2])
 
     def __repr__(self):
-        if not self._is_parameterized():
+        if not self.is_specified:
             return "Hill_3P()"
 
         return "Hill_3P(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)" % (self.E0, self.Emax, self.h, self.C)

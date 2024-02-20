@@ -134,6 +134,7 @@ class ShamDataGenerator:
 class BlissDataGenerator:
     """Tools to simulate noisy data following Bliss independence."""
 
+    @staticmethod
     def get_2drug_combination(
         drug1_model,
         drug2_model,
@@ -160,6 +161,7 @@ class BlissDataGenerator:
 class HSADataGenerator:
     """Tools to simulate noisy data following HSA."""
 
+    @staticmethod
     def get_2drug_combination(
         drug1_model,
         drug2_model,
@@ -190,6 +192,7 @@ class MuSyCDataGenerator:
     MuSyC can be used to simulate Bliss or Loewe (linear isobole) dose response surfaces.
     """
 
+    @staticmethod
     def get_2drug_combination(
         self,
         E0: float = 1.0,
