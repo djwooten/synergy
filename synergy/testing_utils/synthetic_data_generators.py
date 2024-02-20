@@ -26,9 +26,14 @@ from synergy.single import Hill
 FLOAT_MAX = sys.float_info.max
 
 
-def _noisify(vals: np.ndarray, noise: float) -> np.ndarray:
+def _noisify(vals: np.ndarray, noise: float, min_val: float = None, max_val: float = None) -> np.ndarray:
     """Add relative noise."""
-    return vals + norm.rvs(scale=vals * noise)
+    vals = vals + norm.rvs(scale=vals * noise)
+    if min_val is not None:
+        vals[vals < min_val] = min_val
+    if max_val is not None:
+        vals[vals > max_val] = max_val
+    return vals
 
 
 class HillDataGenerator:
@@ -64,8 +69,7 @@ class HillDataGenerator:
         d = np.logspace(np.log10(dmin), np.log10(dmax), num=n_points)
         d = np.hstack([d] * replicates)
 
-        d_noisy = _noisify(d, d_noise)
-        d_noisy[d_noisy < 0] = 0
+        d_noisy = _noisify(d, d_noise, min_val=0)
 
         model = Hill(E0=E0, Emax=Emax, h=h, C=C)
         E = _noisify(model.E(d_noisy), E_noise)
@@ -95,8 +99,7 @@ class ShamDataGenerator:
             dmin, dmax, dmin, dmax, n_points, n_points, replicates=replicates, logscale=False
         )
 
-        d_noisy = _noisify(d1 + d2, d_noise)
-        d_noisy[d_noisy < 0] = 0
+        d_noisy = _noisify(d1 + d2, d_noise, min_val=0)
         E = _noisify(model.E(d_noisy), E_noise)
 
         return d1, d2, E
@@ -126,6 +129,59 @@ class ShamDataGenerator:
             E = E + noise * (2 * np.random.rand(len(E)) - 1)
 
         return doses, E
+
+
+class BlissDataGenerator:
+    """Tools to simulate noisy data following Bliss independence."""
+
+    def get_2drug_combination(
+        drug1_model,
+        drug2_model,
+        d1min: float,
+        d1max: float,
+        d2min: float,
+        d2max: float,
+        n_points1: int = 6,
+        n_points2: int = 6,
+        replicates: int = 1,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
+    ):
+        """-"""
+        d1, d2 = dose_utils.make_dose_grid(d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates)
+        d1_noisy = _noisify(d1, d_noise, min_val=0)
+        d2_noisy = _noisify(d2, d_noise, min_val=0)
+        E1_alone = drug1_model.E(d1_noisy)
+        E2_alone = drug2_model.E(d2_noisy)
+        E = _noisify(E1_alone * E2_alone, E_noise, min_val=0, max_val=1)
+        return d1, d2, E
+
+
+class HSADataGenerator:
+    """Tools to simulate noisy data following HSA."""
+
+    def get_2drug_combination(
+        drug1_model,
+        drug2_model,
+        d1min: float,
+        d1max: float,
+        d2min: float,
+        d2max: float,
+        stronger_orientation=np.minimum,
+        n_points1: int = 6,
+        n_points2: int = 6,
+        replicates: int = 1,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
+    ):
+        """-"""
+        d1, d2 = dose_utils.make_dose_grid(d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates)
+        d1_noisy = _noisify(d1, d_noise, min_val=0)
+        d2_noisy = _noisify(d2, d_noise, min_val=0)
+        E1_alone = drug1_model.E(d1_noisy)
+        E2_alone = drug2_model.E(d2_noisy)
+        E = _noisify(stronger_orientation(E1_alone, E2_alone), E_noise, min_val=0, max_val=1)
+        return d1, d2, E
 
 
 class MuSyCDataGenerator:

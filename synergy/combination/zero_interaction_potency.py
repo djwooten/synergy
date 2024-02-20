@@ -15,9 +15,9 @@
 
 import numpy as np
 
-from ..single import Hill
-from .nonparametric_base import DoseDependentModel
-from .. import utils
+from synergy.single import Hill, Hill_2P
+from synergy.combination.nonparametric_base import DoseDependentModel
+from synergy.utils import base as utils
 
 
 class ZIP(DoseDependentModel):
@@ -51,27 +51,9 @@ class ZIP(DoseDependentModel):
         The EC50 of drug 2 obtained by holding D1==constant
     """
 
-    def __init__(
-        self,
-        E0_bounds=(0, 1.5),
-        E1_bounds=(0, 1.5),
-        E2_bounds=(0, 1.5),
-        h1_bounds=(0, np.inf),
-        C1_bounds=(0, np.inf),
-        h2_bounds=(0, np.inf),
-        C2_bounds=(0, np.inf),
-        synergyfinder=False,
-    ):
+    def __init__(self, synergyfinder: bool = False, drug1_model=None, drug2_model=None, **kwargs):
 
-        super().__init__(
-            h1_bounds=h1_bounds,
-            h2_bounds=h2_bounds,
-            C1_bounds=C1_bounds,
-            C2_bounds=C2_bounds,
-            E0_bounds=E0_bounds,
-            E1_bounds=E1_bounds,
-            E2_bounds=E2_bounds,
-        )
+        super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
 
         self.synergyfinder = synergyfinder
 
@@ -82,8 +64,15 @@ class ZIP(DoseDependentModel):
         self._Emax_21 = []
         self._Emax_12 = []
 
-    def _get_single_drug_classes(self):
-        return Hill, Hill
+    @property
+    def _default_single_drug_class(self) -> type:
+        """The default drug model to use"""
+        return Hill
+
+    @property
+    def _required_single_drug_class(self) -> type:
+        """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
+        return Hill
 
     def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, use_jacobian=True, **kwargs):
 
@@ -110,11 +99,6 @@ class ZIP(DoseDependentModel):
             E0 = Emax
             Emax = tmp
 
-        logh1 = np.log(h1)
-        logh2 = np.log(h2)
-        logC1 = np.log(C1)
-        logC2 = np.log(C2)
-
         self._h_21 = []  # Hill slope of drug 1, after treated by drug 2
         self._h_12 = []  # Hill slope of drug 2, after treated by drug 1
         self._C_21 = []  # EC50 of drug 1, after treated by drug 2
@@ -123,7 +107,7 @@ class ZIP(DoseDependentModel):
         self._Emax_12 = []
 
         if self.synergyfinder:
-            zip_model = _Hill_3P(Emax_bounds=(-1e-6, 1e-6))
+            zip_model = Hill_2P(Emax=0.0)
         else:
             zip_model = _Hill_3P(Emax_bounds=(0, 1.5))
 
@@ -178,22 +162,17 @@ class ZIP(DoseDependentModel):
         return self.synergy
 
     def _delta_score(self, d1, d2, E0, E1, E2, h1, h2, C1, C2, Emax_21, Emax_12, h_21, h_12, C_21, C_12):
-
-        single_drug_1 = E0 + (E1 - E0) * np.power(d1, h1) / (np.power(C1, h1) + np.power(d1, h1))
-
-        single_drug_2 = E0 + (E2 - E0) * np.power(d2, h2) / (np.power(C2, h2) + np.power(d2, h2))
-
-        zip_fit_1 = single_drug_2 + (Emax_21 - single_drug_2) * np.power(d1, h_21) / (
-            np.power(C_21, h_21) + np.power(d1, h_21)
+        """-"""
+        single_drug_1 = E0 + (E1 - E0) * np.float_power(d1, h1) / (np.float_power(C1, h1) + np.float_power(d1, h1))
+        single_drug_2 = E0 + (E2 - E0) * np.float_power(d2, h2) / (np.float_power(C2, h2) + np.float_power(d2, h2))
+        zip_fit_1 = single_drug_2 + (Emax_21 - single_drug_2) * np.float_power(d1, h_21) / (
+            np.float_power(C_21, h_21) + np.float_power(d1, h_21)
         )
-
-        zip_fit_2 = single_drug_1 + (Emax_12 - single_drug_1) * np.power(d2, h_12) / (
-            np.power(C_12, h_12) + np.power(d2, h_12)
+        zip_fit_2 = single_drug_1 + (Emax_12 - single_drug_1) * np.float_power(d2, h_12) / (
+            np.float_power(C_12, h_12) + np.float_power(d2, h_12)
         )
-
         zip_fit = (zip_fit_1 + zip_fit_2) / 2.0
         zip_ind = single_drug_1 * single_drug_2
-
         self.reference = zip_ind
 
         return zip_ind - zip_fit
@@ -205,12 +184,10 @@ class _Hill_3P(Hill):
     def __init__(
         self, E0=1, Emax=0, h=None, C=None, Emax_bounds=(-np.inf, np.inf), h_bounds=(0, np.inf), C_bounds=(0, np.inf)
     ):
+        """-"""
         super().__init__(h=h, C=C, E0=E0, Emax=Emax, Emax_bounds=Emax_bounds, h_bounds=h_bounds, C_bounds=C_bounds)
-
         self.fit_function = lambda d, Emax, logh, logC: self._model(d, self.E0, Emax, np.exp(logh), np.exp(logC))
-
         self.jacobian_function = lambda d, Emax, logh, logC: self._model_jacobian(d, Emax, logh, logC)
-
         self.bounds = tuple(zip(self.Emax_bounds, self.logh_bounds, self.logC_bounds))
 
     def _model_jacobian(self, d, Emax, logh, logC):
@@ -218,13 +195,9 @@ class _Hill_3P(Hill):
         Ch = (np.exp(logC)) ** (np.exp(logh))
         logd = np.log(d)
         E0 = self.E0
-
         jEmax = dh / (Ch + dh)
-
         jC = (E0 - Emax) * dh * np.exp(logh + logC) * (np.exp(logC)) ** (np.exp(logh) - 1) / ((Ch + dh) * (Ch + dh))
-
         jh = (Emax - E0) * dh * np.exp(logh) * ((Ch + dh) * logd - (logC * Ch + logd * dh)) / ((Ch + dh) * (Ch + dh))
-
         jac = np.hstack((jEmax.reshape(-1, 1), jh.reshape(-1, 1), jC.reshape(-1, 1)))
         jac[np.isnan(jac)] = 0
         return jac

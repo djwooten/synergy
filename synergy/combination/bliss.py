@@ -19,7 +19,9 @@ from synergy.combination.nonparametric_base import DoseDependentModel
 class Bliss(DoseDependentModel):
     """Bliss independence model
 
-    Bliss synergy is defined as the difference between the observed E and the E predicted by the Bliss Independence assumption (E_pred = E_drug1_alone * E_drug2_alone).
+    Bliss synergy is defined as the difference between the observed E and the E predicted by the Bliss Independence
+    assumption:
+        E_pred = E_drug1_alone * E_drug2_alone
 
     synergy : array_like, float
         (-inf,0)=antagonism, (0,inf)=synergism
