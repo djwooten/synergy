@@ -17,6 +17,8 @@ import numpy as np
 import inspect
 import warnings
 
+from synergy.exceptions import InvalidDrugModelError
+
 
 def remove_zeros(d, min_buffer=0.2):
     """Replace zeros with some semi-intelligently chosen small value
@@ -101,7 +103,22 @@ def sanitize_initial_guess(p0, bounds):
         index += 1
 
 
-def sanitize_single_drug_model(model, default_class, expected_superclass=None, **kwargs):
+def sanitize_single_drug_model(model, default_type: type, required_type: type, **kwargs):
+    if model is None:
+        model = default_type(**kwargs)
+
+    if inspect.isclass(model):
+        if required_type and not issubclass(model, required_type):
+            raise InvalidDrugModelError(f"Expected a single drug model inheriting type {required_type.__name__}")
+        model = model(**kwargs)
+
+    elif required_type and not isinstance(model, required_type):
+        raise InvalidDrugModelError(f"Expected a single drug model inheriting type {required_type.__name__}")
+
+    return model
+
+
+def sanitize_single_drug_model_OLD(model, default_class, expected_superclass=None, **kwargs):
     """
     Makes sure the given single drug model is a class or object of a class that is permissible for the given synergy model.
 

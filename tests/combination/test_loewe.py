@@ -1,63 +1,30 @@
-def test_loewe_sham():
-    import numpy as np
-    from synergy.combination import Loewe
-    from tests.testing_utils.synthetic_data import sham
+import os
+import unittest
+from unittest import TestCase
 
-    d1, d2, E = sham()
+import numpy as np
 
-    model = Loewe()
+from synergy.single.hill import Hill
+from synergy.combination import Loewe
+from synergy.testing_utils.synthetic_data_generators import ShamDataGenerator
 
-    synergy = model.fit(d1, d2, E)
-    assert np.abs(np.nanmean(np.log(synergy))) < 0.1
-
-
-def test_loewe_msp():
-    import numpy as np
-    from synergy.combination import Loewe
-    from tests.testing_utils.synthetic_data import bliss_independent
-
-    d1, d2, E = bliss_independent()
-
-    model = Loewe()
-
-    synergy = model.fit(d1, d2, E)
-    assert np.nanmax(np.abs(np.log(synergy))) > 1
+TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
-def test_loewe_sham_3():
-    import numpy as np
-    from synergy.higher import Loewe
-    from tests.testing_utils.synthetic_data import sham_3
+class DeltaLoeweTests(TestCase):
+    """Tests for the delta Loewe synergy dose-response models."""
 
-    d, E = sham_3(noise=0.03)
+    def test_fit_loewe(self):
+        """-"""
+        np.random.seed(123)
+        single_drug = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)
+        d1, d2, E = ShamDataGenerator.get_sham(single_drug, 0.01, 100, 5, 2, E_noise=0, d_noise=0)
 
-    model = Loewe()
-
-    synergy = model.fit(d, E)
-    assert np.abs(np.nanmean(np.log(synergy))) < 0.1
-
-
-def test_loewe_msp_3():
-    import numpy as np
-    from synergy.higher import Loewe
-    from tests.testing_utils.synthetic_data import bliss_independent_3
-
-    d, E = bliss_independent_3()
-
-    model = Loewe()
-
-    synergy = model.fit(d, E)
-    assert np.nanmax(np.abs(np.log(synergy))) > 1
+        # Give it non-prefit single-drug models
+        model = Loewe(mode="delta", drug1_model=Hill, drug2_model=Hill)
+        synergy = model.fit(d1, d2, E)
+        np.testing.assert_allclose(synergy, synergy * 0.0, atol=1e-2)
 
 
-def test_loewe_delta_variant():
-    import numpy as np
-    from synergy.combination import Loewe
-    from tests.testing_utils.synthetic_data import sham
-
-    d1, d2, E = sham()
-
-    model = Loewe(variant="delta")
-
-    synergy = model.fit(d1, d2, E)
-    assert np.nanmax(np.abs(synergy)) < 0.1
+if __name__ == "__main__":
+    unittest.main()

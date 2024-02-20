@@ -15,8 +15,7 @@
 
 import numpy as np
 
-from ..single import Hill
-from .. import utils
+from synergy.single import Hill, LogLinear
 from .nonparametric_base import DoseDependentModel
 
 # Used for delta mode of Loewe
@@ -48,62 +47,41 @@ class Loewe(DoseDependentModel):
     In delta mode, Loewe > 0 indicates synergism, while Loewe < 0 indicates antagonism
     """
 
-    def __init__(
-        self,
-        h1_bounds=(0, np.inf),
-        h2_bounds=(0, np.inf),
-        C1_bounds=(0, np.inf),
-        C2_bounds=(0, np.inf),
-        E0_bounds=(-np.inf, np.inf),
-        E1_bounds=(-np.inf, np.inf),
-        E2_bounds=(-np.inf, np.inf),
-        mode="CI",
-    ):
+    def __init__(self, mode: str = "CI", drug1_model=None, drug2_model=None, **kwargs):
+        """Ctor."""
+        mode = mode.lower()
+        if mode not in ["ci", "delta", "delta_hsa", "delta_nan", "delta_synergyfinder"]:
+            raise ValueError("Only 'ci' and 'delta' modes are supported for Loewe ({mode})")
+        self.mode = mode
 
-        super().__init__(
-            h1_bounds=h1_bounds,
-            h2_bounds=h2_bounds,
-            C1_bounds=C1_bounds,
-            C2_bounds=C2_bounds,
-            E0_bounds=E0_bounds,
-            E1_bounds=E1_bounds,
-            E2_bounds=E2_bounds,
-        )
+        super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
 
-        self.mode = "CI"
-        if isinstance(mode, str):
-            self.mode = mode.lower()
+    @property
+    def _default_single_drug_class(self) -> type:
+        """The default drug model to use"""
+        if self.mode == "ci":
+            return LogLinear
+        return Hill
 
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
+    @property
+    def _required_single_drug_class(self) -> type:
+        """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
+        if self.mode == "ci":
+            return None
+        return Hill
 
-        d1 = np.asarray(d1)
-        d2 = np.asarray(d2)
-        E = np.asarray(E)
-        super().fit(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
+    def _get_synergy(self, d1, d2, E):
+        if self.mode == "ci":
+            return self._get_synergy_CI(d1, d2, E)
+        return self._get_synergy_delta(d1, d2, E)
 
-        drug1_model = self.drug1_model
-        drug2_model = self.drug2_model
-
-        if self.mode.startswith("delta"):
-            self.reference = self._E_reference(d1, d2, drug1_model, drug2_model)
-            self.synergy = self._get_synergy_delta(d1, d2, E, drug1_model, drug2_model)
-        else:
-            self.synergy = self._get_synergy_CI(d1, d2, E, drug1_model, drug2_model)
-
-        return self.synergy
-
-    def _get_synergy_delta(self, d1, d2, E, drug1_model, drug2_model):
-
+    def _get_synergy_delta(self, d1, d2, E):
         # Save reference and synergy
         if self.reference is None:
-            self.reference = self._E_reference(d1, d2, drug1_model, drug2_model)
+            self.reference = self._E_reference(d1, d2)
         synergy = self.reference - E
 
-        if hasattr(synergy, "__iter__"):
-            synergy[(d1 == 0) | (d2 == 0)] = 0
-        elif d1 == 0 or d2 == 0:
-            synergy = 0
-        return synergy
+        return self._sanitize_synergy(d1, d2, synergy, 0)
 
     def _get_synergy_CI(self, d1, d2, E, drug1_model, drug2_model):
         with np.errstate(divide="ignore", invalid="ignore"):
@@ -111,78 +89,62 @@ class Loewe(DoseDependentModel):
             d2_alone = drug2_model.E_inv(E)
             synergy = d1 / d1_alone + d2 / d2_alone
 
-        if hasattr(synergy, "__iter__"):
-            synergy[(d1 == 0) | (d2 == 0)] = 1
-        elif d1 == 0 or d2 == 0:
-            synergy = 1
-        return synergy
+        return self._sanitize_synergy(d1, d2, synergy, 1.0)
 
-    def _get_single_drug_classes(self):
-        # The delta model ONLY works when single drugs are fit with Hill equation
-        # if self.mode.startswith("delta"):
-        #    return Hill, Hill
-
-        # Otherwise, default to Hill, but allow anything
-        return Hill, None
-
-    def _fit_Loewe_reference(self, X_r, X_c, drug1_model, drug2_model):
+    def _fit_Loewe_reference(self, d1, d2):
         """Calculates a reference (null) model for Loewe for drug1 and drug2 at concentrations X_r and X_c
 
         drug1_model and drug2_model MUST be some form of Hill equation
 
-        Contributed by Mark Russo at Bristol Myers Squibb
+        Credsits: Mark Russo and David Wooten
 
         Returns scipy.optimize.minimize_scalar object
         """
-        # Unpack single drug parameters
-        # pa_r = drug1_model.get_parameters()
-        # pa_c = drug2_model.get_parameters()
-        # [Emin_r, Emax_r, h_r, m_r] = pa_r
-        # [Emin_c, Emax_c, h_c, m_c] = pa_c
-
         # Compute the bounds within which Y_Loewe is valid.
         # Any value outside these bounds causes algorithm to take a root of a negative.
-        # bounds_r = [Emin_r, Emax_r]; bounds_r.sort()
-        # bounds_c = [Emin_c, Emax_c]; bounds_c.sort()
-        # bounds   = [max(bounds_r[0], bounds_c[0]), min(bounds_r[1], bounds_c[1])]
-
-        bounds1 = sorted([drug1_model.E0, drug1_model.Emax])
-        bounds2 = sorted([drug2_model.E0, drug2_model.Emax])
-
+        bounds1 = sorted([self.drug1_model.E0, self.drug1_model.Emax])
+        bounds2 = sorted([self.drug2_model.E0, self.drug2_model.Emax])
         bounds = [max(bounds1[0], bounds2[0]), min(bounds1[1], bounds2[1])]
 
         # Quadratic function with a minimum at CI=1
-        # f  = lambda Y: ((X_r/(m_r*(((Y-Emin_r)/(Emax_r-Y))**(1/h_r))) + X_c/(m_c*(((Y-Emin_c)/(Emax_c-Y))**(1/h_c)))) - 1.0)**2
-
-        f = lambda Y: ((X_r / drug1_model.E_inv(Y)) + (X_c / drug2_model.E_inv(Y)) - 1.0) ** 2
+        # f = lambda Y: ((d1 / self.drug1_model.E_inv(Y)) + (d2 / self.drug2_model.E_inv(Y)) - 1.0) ** 2.0
 
         # Perform constrained minimization to find Y as close as possible to CI == 1 and return result.
-        return minimize_scalar(f, method="bounded", bounds=bounds)
+        return minimize_scalar(
+            self._quadratic_reference_objective_function, args=(d1, d2), method="bounded", bounds=bounds
+        )
 
-    def _E_reference(self, d1, d2, drug1_model, drug2_model):
+    def _quadratic_reference_objective_function(self, E, d1, d2):
+        """Quadratic curve used to find the value of the reference null model
+
+        Based on the combination index definition that
+            d1 / E_inv(E) + d2 / E_inv(E) = 1
+        for Loewe additivity.
+
+        Credits: Mark Russo
+        """
+        return np.float_power((d1 / self.drug1_model.E_inv(E)) + (d2 / self.drug2_model.E_inv(E)) - 1.0, 2.0)
+
+    def _E_reference(self, d1, d2):
         """Calculates a reference (null) model for Loewe for drug1 and drug2.
 
-        Contributed by Mark Russo at Bristol Myers Squibb
-        Modified by David Wooten
+        Credits: Mark Russo, David Wooten
         """
+        if not (isinstance(self.drug1_model, Hill), isinstance(self.drug2_model, Hill)):
+            # TODO: Log a warning
+            return d1 * np.nan
 
-        # Compute the reference model
         with np.errstate(divide="ignore", invalid="ignore"):
-            ref = 0 * d1
+            E_ref = 0 * d1
 
-            # pa1 = drug1_model.get_parameters()
-            # pa2 = drug2_model.get_parameters()
+            Emax_1 = self.drug1_model.Emax
+            Emax_2 = self.drug2_model.Emax
 
-            Emax_1 = drug1_model.Emax
-            Emax_2 = drug2_model.Emax
-
-            # weakest_E = max(pa1[1], pa2[1])
             weakest_E = max(Emax_1, Emax_2)
 
-            stronger_drug = drug1_model
-            # if pa1[1] > pa2[1]: # pa[1] is Emax
-            if Emax_1 > Emax_2:  # pa[1] is Emax
-                stronger_drug = drug2_model
+            stronger_drug = self.drug1_model
+            if Emax_1 > Emax_2:
+                stronger_drug = self.drug2_model
 
             # Loewe becomes undefined for effects past the weaker drug's Emax
             # We implement several modes to handle this case:
@@ -199,42 +161,43 @@ class Loewe(DoseDependentModel):
             elif self.mode == "delta_synergyfinder":
                 option = 4
             else:
-                option = 1
+                raise ValueError(f"Unrecognized mode {self.mode} in Loewe.")
 
-            for i in range(len(ref)):
-                X1, X2 = d1[i], d2[i]
-                E1, E2 = drug1_model.E(X1), drug2_model.E(X2)
+            for i in range(len(E_ref)):
+                D1, D2 = d1[i], d2[i]
+                E1_alone = self.drug1_model.E(D1)
+                E2_alone = self.drug2_model.E(D2)
 
-                # No drug
-                if X1 == 0.0 and X2 == 0.0:
-                    ref[i] = 0.5 * (E2 + E1)
+                # No drug so E1 should equal E2, but let's take the average to be safer
+                if D1 == 0.0 and D2 == 0.0:
+                    E_ref[i] = 0.5 * (E2_alone + E1_alone)
 
                 # Single drugs
-                elif X2 == 0:
-                    ref[i] = E1
-                elif X1 == 0:
-                    ref[i] = E2
+                elif D2 == 0:
+                    E_ref[i] = E1_alone
+                elif D1 == 0:
+                    E_ref[i] = E2_alone
 
-                # If the combo E is stronger than the weaker drug is capable of, don't bother trying to fit
-                elif E1 < weakest_E or E2 < weakest_E:
+                # Use a predefined reference behavior for when E1_alone or E2_alone exceed the weaker of the pair
+                elif E1_alone < weakest_E or E2_alone < weakest_E:
                     if option == 1:
-                        ref[i] = weakest_E
+                        E_ref[i] = weakest_E
                     elif option == 2:
-                        ref[i] = min(E1, E2)
+                        E_ref[i] = min(E1_alone, E2_alone)
                     elif option == 3:
-                        ref[i] = np.nan
+                        E_ref[i] = np.nan
                     elif option == 4:
-                        ref[i] = stronger_drug.E(X1 + X2)
+                        E_ref[i] = stronger_drug.E(D1 + D2)
                     else:
-                        ref[i] = np.nan
+                        E_ref[i] = np.nan
                 else:
                     # Numerically solve the value for Loewe
-                    res = self._fit_Loewe_reference(X1, X2, drug1_model, drug2_model)
+                    res = self._fit_Loewe_reference(D1, D2)
                     if res.success:
-                        ref[i] = res.x
+                        E_ref[i] = res.x
                     else:
-                        ref[i] = min(E2, E1)
-        return ref
+                        E_ref[i] = min(E2_alone, E1_alone)
+        return E_ref
 
     def plot_heatmap(self, cmap="PRGn", neglog=None, center_on_zero=True, **kwargs):
         if neglog is None:
@@ -250,6 +213,4 @@ class Loewe(DoseDependentModel):
                 neglog = False
             else:
                 neglog = True
-        super().plot_surface_plotly(
-            cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs
-        )
+        super().plot_surface_plotly(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)

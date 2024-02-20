@@ -4,3 +4,7 @@ class ModelNotParameterizedError(Exception):
 
 class ModelNotFitToDataError(Exception):
     """Thrown when a model must have been fit to data, but was not yet."""
+
+
+class InvalidDrugModelError(Exception):
+    """Thrown when a synergy model is created with an incompatible single drug model."""

@@ -26,6 +26,11 @@ from synergy.single import Hill
 FLOAT_MAX = sys.float_info.max
 
 
+def _noisify(vals: np.ndarray, noise: float) -> np.ndarray:
+    """Add relative noise."""
+    return vals + norm.rvs(scale=vals * noise)
+
+
 class HillDataGenerator:
     """Tools to simulate data from a Hill equation."""
 
@@ -59,12 +64,11 @@ class HillDataGenerator:
         d = np.logspace(np.log10(dmin), np.log10(dmax), num=n_points)
         d = np.hstack([d] * replicates)
 
-        d_noisy = d + norm.rvs(scale=d * d_noise)
+        d_noisy = _noisify(d, d_noise)
         d_noisy[d_noisy < 0] = 0
 
         model = Hill(E0=E0, Emax=Emax, h=h, C=C)
-        E = model.E(d_noisy)
-        E = E + norm.rvs(scale=E * E_noise)
+        E = _noisify(model.E(d_noisy), E_noise)
         return d, E
 
 
@@ -77,24 +81,35 @@ class ShamDataGenerator:
     """
 
     @staticmethod
-    def get_sham(drug_model, dmin: float, dmax: float, n_points: int, replicates: int = 1, noise: float = 0.05):
+    def get_sham(
+        model,
+        dmin: float,
+        dmax: float,
+        n_points: int,
+        replicates: int = 1,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
+    ):
         """Return dose and effect data corresponding to a two-drug sham combination experiment."""
         d1, d2 = dose_utils.make_dose_grid(
             dmin, dmax, dmin, dmax, n_points, n_points, replicates=replicates, logscale=False
         )
-        E = drug_model.E(d1 + d2)
 
-        if noise > 0:
-            E0 = drug_model.E(0)
-            Emax = drug_model.E(FLOAT_MAX / 1e50)  # For most cases, this is probably safe to get Emax without overflows
-            noise = noise * (E0 - Emax)
-            E = E + noise * (2 * np.random.rand(len(E)) - 1)
+        d_noisy = _noisify(d1 + d2, d_noise)
+        d_noisy[d_noisy < 0] = 0
+        E = _noisify(model.E(d_noisy), E_noise)
 
         return d1, d2, E
 
     @staticmethod
     def get_sham_higher(
-        drug_model, dmin: float, dmax: float, n_points: int, n_drugs: int, replicates: int = 1, noise: float = 0.05
+        drug_model,
+        dmin: float,
+        dmax: float,
+        n_points: int,
+        n_drugs: int,
+        replicates: int = 1,
+        noise: float = 0.05,
     ):
         """Return dose and effect data corresponding to a 3+ drug sham combination experiment."""
         doses = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, logscale=False)

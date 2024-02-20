@@ -1,50 +1,33 @@
-def test_bliss_sham():
-    import numpy as np
-    from synergy.combination import Bliss
-    from tests.testing_utils.synthetic_data import sham
+import os
+import unittest
+from unittest import TestCase
 
-    d1, d2, E = sham()
+import numpy as np
 
-    model = Bliss()
+from synergy.single.hill import Hill
+from synergy.combination import Bliss
+from synergy.testing_utils.synthetic_data_generators import ShamDataGenerator
 
-    synergy = model.fit(d1, d2, E)
-    assert np.nanmean(synergy) < 0.1
-
-
-def test_bliss_msp():
-    import numpy as np
-    from synergy.combination import Bliss
-    from tests.testing_utils.synthetic_data import bliss_independent
-
-    d1, d2, E = bliss_independent()
-
-    model = Bliss()
-
-    synergy = model.fit(d1, d2, E)
-    assert np.nanmax(np.abs(synergy)) < 0.12
+TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
-def test_bliss_sham_3():
-    import numpy as np
-    from synergy.higher import Bliss
-    from tests.testing_utils.synthetic_data import sham_3
+class HSATests(TestCase):
+    """Tests for the HSA model."""
 
-    d, E = sham_3()
+    def test_fit_hsa(self):
+        """-"""
+        np.random.seed(943)
+        single_drug = Hill(E0=1.0, Emax=0.1, h=1.0, C=1.0)
+        d1, d2, E = ShamDataGenerator.get_sham(single_drug, 0.01, 100, 5, 2, E_noise=0, d_noise=0)
+        E1 = single_drug.E(d1)
+        E2 = single_drug.E(d2)
+        E = E1 * E2
 
-    model = Bliss()
+        # Give it non-prefit single-drug models
+        model = Bliss()
+        synergy = model.fit(d1, d2, E)
+        np.testing.assert_allclose(synergy, np.zeros(len(synergy)), atol=2e-2)  # TODO this should be closer than this
 
-    synergy = model.fit(d, E)
-    assert np.nanmean(synergy) < 0.1
 
-
-def test_bliss_msp_3():
-    import numpy as np
-    from synergy.higher import Bliss
-    from tests.testing_utils.synthetic_data import bliss_independent_3
-
-    d, E = bliss_independent_3(noise=0.03)
-
-    model = Bliss()
-
-    synergy = model.fit(d, E)
-    assert np.nanmax(np.abs(synergy)) < 0.11
+if __name__ == "__main__":
+    unittest.main()

@@ -13,11 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
-
-from ..single import LogLinear
-from .. import utils
-from .nonparametric_base import DoseDependentModel
+from synergy.combination.nonparametric_base import DoseDependentModel
 
 
 class Bliss(DoseDependentModel):
@@ -29,23 +25,12 @@ class Bliss(DoseDependentModel):
         (-inf,0)=antagonism, (0,inf)=synergism
     """
 
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
-        d1 = np.asarray(d1)
-        d2 = np.asarray(d2)
-        E = np.asarray(E)
-        super().fit(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
+    def _E_reference(self, d1, d2):
+        E1_alone = self.drug1_model.E(d1)
+        E2_alone = self.drug2_model.E(d2)
 
-        drug1_model = self.drug1_model
-        drug2_model = self.drug2_model
+        return E1_alone * E2_alone
 
-        E1_alone = drug1_model.E(d1)
-        E2_alone = drug2_model.E(d2)
-
-        self.reference = E1_alone * E2_alone
-        self.synergy = self.reference - E
-        self.synergy[(d1 == 0) | (d2 == 0)] = 0
-
-        return self.synergy
-
-    def _get_single_drug_classes(self):
-        return LogLinear, None
+    def _get_synergy(self, d1, d2, E):
+        synergy = self.reference - E
+        return self._sanitize_synergy(d1, d2, synergy, 0)

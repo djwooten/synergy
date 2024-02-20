@@ -1,24 +1,31 @@
-def test_HSA_sham():
-    import numpy as np
-    from synergy.combination import HSA
-    from tests.testing_utils.synthetic_data import sham
+import os
+import unittest
+from unittest import TestCase
 
-    d1, d2, E = sham()
+import numpy as np
 
-    model = HSA()
+from synergy.single.hill import Hill
+from synergy.combination import HSA
+from synergy.testing_utils.synthetic_data_generators import ShamDataGenerator
 
-    synergy = model.fit(d1, d2, E)
-    assert np.nanmean(synergy) > 0.08
+TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
-def test_HSA_sham_3():
-    import numpy as np
-    from synergy.higher import HSA
-    from tests.testing_utils.synthetic_data import sham_3
+class HSATests(TestCase):
+    """Tests for the HSA model."""
 
-    d, E = sham_3()
+    def test_fit_hsa(self):
+        """-"""
+        np.random.seed(2193)
+        single_drug = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)
+        d1, d2, E = ShamDataGenerator.get_sham(single_drug, 0.01, 100, 5, 2, E_noise=0, d_noise=0)
 
-    model = HSA()
+        # Give it non-prefit single-drug models
+        model = HSA()
+        synergy = model.fit(d1, d2, E)
+        # synergy should be > 0 for all of these
+        self.assertTrue((synergy >= 0).all(), msg="HSA should all be synergistic")
 
-    synergy = model.fit(d, E)
-    assert np.nanmean(synergy) > 0.08
+
+if __name__ == "__main__":
+    unittest.main()

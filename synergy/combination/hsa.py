@@ -14,11 +14,8 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
-import warnings
 
-from .. import utils
-from ..single import LogLinear
-from .nonparametric_base import DoseDependentModel
+from synergy.combination.nonparametric_base import DoseDependentModel
 
 
 class HSA(DoseDependentModel):
@@ -27,38 +24,16 @@ class HSA(DoseDependentModel):
     HSA says that any improvement a combination gives over the strongest single agent counts as synergy.
     """
 
-    def fit(self, d1, d2, E, drug1_model=None, drug2_model=None, **kwargs):
+    def __init__(self, stronger_orientation=np.minimum, drug1_model=None, drug2_model=None, **kwargs):
+        super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
+        self.stronger_orientation = stronger_orientation
 
-        d1 = np.asarray(d1)
-        d2 = np.asarray(d2)
-        E = np.asarray(E)
-        super().fit(d1, d2, E, drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
+    def _E_reference(self, d1, d2):
+        E1_alone = self.drug1_model.E(d1)
+        E2_alone = self.drug2_model.E(d2)
 
-        drug1_model = self.drug1_model
-        drug2_model = self.drug2_model
+        return self.stronger_orientation(E1_alone, E2_alone)
 
-        # self.synergy = []
-        d1_min = np.min(d1)
-        d2_min = np.min(d2)
-
-        if d1_min > 0 or d2_min > 0:
-            warnings.warn(
-                "WARNING: HSA expects single-drug information for both drugs. min(d1)=%0.2e, min(d2)=%0.2e"
-                % (d1_min, d2_min)
-            )
-
-        self.drug1_model = drug1_model
-        self.drug2_model = drug2_model
-
-        E1_alone = drug1_model.E(d1)
-        E2_alone = drug2_model.E(d2)
-
-        self.reference = np.minimum(E1_alone, E2_alone)
-        # self.synergy = np.minimum(E1_alone-E, E2_alone-E)
-        self.synergy = self.reference - E
-
-        self.synergy[(d1 == 0) | (d2 == 0)] = 0
-        return self.synergy
-
-    def _get_single_drug_classes(self):
-        return LogLinear, None
+    def _get_synergy(self, d1, d2, E):
+        synergy = self.reference - E
+        return self._sanitize_synergy(d1, d2, synergy, 0)
