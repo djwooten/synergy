@@ -13,6 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 from abc import ABC, abstractmethod
+from copy import deepcopy
 from typing import Optional
 
 import numpy as np
@@ -21,19 +22,29 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
+from synergy.single import Hill
 from synergy.utils import base as utils, dose_utils, plots
 
 
 class ParametricModel(ABC):
     """Base class for paramterized synergy models."""
 
-    def __init__(self):
+    def __init__(self, drug1_model=None, drug2_model=None):
         """Ctor."""
         self.bounds = None
         self.fit_function = None
         self.jacobian_function = None
 
         self.converged = False
+
+        self.drug1_model = deepcopy(drug1_model)
+        self.drug2_model = deepcopy(drug2_model)
+
+        default_type = self._default_single_drug_class
+        required_type = self._required_single_drug_class
+
+        self.drug1_model = utils.sanitize_single_drug_model(drug1_model, default_type, required_type)
+        self.drug2_model = utils.sanitize_single_drug_model(drug2_model, default_type, required_type)
 
         self.sum_of_squares_residuals: Optional[float]
         self.r_squared: Optional[float]
@@ -63,7 +74,7 @@ class ParametricModel(ABC):
         E : array_like
             Dose-response at doses d1 and d2
         """
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
 
         n_parameters = len(self._get_parameters())
@@ -160,19 +171,15 @@ class ParametricModel(ABC):
         """
         pass
 
-    @abstractmethod
-    def _get_single_drug_classes(self):
-        """
-        Returns
-        -------
-        default_single_class : class
-            The default class type to use for single-drug models
+    @property
+    def _default_single_drug_class(self) -> type:
+        """The default drug model to use"""
+        return Hill
 
-        expected_single_superclass : class
-            The required type for single-drug models. If a single-drug model is passed that is not an instance of this
-            superclass, it will be re-instantiated using default_model
-        """
-        pass
+    @property
+    def _required_single_drug_class(self) -> type:
+        """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
+        return Hill
 
     def _internal_fit(self, d, E, use_jacobian, verbose=True, **kwargs):
         """Internal method to fit the model to data (d,E)"""
@@ -340,7 +347,7 @@ class ParametricModel(ABC):
     def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, seed=None, **kwargs):
         """Internal function to identify confidence intervals for parameters"""
 
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
         if not self.converged:
             return
@@ -382,7 +389,7 @@ class ParametricModel(ABC):
         confidence_interval : int, float, default=95
             % confidence interval to return. Must be between 0 and 100.
         """
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
         if not self.converged:
             return None
@@ -409,7 +416,7 @@ class ParametricModel(ABC):
         kwargs
             kwargs passed to synergy.utils.plots.plot_heatmap()
         """
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
 
         E = self.E(d1, d2)
@@ -435,7 +442,7 @@ class ParametricModel(ABC):
         kwargs
             kwargs passed to synergy.utils.plots.plot_heatmap()
         """
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
 
         Emodel = self.E(d1, d2)
@@ -446,27 +453,27 @@ class ParametricModel(ABC):
         pass
 
     def plot_reference_heatmap(self, d1, d2, cmap="YlGnBu", **kwargs):
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
 
         Ereference = self._reference_E(d1, d2)
         plots.plot_heatmap(d1, d2, Ereference, cmap=cmap, **kwargs)
 
     def plot_reference_surface(self, d1, d2, cmap="YlGnBu", **kwargs):
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
         Ereference = self._reference_E(d1, d2)
         plots.plot_surface_plotly(d1, d2, Ereference, cmap=cmap, **kwargs)
 
     def plot_delta_heatmap(self, d1, d2, cmap="PRGn", center_on_zero=True, **kwargs):
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
         Ereference = self._reference_E(d1, d2)
         Emodel = self.E(d1, d2)
         plots.plot_heatmap(d1, d2, Ereference - Emodel, cmap=cmap, center_on_zero=center_on_zero, **kwargs)
 
     def plot_delta_surface(self, d1, d2, cmap="PRGn", center_on_zero=True, **kwargs):
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
         Ereference = self._reference_E(d1, d2)
         Emodel = self.E(d1, d2)
@@ -489,7 +496,7 @@ class ParametricModel(ABC):
         kwargs
             kwargs passed to synergy.utils.plots.plot_heatmap()
         """
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
 
         # d1 and d2 may come from data, and have replicates. This would cause problems with surface plots (replicates in

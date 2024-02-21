@@ -26,12 +26,12 @@ from synergy.single import Hill
 FLOAT_MAX = sys.float_info.max
 
 
-def _noisify(vals: np.ndarray, noise: float, min_val: float = None, max_val: float = None) -> np.ndarray:
+def _noisify(vals: np.ndarray, noise: float, min_val: float = np.nan, max_val: float = np.nan) -> np.ndarray:
     """Add relative noise."""
     vals = vals + norm.rvs(scale=vals * noise)
-    if min_val is not None:
+    if not np.isnan(min_val):
         vals[vals < min_val] = min_val
-    if max_val is not None:
+    if not np.isnan(max_val):
         vals[vals > max_val] = max_val
     return vals
 
@@ -45,8 +45,8 @@ class HillDataGenerator:
         Emax: float = 0.0,
         h: float = 1.0,
         C: float = 1.0,
-        dmin: float = None,
-        dmax: float = None,
+        dmin: float = np.nan,
+        dmax: float = np.nan,
         n_points: int = 6,
         replicates: int = 1,
         E_noise: float = 0.05,
@@ -54,9 +54,9 @@ class HillDataGenerator:
     ):
         if replicates < 1:
             raise ValueError(f"Must have at least 1 replicate ({replicates}).")
-        if dmin is None:
+        if np.isnan(dmin):
             dmin = C / 20.0
-        if dmax is None:
+        if np.isnan(dmax):
             dmax = C * 20.0
 
         if dmin >= dmax:
@@ -194,7 +194,6 @@ class MuSyCDataGenerator:
 
     @staticmethod
     def get_2drug_combination(
-        self,
         E0: float = 1.0,
         E1: float = 0.5,
         E2: float = 0.3,
@@ -251,8 +250,8 @@ class MuSyCDataGenerator:
 
         return d1, d2, E
 
+    @staticmethod
     def get_2drug_bliss(
-        self,
         E1: float = 0.5,
         E2: float = 0.3,
         C1: float = 1.0,
@@ -263,10 +262,12 @@ class MuSyCDataGenerator:
     ):
         if E1 < 0 or E1 > 1 or E2 < 0 or E2 > 1:
             raise ValueError("E1 and E2 must be between 0 and 1 for a Bliss model")
-        return self.get_2drug_combination(E0=1.0, E1=E1, E2=E2, E3=E1 * E2, h1=h1, h2=h2, C1=C1, C2=C2, noise=noise)
+        return MuSyCDataGenerator.get_2drug_combination(
+            E0=1.0, E1=E1, E2=E2, E3=E1 * E2, h1=h1, h2=h2, C1=C1, C2=C2, noise=noise
+        )
 
+    @staticmethod
     def get_2drug_linear_isoboles(
-        self,
         E0: float = 1.0,
         E1: float = 0.5,
         E2: float = 0.3,
@@ -276,4 +277,6 @@ class MuSyCDataGenerator:
         h2: float = 1.0,
         noise: float = 0.05,
     ):
-        return self.get_2drug_combination(E0=E0, E1=E1, E2=E2, E3=min(E1, E2), h1=h1, h2=h2, C1=C1, C2=C2, noise=noise)
+        return MuSyCDataGenerator.get_2drug_combination(
+            E0=E0, E1=E1, E2=E2, E3=min(E1, E2), h1=h1, h2=h2, C1=C1, C2=C2, noise=noise
+        )

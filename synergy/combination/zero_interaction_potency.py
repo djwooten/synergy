@@ -15,7 +15,7 @@
 
 import numpy as np
 
-from synergy.single import Hill, Hill_2P
+from synergy.single import Hill
 from synergy.combination.nonparametric_base import DoseDependentModel
 from synergy.utils import base as utils
 
@@ -51,13 +51,9 @@ class ZIP(DoseDependentModel):
         The EC50 of drug 2 obtained by holding D1==constant
     """
 
-    def __init__(
-        self, synergyfinder: bool = False, use_jacobian: bool = True, drug1_model=None, drug2_model=None, **kwargs
-    ):
+    def __init__(self, use_jacobian: bool = True, drug1_model=None, drug2_model=None, **kwargs):
 
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
-
-        self.synergyfinder = synergyfinder
         self.use_jacobian = use_jacobian
 
         self._h_21: list[float] = []  # h of drug 1, holding drug 2 fixed
@@ -103,21 +99,14 @@ class ZIP(DoseDependentModel):
         self._Emax_21 = []
         self._Emax_12 = []
 
-        if self.synergyfinder:
-            zip_model: Hill = Hill_2P(Emax=0.0)
-            p0_1: list[float] = [h1, C1]
-            p0_2: list[float] = [h2, C2]
-        else:
-            zip_model = _Hill_3P(Emax_bounds=(0, 1.5))
-            p0_1 = [Emax_1, h1, C1]
-            p0_2 = [Emax_2, h2, C2]
+        zip_model = _Hill_3P(Emax_bounds=(0, 1.5))
 
         for D1, D2 in zip(d1, d2):
             # Fix d2==D2, and fit hill for D1
             mask = np.where(d2 == D2)
             y2 = drug2_model.E(D2)
             zip_model.E0 = y2
-            zip_model.fit(d1[mask], E[mask], use_jacobian=self.use_jacobian, p0=p0_1)
+            zip_model.fit(d1[mask], E[mask], use_jacobian=self.use_jacobian, p0=[Emax_1, h1, C1])
             self._h_21.append(zip_model.h)
             self._C_21.append(zip_model.C)
             self._Emax_21.append(zip_model.Emax)
@@ -126,7 +115,7 @@ class ZIP(DoseDependentModel):
             mask = np.where(d1 == D1)
             y1 = drug1_model.E(D1)
             zip_model.E0 = y1
-            zip_model.fit(d2[mask], E[mask], use_jacobian=self.use_jacobian, p0=p0_2)
+            zip_model.fit(d2[mask], E[mask], use_jacobian=self.use_jacobian, p0=[Emax_2, h2, C2])
             self._h_12.append(zip_model.h)
             self._C_12.append(zip_model.C)
             self._Emax_12.append(zip_model.Emax)

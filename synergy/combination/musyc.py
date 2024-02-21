@@ -48,32 +48,15 @@ class MuSyC(ParametricModel):
 
     def __init__(
         self,
-        h1_bounds=(0, np.inf),
-        h2_bounds=(0, np.inf),
-        C1_bounds=(0, np.inf),
-        C2_bounds=(0, np.inf),
-        E0_bounds=(-np.inf, np.inf),
-        E1_bounds=(-np.inf, np.inf),
-        E2_bounds=(-np.inf, np.inf),
-        E3_bounds=(-np.inf, np.inf),
-        alpha12_bounds=(0, np.inf),
-        alpha21_bounds=(0, np.inf),
-        gamma12_bounds=(0, np.inf),
-        gamma21_bounds=(0, np.inf),
-        r1r=1.0,
-        r2r=1.0,
-        E0=None,
-        E1=None,
-        E2=None,
-        E3=None,
-        h1=None,
-        h2=None,
-        C1=None,
-        C2=None,
+        drug1_model=None,
+        drug2_model=None,
         alpha12=None,
         alpha21=None,
+        E3=None,
         gamma12=None,
         gamma21=None,
+        r1r=1.0,
+        r2r=1.0,
         fit_gamma=True,
     ):
         """Ctor.
@@ -84,212 +67,124 @@ class MuSyC(ParametricModel):
         :param float gamma12: Synergistic cooperativity of drug 1 on drug 2 ([0,1) = antagonism, (1,inf) = synergism)
         :param float gamma21: Synergistic cooperativity of drug 2 on drug 1 ([0,1) = antagonism, (1,inf) = synergism)
         """
-        super().__init__()
-        self.C1_bounds = C1_bounds
-        self.C2_bounds = C2_bounds
-        self.h1_bounds = h1_bounds
-        self.h2_bounds = h2_bounds
-        self.E0_bounds = E0_bounds
-        self.E1_bounds = E1_bounds
-        self.E2_bounds = E2_bounds
-        self.E3_bounds = E3_bounds
-        self.alpha12_bounds = alpha12_bounds
-        self.alpha21_bounds = alpha21_bounds
-        self.gamma12_bounds = gamma12_bounds
-        self.gamma21_bounds = gamma21_bounds
+        super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
 
         self.fit_gamma = fit_gamma
 
         self.r1r = r1r
         self.r2r = r2r
-        self.E0 = E0
-        self.E1 = E1
-        self.E2 = E2
-        self.E3 = E3
-        self.h1 = h1
-        self.h2 = h2
-        self.C1 = C1
-        self.C2 = C2
+
         self.alpha12 = alpha12
         self.alpha21 = alpha21
+        self.E3 = E3
         self.gamma12 = gamma12
         self.gamma21 = gamma21
-        if None not in [E1, E2, E3]:
-            self.beta = (min(E1, E2) - E3) / (E0 - min(E1, E2))
-        else:
-            self.beta = None
-
-        with np.errstate(divide="ignore"):
-            self.logh1_bounds = (np.log(h1_bounds[0]), np.log(h1_bounds[1]))
-            self.logC1_bounds = (np.log(C1_bounds[0]), np.log(C1_bounds[1]))
-            self.logh2_bounds = (np.log(h2_bounds[0]), np.log(h2_bounds[1]))
-            self.logC2_bounds = (np.log(C2_bounds[0]), np.log(C2_bounds[1]))
-
-            self.logalpha12_bounds = (np.log(alpha12_bounds[0]), np.log(alpha12_bounds[1]))
-            self.logalpha21_bounds = (np.log(alpha21_bounds[0]), np.log(alpha21_bounds[1]))
-
-            self.loggamma12_bounds = (np.log(gamma12_bounds[0]), np.log(gamma12_bounds[1]))
-            self.loggamma21_bounds = (np.log(gamma21_bounds[0]), np.log(gamma21_bounds[1]))
 
         if fit_gamma:
-            self.fit_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: self._model(
-                d[0],
-                d[1],
-                E0,
-                E1,
-                E2,
-                E3,
-                np.exp(logh1),
-                np.exp(logh2),
-                np.exp(logC1),
-                np.exp(logC2),
-                self.r1r,
-                self.r2r,
-                np.exp(logalpha12),
-                np.exp(logalpha21),
-                np.exp(loggamma12),
-                np.exp(loggamma21),
-            )
-
-            self.jacobian_function = lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21: jacobian(
-                d[0],
-                d[1],
-                E0,
-                E1,
-                E2,
-                E3,
-                logh1,
-                logh2,
-                logC1,
-                logC2,
-                self.r1r,
-                self.r2r,
-                logalpha12,
-                logalpha21,
-                loggamma12,
-                loggamma21,
-            )
-
-            self.bounds = tuple(
-                zip(
-                    self.E0_bounds,
-                    self.E1_bounds,
-                    self.E2_bounds,
-                    self.E3_bounds,
-                    self.logh1_bounds,
-                    self.logh2_bounds,
-                    self.logC1_bounds,
-                    self.logC2_bounds,
-                    self.logalpha12_bounds,
-                    self.logalpha21_bounds,
-                    self.loggamma12_bounds,
-                    self.loggamma21_bounds,
-                )
-            )
+            self.fit_function = self._model_to_fit_with_gamma
+            self.jacobian_function = self._jacobian_with_gamma
 
         else:
-            self.fit_function = (
-                lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: self._model(
-                    d[0],
-                    d[1],
-                    E0,
-                    E1,
-                    E2,
-                    E3,
-                    np.exp(logh1),
-                    np.exp(logh2),
-                    np.exp(logC1),
-                    np.exp(logC2),
-                    self.r1r,
-                    self.r2r,
-                    np.exp(logalpha12),
-                    np.exp(logalpha21),
-                    1,
-                    1,
-                )
-            )
+            self.fit_function = self._model_to_fit_no_gamma
+            self.jacobian_function = self._jacobian_no_gamma
 
-            self.jacobian_function = (
-                lambda d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21: jacobian(
-                    d[0],
-                    d[1],
-                    E0,
-                    E1,
-                    E2,
-                    E3,
-                    logh1,
-                    logh2,
-                    logC1,
-                    logC2,
-                    self.r1r,
-                    self.r2r,
-                    logalpha12,
-                    logalpha21,
-                    0,
-                    0,
-                )[:, :-2]
-            )
+    @property
+    def beta(self):
+        """-"""
+        E0 = (self.drug1_model.E0 + self.drug2_model.E0) / 2.0
+        return MuSyC._get_beta(E0, self.drug1_model.Emax, self.drug2_model.Emax, self.E3)
 
-            self.bounds = tuple(
-                zip(
-                    self.E0_bounds,
-                    self.E1_bounds,
-                    self.E2_bounds,
-                    self.E3_bounds,
-                    self.logh1_bounds,
-                    self.logh2_bounds,
-                    self.logC1_bounds,
-                    self.logC2_bounds,
-                    self.logalpha12_bounds,
-                    self.logalpha21_bounds,
-                )
-            )
+    def _model_to_fit_with_gamma(
+        self, d, E0, E1, E2, E3, h1, h2, C1, C2, logalpha12, logalpha21, loggamma12, loggamma21
+    ):
+        return self._model(
+            d[0],
+            d[1],
+            E0,
+            E1,
+            E2,
+            E3,
+            h1,
+            h2,
+            C1,
+            C2,
+            self.r1r,
+            self.r2r,
+            np.exp(logalpha12),
+            np.exp(logalpha21),
+            np.exp(loggamma12),
+            np.exp(loggamma21),
+        )
 
-    def _get_initial_guess(self, d1, d2, E, drug1_model, drug2_model, p0=None):
+    def _model_to_fit_no_gamma(self, d, E0, E1, E2, E3, h1, h2, C1, C2, logalpha12, logalpha21):
+        return self._model(
+            d[0], d[1], E0, E1, E2, E3, h1, h2, C1, C2, self.r1r, self.r2r, np.exp(logalpha12), np.exp(logalpha21), 1, 1
+        )
+
+    def _jacobian_with_gamma(
+        self, d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21
+    ):
+        """Calculate the jacobian inlcuding gamma.
+
+        Derivatives in the jacobian are already defined with respect to (e.g.) log(h) or log(alpha), rather than the
+        linear values, so np.exp() is not required (or desired) here.
+        """
+        return jacobian(
+            d[0],
+            d[1],
+            E0,
+            E1,
+            E2,
+            E3,
+            logh1,
+            logh2,
+            logC1,
+            logC2,
+            self.r1r,
+            self.r2r,
+            logalpha12,
+            logalpha21,
+            loggamma12,
+            loggamma21,
+        )
+
+    def _jacobian_no_gamma(self, d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21):
+        """Calculate the jacobian assuming gamma==1.
+
+        Derivatives in the jacobian are already defined with respect to (e.g.) log(h) or log(alpha), rather than the
+        linear values, so np.exp() is not required (or desired) here.
+
+        The [:, :, -2] gets rid of derivatives WRT gamma
+        TODO: Speed things up by defining a no_gamma jacobian that doesn't even calculate them at all
+        """
+        return jacobian(
+            d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1r, self.r2r, logalpha12, logalpha21, 0, 0
+        )[:, :, -2]
+
+    def _get_initial_guess(self, d1, d2, E, p0=None):
 
         # If there is no intial guess, use single-drug models to come up with intitial guess
         if p0 is None:
-            # Sanitize single-drug models
-            default_class, expected_superclass = self._get_single_drug_classes()
-
-            drug1_model = utils.sanitize_single_drug_model(
-                drug1_model,
-                default_class,
-                expected_superclass=expected_superclass,
-                E0_bounds=self.E0_bounds,
-                Emax_bounds=self.E1_bounds,
-                h_bounds=self.h1_bounds,
-                C_bounds=self.C1_bounds,
-            )
-
-            drug2_model = utils.sanitize_single_drug_model(
-                drug2_model,
-                default_class,
-                expected_superclass=expected_superclass,
-                E0_bounds=self.E0_bounds,
-                Emax_bounds=self.E2_bounds,
-                h_bounds=self.h2_bounds,
-                C_bounds=self.C2_bounds,
-            )
 
             # Fit the single drug models if they were not pre-fit by the user
-            if not drug1_model.is_fit():
+            if not self.drug1_model.is_specified:
                 mask = np.where(d2 == min(d2))
-                drug1_model.fit(d1[mask], E[mask])
-            if not drug2_model.is_fit():
+                self.drug1_model.fit(d1[mask], E[mask])
+            if not self.drug2_model.is_specified:
                 mask = np.where(d1 == min(d1))
-                drug2_model.fit(d2[mask], E[mask])
+                self.drug2_model.fit(d2[mask], E[mask])
 
             # Get initial guesses of E0, E1, E2, h1, h2, C1, and C2 from single-drug fits
-            E0_1, E1, h1, C1 = drug1_model.get_parameters()
-            E0_2, E2, h2, C2 = drug2_model.get_parameters()
+            E0_1, E1, h1, C1 = self.drug1_model.get_parameters()
+            E0_2, E2, h2, C2 = self.drug2_model.get_parameters()
 
-            # TODO: E orientation
             # Get initial guess of E3 at E(d1_max, d2_max), if that point exists
+            # It may not exist if the input data are not sampled on a regular grid
             E3 = E[(d1 == max(d1)) & (d2 == max(d2))]
             if len(E3) > 0:
                 E3 = np.mean(E3)
 
+            # TODO: E orientation
             # Otherwise guess E3 is the minimum E observed
             else:
                 E3 = np.min(E)
@@ -300,11 +195,12 @@ class MuSyC(ParametricModel):
                 p0 = p0[:-2]
 
         p0 = list(self._transform_params_to_fit(p0))
-        utils.sanitize_initial_guess(p0, self.bounds)
+        bounds = ()  # TODO: Redo bounds later
+        utils.sanitize_initial_guess(p0, bounds)
         return p0
 
     def _transform_params_from_fit(self, params):
-
+        """Transforms logscaled parameters to linear scale"""
         if not self.fit_gamma:
             E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21 = params
         else:
@@ -338,7 +234,7 @@ class MuSyC(ParametricModel):
         return E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21
 
     def _transform_params_to_fit(self, params):
-
+        """Transform appropriate linear params to log-scale for fitting"""
         if not self.fit_gamma:
             E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21 = params
         else:
@@ -372,7 +268,7 @@ class MuSyC(ParametricModel):
         )
 
     def E(self, d1, d2):
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
 
         if not self.fit_gamma:
@@ -475,11 +371,8 @@ class MuSyC(ParametricModel):
                 self.gamma21,
             ) = popt
 
-    def _get_single_drug_classes(self):
-        return Hill, Hill
-
     def _reference_E(self, d1, d2):
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
 
         return self._model(
@@ -608,10 +501,8 @@ class MuSyC(ParametricModel):
         return beta
 
     def get_parameters(self, confidence_interval=95):
-        if not self.is_specified():
+        if not self.is_specified:
             raise ModelNotParameterizedError()
-
-        beta = MuSyC._get_beta(self.E0, self.E1, self.E2, self.E3)
 
         if self.converged and self.bootstrap_parameters is not None:
             parameter_ranges = self.get_parameter_range(confidence_interval=confidence_interval)
@@ -644,7 +535,7 @@ class MuSyC(ParametricModel):
             self.C2,
         ]
         params["beta"] = [
-            beta,
+            self.beta,
         ]
         params["alpha12"] = [
             self.alpha12,
@@ -750,7 +641,7 @@ class MuSyC(ParametricModel):
             return "No synergy or antagonism detected with %d percent confidence interval" % (int(confidence_interval))
 
     def __repr__(self):
-        if not self.is_specified():
+        if not self.is_specified:
             return "MuSyC()"
 
         # beta = (min(self.E1,self.E2)-self.E3) / (self.E0 - min(self.E1,self.E2))
