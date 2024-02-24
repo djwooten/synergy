@@ -15,8 +15,12 @@ class SynergyModel2D(ABC):
 
         drug1_model = deepcopy(drug1_model)
         drug2_model = deepcopy(drug2_model)
-        self.drug1_model = utils.sanitize_single_drug_model(drug1_model, default_type, required_type)
-        self.drug2_model = utils.sanitize_single_drug_model(drug2_model, default_type, required_type)
+        self.drug1_model: DoseResponseModel1D = utils.sanitize_single_drug_model(
+            drug1_model, default_type, required_type
+        )
+        self.drug2_model: DoseResponseModel1D = utils.sanitize_single_drug_model(
+            drug2_model, default_type, required_type
+        )
 
     @abstractmethod
     def fit(self, d1, d2, E, **kwargs):
@@ -27,11 +31,11 @@ class SynergyModel2D(ABC):
         """-"""
 
     @abstractproperty
-    def _required_single_drug_class(self) -> type:
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
         """-"""
 
     @abstractproperty
-    def _default_single_drug_class(self) -> type:
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
         """-"""
 
     @abstractproperty
@@ -46,9 +50,9 @@ class SynergyModel2D(ABC):
 class DoseDependentSynergyModel2D(SynergyModel2D):
     """-"""
 
-    def __init__(self, drug1_model=None, drug2_model=None):
+    def __init__(self, drug1_model: DoseResponseModel1D, drug2_model: DoseResponseModel1D):
         """-"""
-        super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
+        super().__init__(drug1_model, drug2_model)
         self.synergy = None
         self.d1 = None
         self.d2 = None

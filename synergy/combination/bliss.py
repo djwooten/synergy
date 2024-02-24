@@ -14,9 +14,10 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 from synergy.combination.nonparametric_base import DoseDependentModel
+from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
 
 
-class Bliss(DoseDependentModel):
+class Bliss(DoseDependentSynergyModel2D):
     """Bliss independence model
 
     Bliss synergy is defined as the difference between the observed E and the E predicted by the Bliss Independence
