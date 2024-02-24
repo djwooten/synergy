@@ -1,41 +1,48 @@
-#    Copyright (C) 2020 David J. Wooten
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
-
-from abc import ABC, abstractmethod
-from typing import Optional
+from abc import ABC, abstractproperty, abstractmethod
+from typing import Callable, Optional
 
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 
-from synergy.utils import base as utils
-from synergy.single.dose_response_model_1d import ParametricDoseResponseModel1D
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
+from synergy.utils import base as utils
 
 
-class ParameterizedModel1D(ParametricDoseResponseModel1D):
-    """Base model for parametric single-drug dose response curves."""
+class DoseResponseModel1D(ABC):
+    """-"""
+
+    @abstractmethod
+    def fit(self, d, E, **kwargs) -> None:
+        """-"""
+
+    @abstractmethod
+    def E(self, d):
+        """-"""
+
+    @abstractmethod
+    def E_inv(self, E):
+        """-"""
+
+    @abstractproperty
+    def is_specified(self) -> bool:
+        """-"""
+
+    @abstractproperty
+    def is_fit(self) -> bool:
+        """-"""
+
+
+class ParametricDoseResponseModel1D(DoseResponseModel1D):
+    """-"""
 
     def __init__(self):
         """Ctor."""
-        self.bounds = None
-        self.fit_function = None
-        self.jacobian_function = None
+        self.fit_function: Callable
+        self.jacobian_function: Callable
 
-        self.converged = False
-        self._is_fit = False
+        self._converged: bool = False
+        self._is_fit: bool = False
 
         self.sum_of_squares_residuals: Optional[float]
         self.r_squared: Optional[float]
@@ -44,12 +51,12 @@ class ParameterizedModel1D(ParametricDoseResponseModel1D):
         self.bootstrap_parameters = None
 
     @abstractmethod
-    def _set_parameters(self, popt):
-        """Internal method to set model parameters"""
-
-    @abstractmethod
     def get_parameters(self) -> list:
         """Returns model parameters"""
+
+    @abstractmethod
+    def _set_parameters(self, parameters):
+        """Internal method to set model parameters"""
 
     @abstractmethod
     def E(self, d):
@@ -82,7 +89,27 @@ class ParameterizedModel1D(ParametricDoseResponseModel1D):
             range, or for non-invertable models
         """
 
-    def fit(self, d, E, use_jacobian=True, bootstrap_iterations=0, **kwargs):
+    @abstractproperty
+    def _parameter_names(self) -> list[str]:
+        """-"""
+
+    @abstractproperty
+    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
+        """-"""
+
+    def _get_fit_bounds(self, fit_kwargs):
+        lower_bounds = []
+        upper_bounds = []
+        for param in self._parameter_names:
+            default_bounds = self._default_fit_bounds.get(param, (-np.inf, np.inf))
+            lb, ub = fit_kwargs.pop(f"{param}_bounds", default_bounds)
+            lower_bounds.append(lb)
+            upper_bounds.append(ub)
+        lower_bounds = self._transform_params_to_fit(lower_bounds)
+        upper_bounds = self._transform_params_to_fit(upper_bounds)
+        return lower_bounds, upper_bounds
+
+    def fit(self, d, E, **kwargs):
         """Fit the model to data.
 
         Parameters
@@ -106,38 +133,44 @@ class ParameterizedModel1D(ParametricDoseResponseModel1D):
         d = np.asarray(d)
         E = np.asarray(E)
 
-        # Are initial parameter guesses provided?
-        if "p0" in kwargs:
-            p0 = list(kwargs["p0"])
-        else:
-            p0 = None
+        # Parse optional kwargs
+        use_jacobian = kwargs.pop("use_jacobian", True)
+        bootstrap_iterations = kwargs.pop("bootstrap_iterations", 0)
+        bounds = self._get_fit_bounds(kwargs)
+        p0 = kwargs.pop("p0", None)
+        if p0 is not None:
+            p0 = list(p0)
 
         # Sanitize initial guesses
-        p0 = self._get_initial_guess(d, E, p0=p0)
+        p0 = self._get_initial_guess(d, E, p0, bounds)
+
+        # Pass bounds and p0 to kwargs for curve_fit()
+        kwargs["bounds"] = bounds
         kwargs["p0"] = p0
 
         with np.errstate(divide="ignore", invalid="ignore"):
-            popt = self._internal_fit(d, E, use_jacobian, **kwargs)
+            popt = self._fit(d, E, use_jacobian, **kwargs)
 
         if popt is None:  # curve_fit() failed to fit parameters
-            self.converged = False
-            self._set_parameters(self._transform_params_from_fit(p0))
-        else:  # curve_fit() succeeded
-            self.converged = True
-            self._set_parameters(popt)
+            self._converged = False
+            return
 
-            n_parameters = len(popt)
-            n_samples = len(d)
-            if n_samples - n_parameters - 1 > 0:  # TODO: What is this watching out for?
-                self._score(d, E)
-                kwargs["p0"] = self._transform_params_to_fit(popt)
-                self._bootstrap_resample(
-                    d,
-                    E,
-                    use_jacobian,
-                    bootstrap_iterations,
-                    **kwargs,
-                )
+        # otherwise curve_fit() succeeded
+        self._converged = True
+        self._set_parameters(popt)
+
+        n_parameters = len(popt)
+        n_samples = len(d)
+        if n_samples - n_parameters - 1 > 0:  # TODO: What is this watching out for?
+            self._score(d, E)
+            kwargs["p0"] = self._transform_params_to_fit(popt)
+            self._bootstrap_resample(
+                d,
+                E,
+                use_jacobian,
+                bootstrap_iterations,
+                **kwargs,
+            )
 
     def get_confidence_intervals(self, confidence_interval: float = 95):
         """Returns the lower bound and upper bound estimate for each parameter.
@@ -162,29 +195,34 @@ class ParameterizedModel1D(ParametricDoseResponseModel1D):
         ub = 100 - lb
         return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
 
-    @property
-    def is_specified(self) -> bool:
-        """True if all parameters are set."""
-        parameters = self.get_parameters()
-        if parameters is None:
-            return False
+    def _get_initial_guess(self, d, E, p0, bounds):
+        """Transform user supplied initial guess to correct scale, and/or guess p0."""
+        p0 = list(self._transform_params_to_fit(p0))
+        return utils.sanitize_initial_guess(p0, bounds)
 
-        return None not in parameters and not np.isnan(np.asarray(parameters)).any()
+    def _transform_params_from_fit(self, params):
+        """Transform parameters from curve-fitting scale to linear scale.
 
-    @property
-    def is_fit(self) -> bool:
-        """True if it was fit to data and converged."""
-        return self._is_fit and self.converged
+        For instance, models that fit logh and logC must transform those to h and C
+        """
+        return params
 
-    def _internal_fit(self, d, E, use_jacobian: bool, **kwargs):
+    def _transform_params_to_fit(self, params):
+        """Transform parameters to scale used for curve fitting.
+
+        For instance, models that fit logh and logC must transform from h and C
+        """
+        return params
+
+    def _fit(self, d, E, use_jacobian: bool, bounds=None, **kwargs):
         """Fit the model to data (d, E)"""
-        jac = self.jacobian_function if use_jacobian and self.jacobian_function else None
+        jac = self.jacobian_function if use_jacobian and self.jacobian_function is not None else None
 
         popt = curve_fit(
             self.fit_function,
             d,
             E,
-            bounds=self.bounds,
+            bounds=bounds,
             jac=jac,
             **kwargs,
         )[0]
@@ -192,24 +230,6 @@ class ParameterizedModel1D(ParametricDoseResponseModel1D):
         if True in np.isnan(popt):
             return None
         return self._transform_params_from_fit(popt)
-
-    def _get_initial_guess(self, d, E, p0=None):
-        """Internal method to format and/or guess p0"""
-        return p0
-
-    def _transform_params_from_fit(self, params):
-        """Internal method to transform parameterss as needed.
-
-        For instance, models that fit logh and logC must transform those to h and C
-        """
-        return params
-
-    def _transform_params_to_fit(self, params):
-        """Internal method to transform parameterss as needed.
-
-        For instance, models that fit logh and logC must transform from h and C
-        """
-        return params
 
     def _score(self, d, E):
         """Calculate goodness of fit and model quality scores
@@ -222,23 +242,19 @@ class ParameterizedModel1D(ParametricDoseResponseModel1D):
 
         Called automatically during model.fit(d1, d2, E)
 
-        Parameters
-        ----------
-        d : array_like
-            Doses
-
-        E : array_like
-            Measured dose-response at doses d
+        :param ArrayLike d: Doses
+        :param ArrayLike E: Measured dose-response effect at doses d
         """
         if not (self.is_specified and self.is_fit):
             raise ModelNotFitToDataError("Must fit the model to data before scoring")
 
         n_parameters = len(self.get_parameters())
+        n_datapoints = len(E)
 
         self.sum_of_squares_residuals = utils.residual_ss_1d(d, E, self.E)
         self.r_squared = utils.r_squared(E, self.sum_of_squares_residuals)
-        self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, len(E))
-        self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, len(E))
+        self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, n_datapoints)
+        self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, n_datapoints)
 
     def _bootstrap_resample(self, d, E, use_jacobian, bootstrap_iterations, **kwargs):
         """Identify confidence intervals for parameters using bootstrap resampling.
@@ -249,7 +265,7 @@ class ParameterizedModel1D(ParametricDoseResponseModel1D):
         """
         if not self.is_specified:
             raise ModelNotParameterizedError()
-        if not self.converged:
+        if not self.is_converged:
             raise ModelNotFitToDataError()
 
         n_data_points = len(E)
@@ -268,7 +284,7 @@ class ParameterizedModel1D(ParametricDoseResponseModel1D):
 
             # Fit noisy data
             with np.errstate(divide="ignore", invalid="ignore"):
-                popt1 = self._internal_fit(d, E_iteration, use_jacobian=use_jacobian, **kwargs)
+                popt1 = self._fit(d, E_iteration, use_jacobian=use_jacobian, **kwargs)
 
             if popt1 is not None:
                 bootstrap_parameters.append(popt1)
@@ -278,8 +294,21 @@ class ParameterizedModel1D(ParametricDoseResponseModel1D):
         else:
             self.bootstrap_parameters = None
 
-    def __repr__(self):
-        name = type(self).__name__
-        x: dict = {}  # TODO should map parameter name to value
-        params = [f"{k}={v}" for k, v in x.items()]
-        return f"{name}({', '.join(params)})"
+    @property
+    def is_specified(self) -> bool:
+        """True if all parameters are set."""
+        parameters = self.get_parameters()
+        if parameters is None:
+            return False
+
+        return None not in parameters and not np.isnan(np.asarray(parameters)).any()
+
+    @property
+    def is_converged(self) -> bool:
+        """-"""
+        return self._converged
+
+    @property
+    def is_fit(self) -> bool:
+        """-"""
+        return self._is_fit

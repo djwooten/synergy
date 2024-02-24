@@ -85,9 +85,7 @@ def r_squared(E, sum_of_squares_residuals):
 
 
 def sanitize_initial_guess(p0, bounds):
-    """
-    Makes sure p0 is within the bounds
-    """
+    """Ensure sure p0 is within the bounds"""
     index = 0
     for x, lower, upper in zip(p0, *bounds):
         if x is None:

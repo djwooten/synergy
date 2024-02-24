@@ -188,7 +188,7 @@ class HillFitTests(TestCase):
         # Ensure the hill is fit
         self.assertTrue(model.is_specified)
         self.assertTrue(model.is_fit)
-        self.assertTrue(model.converged)
+        self.assertTrue(model.is_converged)
 
         # Ensure the parameters are approximately correct
         observed = np.asarray(model.get_parameters())

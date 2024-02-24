@@ -16,12 +16,11 @@
 import numpy as np
 from scipy.stats import linregress
 
-from synergy.utils import base as utils
 from synergy.exceptions import ModelNotParameterizedError
-from synergy.single.parametric_base import ParameterizedModel1D
+from synergy.single.dose_response_model_1d import ParametricDoseResponseModel1D
 
 
-class Hill(ParameterizedModel1D):
+class Hill(ParametricDoseResponseModel1D):
     """The four-parameter Hill equation
 
                             d^h
@@ -30,46 +29,11 @@ class Hill(ParameterizedModel1D):
 
     The Hill equation is a standard model for single-drug dose-response curves.
     This is the base model for Hill_2P and Hill_CI.
-
     """
 
-    def __init__(
-        self,
-        E0=None,
-        Emax=None,
-        h=None,
-        C=None,
-        E0_bounds=None,
-        Emax_bounds=None,
-        h_bounds=None,
-        C_bounds=None,
-    ):
-        """
-        Parameters
-        ----------
-        E0 : float, optional
-            Effect at 0 dose. Set this if you are creating a synthetic Hill
-            model, rather than fitting from data
-
-        Emax : float, optional
-            Effect at 0 dose. Set this if you are creating a synthetic Hill
-            model, rather than fitting from data
-
-        h : float, optional
-            The Hill-slope. Set this if you are creating a synthetic Hill
-            model, rather than fitting from data
-
-        C : float, optional
-            EC50, the dose for which E = (E0+Emax)/2. Set this if you are
-            creating a synthetic Hill model, rather than fitting from data
-
-        X_bounds: tuple
-            Bounds to use for Hill equation parameters during fitting. Valid options are E0_bounds, Emax_bounds,
-            h_bounds, C_bounds.
-        """
-
+    def __init__(self, E0=None, Emax=None, h=None, C=None):
+        """Ctor."""
         super().__init__()
-
         if h is not None and h <= 0:
             raise ValueError(f"h must be > 0 ({h})")
         if C is not None and C <= 0:
@@ -79,20 +43,13 @@ class Hill(ParameterizedModel1D):
         self.h = h
         self.C = C
 
-        self.E0_bounds = E0_bounds if E0_bounds else (-np.inf, np.inf)
-        self.Emax_bounds = Emax_bounds if Emax_bounds else (-np.inf, np.inf)
-        self.h_bounds = h_bounds if h_bounds else (0, np.inf)
-        self.C_bounds = C_bounds if C_bounds else (0, np.inf)
-
-        # Transform h and C bounds to log scale
-        with np.errstate(divide="ignore"):
-            self.logh_bounds = (np.log(self.h_bounds[0]), np.log(self.h_bounds[1]))
-            self.logC_bounds = (np.log(self.C_bounds[0]), np.log(self.C_bounds[1]))
+        # To minimize risk of overflow or floating-point precision issues, we linearly scale
+        # doses passed into fit to be centered around 0 on a log scale.
+        # This variable stores that scale and is used to reverse it when fitting C.
+        self.__dose_scale = 1.0
 
         self.fit_function = self._model_to_fit
         self.jacobian_function = self._model_jacobian_for_fit
-
-        self.bounds = tuple(zip(self.E0_bounds, self.Emax_bounds, self.logh_bounds, self.logC_bounds))
 
     def E(self, d):
         """Evaluate this model at dose d. If the model is not parameterized, returns 0.
@@ -131,6 +88,14 @@ class Hill(ParameterizedModel1D):
 
         return self._model_inv(E, self.E0, self.Emax, self.h, self.C)
 
+    @property
+    def _parameter_names(self) -> list[str]:
+        return ["E0", "Emax", "h", "C"]
+
+    @property
+    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
+        return {"h": (0.0, np.inf), "C": (0.0, np.inf)}
+
     def get_parameters(self):
         """Gets the model's parmaters.
 
@@ -141,13 +106,15 @@ class Hill(ParameterizedModel1D):
         """
         return (self.E0, self.Emax, self.h, self.C)
 
-    def _set_parameters(self, popt):
-        E0, Emax, h, C = popt
+    def fit(self, d, E, use_jacobian=True, bootstrap_iterations=0, **kwargs):
+        """-"""
+        self.__dose_scale = np.exp(np.mean(np.log(d)))
+        super().fit(
+            d / self.__dose_scale, E, use_jacobian=use_jacobian, bootstrap_iterations=bootstrap_iterations, **kwargs
+        )
 
-        self.E0 = E0
-        self.Emax = Emax
-        self.h = h
-        self.C = C
+    def _set_parameters(self, parameters):
+        self.E0, self.Emax, self.h, self.C = parameters
 
     def _model(self, d, E0, Emax, h, C):
         dh = np.float_power(d, h)
@@ -201,19 +168,18 @@ class Hill(ParameterizedModel1D):
         jac[np.isnan(jac)] = 0
         return jac
 
-    def _get_initial_guess(self, d, E, p0=None):
+    def _get_initial_guess(self, d, E, p0, bounds):
         if p0 is None:
             p0 = [max(E), min(E), 1, np.median(d)]
 
-        p0 = list(self._transform_params_to_fit(p0))
-        utils.sanitize_initial_guess(p0, self.bounds)
-        return p0
+        return super()._get_initial_guess(d, E, p0, bounds)
 
     def _transform_params_from_fit(self, params):
         return params[0], params[1], np.exp(params[2]), np.exp(params[3])
 
     def _transform_params_to_fit(self, params):
-        return params[0], params[1], np.log(params[2]), np.log(params[3])
+        with np.errstate(divide="ignore"):
+            return params[0], params[1], np.log(params[2]), np.log(params[3] * self.__dose_scale)
 
     def __repr__(self):
         if not self.is_specified:
@@ -232,12 +198,6 @@ class Hill_2P(Hill):
     Mathematically equivalent to the four-parameter Hill equation, but E0 and Emax are held constant (not fit to data).
 
     """
-
-    def __init__(self, E0=1, Emax=0, **kwargs):
-        super().__init__(E0=E0, Emax=Emax, **kwargs)
-
-        self.jacobian_function = self._model_jacobian_for_fit
-        self.bounds = tuple(zip(self.logh_bounds, self.logC_bounds))
 
     def _model_to_fit(self, d, logh, logC):
         return self._model(d, self.E0, self.Emax, np.exp(logh), np.exp(logC))
@@ -261,14 +221,15 @@ class Hill_2P(Hill):
         jac[np.isnan(jac)] = 0
         return jac
 
-    def _get_initial_guess(self, d, E, p0=None):
+    @property
+    def _parameter_names(self) -> list[str]:
+        return ["h", "C"]
+
+    def _get_initial_guess(self, d, E, p0, bounds):
         if p0 is None:
             p0 = [1, np.median(d)]
 
-        p0 = list(self._transform_params_to_fit(p0))
-        utils.sanitize_initial_guess(p0, self.bounds)
-
-        return p0
+        return super()._get_initial_guess(d, E, p0, bounds)
 
     def get_parameters(self):
         """Gets the model's parameters
@@ -290,7 +251,8 @@ class Hill_2P(Hill):
         return np.exp(params[0]), np.exp(params[1])
 
     def _transform_params_to_fit(self, params):
-        return np.log(params[0]), np.log(params[1])
+        with np.errstate(divide="ignore"):
+            return np.log(params[0]), np.log(params[1])
 
     def __repr__(self):
         if not self.is_specified:

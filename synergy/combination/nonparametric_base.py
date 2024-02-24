@@ -19,7 +19,7 @@ import numpy as np
 
 from synergy.utils import base as utils
 from synergy.exceptions import ModelNotParameterizedError
-from synergy.single import LogLinear
+from synergy.single.dose_response_model_1d import DoseResponseModel, LogLinear
 from synergy.utils import plots
 
 
@@ -102,14 +102,14 @@ class DoseDependentModel(ABC):
         return self.drug1_model.is_specified and self.drug2_model.is_specified
 
     @property
-    def _default_single_drug_class(self) -> type:
+    def _default_single_drug_class(self) -> type[DoseResponseModel]:
         """The default drug model to use"""
         return LogLinear
 
     @property
-    def _required_single_drug_class(self) -> type:
+    def _required_single_drug_class(self) -> type[DoseResponseModel]:
         """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
-        return None
+        return DoseResponseModel
 
     def plot_heatmap(self, cmap="PRGn", neglog=False, center_on_zero=True, **kwargs):
         """Plots the synergy as a heatmap

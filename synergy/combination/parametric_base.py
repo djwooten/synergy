@@ -23,6 +23,7 @@ from scipy.stats import norm
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.single import Hill
+from synergy.single.dose_response_model_1d import DoseResponseModel
 from synergy.utils import base as utils, dose_utils, plots
 
 
@@ -172,12 +173,12 @@ class ParametricModel(ABC):
         pass
 
     @property
-    def _default_single_drug_class(self) -> type:
+    def _default_single_drug_class(self) -> type[DoseResponseModel]:
         """The default drug model to use"""
         return Hill
 
     @property
-    def _required_single_drug_class(self) -> type:
+    def _required_single_drug_class(self) -> type[DoseResponseModel]:
         """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
         return Hill
 

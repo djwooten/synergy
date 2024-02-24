@@ -16,9 +16,10 @@
 import numpy as np
 
 from synergy.exceptions import ModelNotParameterizedError
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
 
 
-class LogLinear:
+class LogLinear(DoseResponseModel1D):
     """A model that fits dose response curves as piecewise linear interpolations of E vs log(dose).
 
     This model is useful for drugs whose dose response do not follow some known parametric equation.
