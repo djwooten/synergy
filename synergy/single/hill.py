@@ -31,9 +31,8 @@ class Hill(ParametricDoseResponseModel1D):
     This is the base model for Hill_2P and Hill_CI.
     """
 
-    def __init__(self, E0=None, Emax=None, h=None, C=None):
+    def __init__(self, E0=None, Emax=None, h=None, C=None, **kwargs):
         """Ctor."""
-        super().__init__()
         if h is not None and h <= 0:
             raise ValueError(f"h must be > 0 ({h})")
         if C is not None and C <= 0:
@@ -46,10 +45,12 @@ class Hill(ParametricDoseResponseModel1D):
         # To minimize risk of overflow or floating-point precision issues, we linearly scale
         # doses passed into fit to be centered around 0 on a log scale.
         # This variable stores that scale and is used to reverse it when fitting C.
-        self.__dose_scale = 1.0
+        self._dose_scale: float = 1.0
 
         self.fit_function = self._model_to_fit
         self.jacobian_function = self._model_jacobian_for_fit
+
+        super().__init__(**kwargs)
 
     def E(self, d):
         """Evaluate this model at dose d. If the model is not parameterized, returns 0.
@@ -106,11 +107,35 @@ class Hill(ParametricDoseResponseModel1D):
         """
         return (self.E0, self.Emax, self.h, self.C)
 
+    def _set_dose_scale(self, d):
+        """Find the scaling factor that will normalize the dose scale to be log-centered around 0.
+
+        We want to find s such that d' = d / s has
+        mean(log(d')) = 0
+
+        We will then use d' when fitting the data.
+        Importantly, this will mean we are fitting C' = C / s, not just C.
+        Consequently we must update C_bounds to C'_bounds.
+        """
+        C_idx = self._parameter_names.index("C")
+        # Revert old C'_bounds back to C_bounds
+        if C_idx >= 0:
+            self._bounds[0][C_idx] += np.log(self._dose_scale)
+            self._bounds[1][C_idx] += np.log(self._dose_scale)
+
+        # Calculate dose scale
+        self._dose_scale = np.exp(np.mean(np.log(d)))
+
+        # Update C_bounds to C'_bounds
+        if C_idx >= 0:
+            self._bounds[0][C_idx] -= np.log(self._dose_scale)
+            self._bounds[1][C_idx] -= np.log(self._dose_scale)
+
     def fit(self, d, E, use_jacobian=True, bootstrap_iterations=0, **kwargs):
         """-"""
-        self.__dose_scale = np.exp(np.mean(np.log(d)))
+        self._set_dose_scale(d)
         super().fit(
-            d / self.__dose_scale, E, use_jacobian=use_jacobian, bootstrap_iterations=bootstrap_iterations, **kwargs
+            d / self._dose_scale, E, use_jacobian=use_jacobian, bootstrap_iterations=bootstrap_iterations, **kwargs
         )
 
     def _set_parameters(self, parameters):
@@ -170,16 +195,16 @@ class Hill(ParametricDoseResponseModel1D):
 
     def _get_initial_guess(self, d, E, p0, bounds):
         if p0 is None:
-            p0 = [max(E), min(E), 1, np.median(d)]
+            p0 = [np.median(E[d == min(d)]), np.median(E[d == max(d)]), 1, np.median(d) * self._dose_scale]
 
         return super()._get_initial_guess(d, E, p0, bounds)
 
     def _transform_params_from_fit(self, params):
-        return params[0], params[1], np.exp(params[2]), np.exp(params[3])
+        return params[0], params[1], np.exp(params[2]), np.exp(params[3]) * self._dose_scale
 
     def _transform_params_to_fit(self, params):
         with np.errstate(divide="ignore"):
-            return params[0], params[1], np.log(params[2]), np.log(params[3] * self.__dose_scale)
+            return params[0], params[1], np.log(params[2]), np.log(params[3] / self._dose_scale)
 
     def __repr__(self):
         if not self.is_specified:
@@ -248,11 +273,11 @@ class Hill_2P(Hill):
         self.C = C
 
     def _transform_params_from_fit(self, params):
-        return np.exp(params[0]), np.exp(params[1])
+        return np.exp(params[0]), np.exp(params[1]) * self._dose_scale
 
     def _transform_params_to_fit(self, params):
         with np.errstate(divide="ignore"):
-            return np.log(params[0]), np.log(params[1])
+            return np.log(params[0]), np.log(params[1] / self._dose_scale)
 
     def __repr__(self):
         if not self.is_specified:
@@ -273,10 +298,10 @@ class Hill_CI(Hill_2P):
     log-linearization approach to dose-response fitting used by the Combination Index.
     """
 
-    def __init__(self, h=None, C=None):
+    def __init__(self, h=None, C=None, **kwargs):
         super().__init__(h=h, C=C, E0=1.0, Emax=0.0)
 
-    def _internal_fit(self, d, E, use_jacobian, **kwargs):
+    def _fit(self, d, E, use_jacobian, **kwargs):
         """Override the parent function to use linregress() instead of curve_fit()"""
         mask = np.where((E < 1) & (E > 0) & (d > 0))
         E = E[mask]
@@ -287,7 +312,7 @@ class Hill_CI(Hill_2P):
         median_effect_line = linregress(np.log(d), np.log(fA / fU))
         h = median_effect_line.slope
         C = np.exp(-median_effect_line.intercept / h)
-
+        C *= self._dose_scale
         return (h, C)
 
     def plot_linear_fit(self, d, E, ax=None):

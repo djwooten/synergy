@@ -239,6 +239,34 @@ class LogLinearTests(TestCase):
 
         np.testing.assert_allclose(observed_d, expected_d)
 
+    def test_dose_scale(self):
+        """Ensure the model behaves well at high dose ranges."""
+        model = LogLinear()
+        #   |         X
+        #   |
+        #   |
+        #   |
+        #   |     X
+        #   +-X------------
+        #     1   10  100
+        scale = 1e9
+        d = np.asarray([1, 10, 100]) * scale
+        E = np.asarray([0, 1, 5])
+        model.fit(d, E)
+
+        segment_1_d = np.logspace(0, 1) * scale
+        segment_1_E = np.linspace(0, 1)
+
+        segment_2_d = np.logspace(1, 2) * scale
+        segment_2_E = np.linspace(1, 5)
+
+        test_d = np.hstack([segment_1_d, segment_2_d])
+        expected_E = np.hstack([segment_1_E, segment_2_E])
+        observed_E = model.E(test_d)
+        np.testing.assert_allclose(observed_E, expected_E)
+
+        self.assertAlmostEqual(model._dose_scale, scale * 10, places=1)
+
 
 if __name__ == "__main__":
     unittest.main()

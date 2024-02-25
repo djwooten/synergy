@@ -53,6 +53,8 @@ class LogLinear(DoseResponseModel1D):
         self._uninvertible_domains = []
         self._ready_for_inverse = False
 
+        self._dose_scale = 1.0
+
     @property
     def is_specified(self):
         return len(self._logd) > 0 and len(self._E) > 0
@@ -100,8 +102,11 @@ class LogLinear(DoseResponseModel1D):
         self._d = self._d[sorted_indices]
         self._E = self._E[sorted_indices]
 
+        # Calculate dose scale
+        self._dose_scale = np.exp(np.mean(np.log(self._d)))
+
         # Get log-transformed dose (used for interpolation)
-        self._logd = np.log(self._d)
+        self._logd = np.log(self._d / self._dose_scale)
 
     def E(self, d):
         """Evaluate this model at dose d
@@ -121,7 +126,7 @@ class LogLinear(DoseResponseModel1D):
 
         d = np.array(d, copy=True)
         d[d == 0] = np.nextafter(0, 1)
-        logd = np.log(d)
+        logd = np.log(d / self._dose_scale)
 
         E = np.interp(logd, self._logd, self._E, left=np.nan, right=np.nan)
 
@@ -168,7 +173,7 @@ class LogLinear(DoseResponseModel1D):
         elif invalid_mask:
             d = np.nan
 
-        return d
+        return d * self._dose_scale
 
     def create_fit(d, E, aggregation_function=np.mean):
         """Courtesy function to build a marginal linear model directly from

@@ -18,7 +18,6 @@ import inspect
 import warnings
 
 from synergy.exceptions import InvalidDrugModelError
-from synergy.single.dose_response_model_1d import DoseResponseModel1D
 
 
 def remove_zeros(d, min_buffer=0.2):
@@ -91,7 +90,7 @@ def sanitize_initial_guess(p0, bounds):
     for x, lower, upper in zip(p0, *bounds):
         if x is None:
             if True in np.isinf((lower, upper)):
-                np.min((np.max((0, lower)), upper))
+                p0[index] = np.min((np.max((0, lower)), upper))
             else:
                 p0[index] = np.mean((lower, upper))
 
@@ -100,11 +99,10 @@ def sanitize_initial_guess(p0, bounds):
         elif x > upper:
             p0[index] = upper
         index += 1
+    return p0
 
 
-def sanitize_single_drug_model(
-    model, default_type: type[DoseResponseModel1D], required_type: type[DoseResponseModel1D], **kwargs
-) -> DoseResponseModel1D:
+def sanitize_single_drug_model(model, default_type: type, required_type: type, **kwargs):
     if model is None:
         model = default_type(**kwargs)
 

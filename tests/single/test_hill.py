@@ -233,6 +233,26 @@ class HillFitTests(TestCase):
             self.assertLessEqual(interval_95[0], interval_50[0])
             self.assertGreaterEqual(interval_95[1], interval_50[1])
 
+    @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.differing_executors])
+    @given(sampled_from(["synthetic_hill_1.csv"]))
+    def test_dose_scale(self, fname):
+        """Ensure confidence intervals work reasonably."""
+        expected = np.asarray(self.EXPECTED_PARAMETERS[fname])
+
+        d, E = load_synthetic_data(os.path.join(TEST_DATA_DIR, fname))
+        scale = 1e9
+        d *= scale
+        expected[-1] *= scale
+        expected_C = expected[-1]
+
+        model = self.MODEL(C_bounds=(expected_C / 10.0, expected_C * 10.0), **self.INIT_KWARGS)
+
+        # Ensure the parameters are approximately correct
+        model.fit(d, E)
+        observed = np.asarray(model.get_parameters())
+        np.testing.assert_allclose(observed[:-1], expected[:-1], atol=0.2)
+        np.testing.assert_allclose(observed[-1], expected[-1], atol=0.2 * scale)
+
 
 class Hill2PTests(HillTests):
     """Tests for 1D Hill_2P dose-response models."""
