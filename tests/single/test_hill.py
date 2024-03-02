@@ -11,7 +11,7 @@ from hypothesis import given, seed
 from hypothesis.strategies import floats, sampled_from
 
 from synergy.single.hill import Hill, Hill_2P, Hill_CI
-from synergy.testing_utils.synthetic_data_loader import load_synthetic_data
+from synergy.testing_utils.test_data_loader import load_test_data
 
 
 MAX_FLOAT = sys.float_info.max
@@ -181,7 +181,7 @@ class HillFitTests(TestCase):
         """Ensure the model fits correctly."""
         expected_parameters = self.EXPECTED_PARAMETERS[fname]
 
-        d, E = load_synthetic_data(os.path.join(TEST_DATA_DIR, fname))
+        d, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
         model = self.MODEL(**self.INIT_KWARGS)
         model.fit(d, E)
 
@@ -213,7 +213,7 @@ class HillFitTests(TestCase):
         """Ensure confidence intervals work reasonably."""
         expected_parameters = self.EXPECTED_PARAMETERS[fname]
 
-        d, E = load_synthetic_data(os.path.join(TEST_DATA_DIR, fname))
+        d, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
         model = self.MODEL(**self.INIT_KWARGS)
         model.fit(d, E, bootstrap_iterations=100)
 
@@ -239,7 +239,7 @@ class HillFitTests(TestCase):
         """Ensure confidence intervals work reasonably."""
         expected = np.asarray(self.EXPECTED_PARAMETERS[fname])
 
-        d, E = load_synthetic_data(os.path.join(TEST_DATA_DIR, fname))
+        d, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
         scale = 1e9
         d *= scale
         expected[-1] *= scale

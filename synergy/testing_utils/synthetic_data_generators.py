@@ -213,7 +213,8 @@ class MuSyCDataGenerator:
         n_points1: int = 6,
         n_points2: int = 6,
         replicates: int = 1,
-        noise: float = 0.05,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
     ):
         model = MuSyC(
             E0=E0,
@@ -243,11 +244,9 @@ class MuSyCDataGenerator:
             d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates, include_zero=True
         )
 
-        E = model.E(d1, d2)
-        noise = noise * (E0 - E3)
-
-        E = E + noise * (2 * np.random.rand(len(E)) - 1)
-
+        d1_noisy = _noisify(d1, d_noise, min_val=0)
+        d2_noisy = _noisify(d2, d_noise, min_val=0)
+        E = _noisify(model.E(d1_noisy, d2_noisy), E_noise)
         return d1, d2, E
 
     @staticmethod
@@ -258,13 +257,10 @@ class MuSyCDataGenerator:
         C2: float = 1.0,
         h1: float = 1.0,
         h2: float = 1.0,
-        noise: float = 0.05,
     ):
         if E1 < 0 or E1 > 1 or E2 < 0 or E2 > 1:
             raise ValueError("E1 and E2 must be between 0 and 1 for a Bliss model")
-        return MuSyCDataGenerator.get_2drug_combination(
-            E0=1.0, E1=E1, E2=E2, E3=E1 * E2, h1=h1, h2=h2, C1=C1, C2=C2, noise=noise
-        )
+        return MuSyCDataGenerator.get_2drug_combination(E0=1.0, E1=E1, E2=E2, E3=E1 * E2, h1=h1, h2=h2, C1=C1, C2=C2)
 
     @staticmethod
     def get_2drug_linear_isoboles(
@@ -275,8 +271,7 @@ class MuSyCDataGenerator:
         C2: float = 1.0,
         h1: float = 1.0,
         h2: float = 1.0,
-        noise: float = 0.05,
     ):
         return MuSyCDataGenerator.get_2drug_combination(
-            E0=E0, E1=E1, E2=E2, E3=min(E1, E2), h1=h1, h2=h2, C1=C1, C2=C2, noise=noise
+            E0=E0, E1=E1, E2=E2, E3=0, h1=h1, h2=h2, C1=C1, C2=C2, alpha12=0, alpha21=0
         )

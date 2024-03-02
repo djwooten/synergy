@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def load_synthetic_data(fname, sep=",") -> tuple:
+def load_test_data(fname, sep=",") -> tuple:
     lines = []
     with open(fname) as infile:
         infile.readline()  # Get rid of header

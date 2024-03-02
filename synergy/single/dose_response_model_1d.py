@@ -152,7 +152,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
             p0 = list(p0)
 
         # Sanitize initial guesses
-        p0 = self._get_initial_guess(d, E, p0, self._bounds)
+        p0 = self._get_initial_guess(d, E, p0)
 
         # Pass bounds and p0 to kwargs for curve_fit()
         kwargs["p0"] = p0
@@ -198,11 +198,11 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         ub = 100 - lb
         return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
 
-    def _get_initial_guess(self, d, E, p0, bounds):
+    def _get_initial_guess(self, d, E, p0):
         """Transform user supplied initial guess to correct scale, and/or guess p0."""
         if p0:
             p0 = list(self._transform_params_to_fit(p0))
-        return utils.sanitize_initial_guess(p0, bounds)
+        return utils.sanitize_initial_guess(p0, self._bounds)
 
     def _transform_params_from_fit(self, params):
         """Transform parameters from curve-fitting scale to linear scale.
@@ -220,7 +220,9 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
 
     def _fit(self, d, E, use_jacobian: bool, **kwargs):
         """Fit the model to data (d, E)"""
-        jac = self.jacobian_function if use_jacobian and self.jacobian_function is not None else None
+        jac = self.jacobian_function if use_jacobian else None
+        if use_jacobian and jac is None:
+            _LOGGER.warn(f"No jacobian function is specified for {type(self).__name__}, ignoring `use_jacobian`.")
         popt = curve_fit(
             self.fit_function,
             d,

@@ -15,15 +15,16 @@
 
 import numpy as np
 
-from .jacobians.musyc_jacobian import jacobian
-from .parametric_base import ParametricModel
 
+from synergy.combination.jacobians.musyc_jacobian import jacobian
+from synergy.combination.synergy_model_2d import ParametricSynergyModel2D
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.utils import base as utils
 from synergy.single import Hill
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 
 
-class MuSyC(ParametricModel):
+class MuSyC(ParametricSynergyModel2D):
     """The MuSyC parametric synergy model for combinations of two drugs.
 
     Multidimensional Synergy of Combinations (MuSyC) is a drug synergy framework based on the law of mass action
@@ -50,14 +51,22 @@ class MuSyC(ParametricModel):
         self,
         drug1_model=None,
         drug2_model=None,
+        E0=None,
+        E1=None,
+        E2=None,
+        E3=None,
+        h1=None,
+        h2=None,
+        C1=None,
+        C2=None,
         alpha12=None,
         alpha21=None,
-        E3=None,
         gamma12=None,
         gamma21=None,
         r1r=1.0,
         r2r=1.0,
         fit_gamma=True,
+        **kwargs,
     ):
         """Ctor.
 
@@ -67,18 +76,23 @@ class MuSyC(ParametricModel):
         :param float gamma12: Synergistic cooperativity of drug 1 on drug 2 ([0,1) = antagonism, (1,inf) = synergism)
         :param float gamma21: Synergistic cooperativity of drug 2 on drug 1 ([0,1) = antagonism, (1,inf) = synergism)
         """
-        super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
-
         self.fit_gamma = fit_gamma
+        super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
 
-        self.r1r = r1r
-        self.r2r = r2r
-
+        self.E0 = E0
+        self.E1 = E1
+        self.E2 = E2
+        self.E3 = E3
+        self.h1 = h1
+        self.h2 = h2
+        self.C1 = C1
+        self.C2 = C2
         self.alpha12 = alpha12
         self.alpha21 = alpha21
-        self.E3 = E3
         self.gamma12 = gamma12
         self.gamma21 = gamma21
+        self.r1r = r1r
+        self.r2r = r2r
 
         if fit_gamma:
             self.fit_function = self._model_to_fit_with_gamma
@@ -87,15 +101,68 @@ class MuSyC(ParametricModel):
         else:
             self.fit_function = self._model_to_fit_no_gamma
             self.jacobian_function = self._jacobian_no_gamma
+            self.gamma12 = 1.0
+            self.gamma21 = 1.0
+
+    @property
+    def _parameter_names(self) -> list[str]:
+        """-"""
+        if self.fit_gamma:
+            return ["E0", "E1", "E2", "E3", "h1", "h2", "C1", "C2", "alpha12", "alpha21", "gamma12", "gamma21"]
+        return ["E0", "E1", "E2", "E3", "h1", "h2", "C1", "C2", "alpha12", "alpha21"]
+
+    @property
+    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
+        """-"""
+        return {
+            "h1": (0, np.inf),
+            "h2": (0, np.inf),
+            "C1": (0, np.inf),
+            "C2": (0, np.inf),
+            "alpha12": (0, np.inf),
+            "alpha21": (0, np.inf),
+            "gamma12": (0, np.inf),
+            "gamma21": (0, np.inf),
+        }
+
+    def E_reference(self, d1, d2):
+        """-"""
+        return self._model(
+            d1,
+            d2,
+            self.E0,
+            self.E1,
+            self.E2,
+            min(self.E1, self.E2),
+            self.h1,
+            self.h2,
+            self.C1,
+            self.C2,
+            self.r1r,
+            self.r2r,
+            1.0,
+            1.0,
+            1.0,
+            1.0,
+        )
+
+    @property
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return Hill
+
+    @property
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return Hill
 
     @property
     def beta(self):
         """-"""
-        E0 = (self.drug1_model.E0 + self.drug2_model.E0) / 2.0
-        return MuSyC._get_beta(E0, self.drug1_model.Emax, self.drug2_model.Emax, self.E3)
+        return MuSyC._get_beta(self.E0, self.E1, self.E2, self.E3)
 
     def _model_to_fit_with_gamma(
-        self, d, E0, E1, E2, E3, h1, h2, C1, C2, logalpha12, logalpha21, loggamma12, loggamma21
+        self, d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21, loggamma12, loggamma21
     ):
         return self._model(
             d[0],
@@ -104,10 +171,10 @@ class MuSyC(ParametricModel):
             E1,
             E2,
             E3,
-            h1,
-            h2,
-            C1,
-            C2,
+            np.exp(logh1),
+            np.exp(logh2),
+            np.exp(logC1),
+            np.exp(logC2),
             self.r1r,
             self.r2r,
             np.exp(logalpha12),
@@ -116,9 +183,24 @@ class MuSyC(ParametricModel):
             np.exp(loggamma21),
         )
 
-    def _model_to_fit_no_gamma(self, d, E0, E1, E2, E3, h1, h2, C1, C2, logalpha12, logalpha21):
+    def _model_to_fit_no_gamma(self, d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21):
         return self._model(
-            d[0], d[1], E0, E1, E2, E3, h1, h2, C1, C2, self.r1r, self.r2r, np.exp(logalpha12), np.exp(logalpha21), 1, 1
+            d[0],
+            d[1],
+            E0,
+            E1,
+            E2,
+            E3,
+            np.exp(logh1),
+            np.exp(logh2),
+            np.exp(logC1),
+            np.exp(logC2),
+            self.r1r,
+            self.r2r,
+            np.exp(logalpha12),
+            np.exp(logalpha21),
+            1,
+            1,
         )
 
     def _jacobian_with_gamma(
@@ -161,43 +243,44 @@ class MuSyC(ParametricModel):
             d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1r, self.r2r, logalpha12, logalpha21, 0, 0
         )[:, :, -2]
 
-    def _get_initial_guess(self, d1, d2, E, p0=None):
+    def _get_initial_guess(self, d1, d2, E, p0):
 
         # If there is no intial guess, use single-drug models to come up with intitial guess
         if p0 is None:
 
-            # Fit the single drug models if they were not pre-fit by the user
-            if not self.drug1_model.is_specified:
+            drug1 = self.drug1_model
+            drug2 = self.drug2_model
+
+            # Fit the single drug models if they were not pre-specified by the user
+            if not drug1.is_specified:
                 mask = np.where(d2 == min(d2))
-                self.drug1_model.fit(d1[mask], E[mask])
-            if not self.drug2_model.is_specified:
+                drug1.fit(d1[mask], E[mask])
+            if not drug2.is_specified:
                 mask = np.where(d1 == min(d1))
-                self.drug2_model.fit(d2[mask], E[mask])
+                drug2.fit(d2[mask], E[mask])
 
             # Get initial guesses of E0, E1, E2, h1, h2, C1, and C2 from single-drug fits
-            E0_1, E1, h1, C1 = self.drug1_model.get_parameters()
-            E0_2, E2, h2, C2 = self.drug2_model.get_parameters()
+            E0_1, E1, h1, C1 = drug1.E0, drug1.Emax, drug1.h, drug1.C
+            E0_2, E2, h2, C2 = drug2.E0, drug2.Emax, drug2.h, drug2.C
+            E0 = (E0_1 + E0_2) / 2.0
 
             # Get initial guess of E3 at E(d1_max, d2_max), if that point exists
             # It may not exist if the input data are not sampled on a regular grid
             E3 = E[(d1 == max(d1)) & (d2 == max(d2))]
             if len(E3) > 0:
-                E3 = np.mean(E3)
+                E3 = np.median(E3)
 
             # TODO: E orientation
             # Otherwise guess E3 is the minimum E observed
             else:
                 E3 = np.min(E)
 
-            p0 = [(E0_1 + E0_2) / 2.0, E1, E2, E3, h1, h2, C1, C2, 1, 1, 1, 1]
+            p0 = [E0, E1, E2, E3, h1, h2, C1, C2, 1, 1, 1, 1]
 
             if not self.fit_gamma:
                 p0 = p0[:-2]
 
-        p0 = list(self._transform_params_to_fit(p0))
-        bounds = ()  # TODO: Redo bounds later
-        utils.sanitize_initial_guess(p0, bounds)
-        return p0
+        return super()._get_initial_guess(d1, d2, E, p0)
 
     def _transform_params_from_fit(self, params):
         """Transforms logscaled parameters to linear scale"""
@@ -218,8 +301,6 @@ class MuSyC(ParametricModel):
                 loggamma12,
                 loggamma21,
             ) = params
-            gamma12 = np.exp(loggamma12)
-            gamma21 = np.exp(loggamma21)
 
         h1 = np.exp(logh1)
         h2 = np.exp(logh2)
@@ -231,6 +312,8 @@ class MuSyC(ParametricModel):
         if not self.fit_gamma:
             return E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21
 
+        gamma12 = np.exp(loggamma12)
+        gamma21 = np.exp(loggamma21)
         return E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21
 
     def _transform_params_to_fit(self, params):
@@ -239,19 +322,21 @@ class MuSyC(ParametricModel):
             E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21 = params
         else:
             E0, E1, E2, E3, h1, h2, C1, C2, alpha12, alpha21, gamma12, gamma21 = params
-            loggamma12 = np.log(gamma12)
-            loggamma21 = np.log(gamma21)
 
-        logh1 = np.log(h1)
-        logh2 = np.log(h2)
-        logC1 = np.log(C1)
-        logC2 = np.log(C2)
-        logalpha12 = np.log(alpha12)
-        logalpha21 = np.log(alpha21)
+        with np.errstate(divide="ignore"):
+            logh1 = np.log(h1)
+            logh2 = np.log(h2)
+            logC1 = np.log(C1)
+            logC2 = np.log(C2)
+            logalpha12 = np.log(alpha12)
+            logalpha21 = np.log(alpha21)
 
         if not self.fit_gamma:
             return E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21
 
+        with np.errstate(divide="ignore"):
+            loggamma12 = np.log(gamma12)
+            loggamma21 = np.log(gamma21)
         return (
             E0,
             E1,
@@ -311,7 +396,7 @@ class MuSyC(ParametricModel):
                 self.gamma21,
             )
 
-    def _get_parameters(self):
+    def get_parameters(self):
         if not self.fit_gamma:
             return (
                 self.E0,
@@ -396,22 +481,22 @@ class MuSyC(ParametricModel):
 
     def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, r1r, r2r, alpha12, alpha21, gamma12, gamma21):
         # Precompute some terms that are used repeatedly
-        d1_pow_h1 = np.power(d1, h1)
-        d2_pow_h2 = np.power(d2, h2)
-        C1_pow_h1 = np.power(C1, h1)
-        C2_pow_h2 = np.power(C2, h2)
+        d1_pow_h1 = np.float_power(d1, h1)
+        d2_pow_h2 = np.float_power(d2, h2)
+        C1_pow_h1 = np.float_power(C1, h1)
+        C2_pow_h2 = np.float_power(C2, h2)
 
         r1 = r1r / C1_pow_h1
         r2 = r2r / C2_pow_h2
 
-        alpha21_d1_pow_gamma21_h1 = np.power(alpha21 * d1, gamma21 * h1)
-        alpha12_d2_pow_gamma12_h2 = np.power(alpha12 * d2, gamma12 * h2)
-        r1_C1h1_pow_gamma21 = np.power((r1 * C1_pow_h1), gamma21)
-        r2_C2h2_pow_gamma12 = np.power((r2 * C2_pow_h2), gamma12)
-        r1_pow_gamma21_plus_1 = np.power(r1, (gamma21 + 1))
-        r2_pow_gamma12_plus_1 = np.power(r2, (gamma12 + 1))
-        r1_pow_gamma21 = np.power(r1, gamma21)
-        r2_pow_gamma12 = np.power(r2, gamma12)
+        alpha21_d1_pow_gamma21_h1 = np.float_power(alpha21 * d1, gamma21 * h1)
+        alpha12_d2_pow_gamma12_h2 = np.float_power(alpha12 * d2, gamma12 * h2)
+        r1_C1h1_pow_gamma21 = np.float_power((r1 * C1_pow_h1), gamma21)
+        r2_C2h2_pow_gamma12 = np.float_power((r2 * C2_pow_h2), gamma12)
+        r1_pow_gamma21_plus_1 = np.float_power(r1, (gamma21 + 1))
+        r2_pow_gamma12_plus_1 = np.float_power(r2, (gamma12 + 1))
+        r1_pow_gamma21 = np.float_power(r1, gamma21)
+        r2_pow_gamma12 = np.float_power(r2, gamma12)
 
         # Unaffected population
         U = (
@@ -500,7 +585,7 @@ class MuSyC(ParametricModel):
         beta = (strongest_E - E3) / (E0 - strongest_E)
         return beta
 
-    def get_parameters(self, confidence_interval=95):
+    def get_confidence_intervals(self, confidence_interval=95):
         if not self.is_specified:
             raise ModelNotParameterizedError()
 
@@ -573,7 +658,7 @@ class MuSyC(ParametricModel):
             beta_bootstrap = MuSyC._get_beta(bsE0, bsE1, bsE2, bsE3)
 
             beta_bootstrap = np.percentile(
-                beta_bootstrap, [(100 - confidence_interval) / 2, 50 + confidence_interval / 2]
+                beta_bootstrap, [(100 - confidence_interval) / 2.0, 50 + confidence_interval / 2.0]
             )
             params["beta"].append(beta_bootstrap)
         return params
@@ -644,12 +729,9 @@ class MuSyC(ParametricModel):
         if not self.is_specified:
             return "MuSyC()"
 
-        # beta = (min(self.E1,self.E2)-self.E3) / (self.E0 - min(self.E1,self.E2))
-        beta = MuSyC._get_beta(self.E0, self.E1, self.E2, self.E3)
-
         if not self.fit_gamma:
             return (
-                "MuSyC(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, alpha12=%0.2f, alpha21=%0.2f, beta=%0.2f)"
+                "MuSyC(E0=%0.3g, E1=%0.3g, E2=%0.3g, E3=%0.3g, h1=%0.3g, h2=%0.3g, C1=%0.3g, C2=%0.3g, alpha12=%0.3g, alpha21=%0.3g, beta=%0.3g)"
                 % (
                     self.E0,
                     self.E1,
@@ -661,7 +743,7 @@ class MuSyC(ParametricModel):
                     self.C2,
                     self.alpha12,
                     self.alpha21,
-                    beta,
+                    self.beta,
                 )
             )
         return (
@@ -677,7 +759,7 @@ class MuSyC(ParametricModel):
                 self.C2,
                 self.alpha12,
                 self.alpha21,
-                beta,
+                self.beta,
                 self.gamma12,
                 self.gamma21,
             )

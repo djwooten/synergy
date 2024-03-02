@@ -193,11 +193,11 @@ class Hill(ParametricDoseResponseModel1D):
         jac[np.isnan(jac)] = 0
         return jac
 
-    def _get_initial_guess(self, d, E, p0, bounds):
+    def _get_initial_guess(self, d, E, p0):
         if p0 is None:
             p0 = [np.median(E[d == min(d)]), np.median(E[d == max(d)]), 1, np.median(d) * self._dose_scale]
 
-        return super()._get_initial_guess(d, E, p0, bounds)
+        return super()._get_initial_guess(d, E, p0)
 
     def _transform_params_from_fit(self, params):
         return params[0], params[1], np.exp(params[2]), np.exp(params[3]) * self._dose_scale
@@ -250,11 +250,11 @@ class Hill_2P(Hill):
     def _parameter_names(self) -> list[str]:
         return ["h", "C"]
 
-    def _get_initial_guess(self, d, E, p0, bounds):
+    def _get_initial_guess(self, d, E, p0):
         if p0 is None:
             p0 = [1, np.median(d)]
 
-        return super()._get_initial_guess(d, E, p0, bounds)
+        return super()._get_initial_guess(d, E, p0)
 
     def get_parameters(self):
         """Gets the model's parameters

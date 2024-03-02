@@ -1,3 +1,5 @@
+"""Base classes for 2-drug synergy models."""
+
 from abc import ABC, abstractmethod, abstractproperty
 from copy import deepcopy
 from typing import Callable, Optional
@@ -121,8 +123,14 @@ class DoseDependentSynergyModel2D(SynergyModel2D):
 class ParametricSynergyModel2D(SynergyModel2D):
     """-"""
 
-    def __init__(self, **kwargs):
+    def __init__(
+        self,
+        drug1_model: Optional[DoseResponseModel1D] = None,
+        drug2_model: Optional[DoseResponseModel1D] = None,
+        **kwargs,
+    ):
         """Ctor."""
+        super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
         self.fit_function: Callable
         self.jacobian_function: Callable
 
@@ -254,11 +262,11 @@ class ParametricSynergyModel2D(SynergyModel2D):
         ub = 100 - lb
         return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
 
-    def _get_initial_guess(self, d1, d2, E, p0, bounds):
+    def _get_initial_guess(self, d1, d2, E, p0):
         """Transform user supplied initial guess to correct scale, and/or guess p0."""
         if p0:
             p0 = list(self._transform_params_to_fit(p0))
-        return utils.sanitize_initial_guess(p0, bounds)
+        return utils.sanitize_initial_guess(p0, self._bounds)
 
     def _transform_params_from_fit(self, params):
         """Transform parameters from curve-fitting scale to linear scale.
@@ -276,7 +284,9 @@ class ParametricSynergyModel2D(SynergyModel2D):
 
     def _fit(self, d1, d2, E, use_jacobian: bool, **kwargs):
         """Fit the model to data (d, E)"""
-        jac = self.jacobian_function if use_jacobian and self.jacobian_function is not None else None
+        jac = self.jacobian_function if use_jacobian else None
+        if use_jacobian and jac is None:
+            _LOGGER.warn(f"No jacobian function is specified for {type(self).__name__}, ignoring `use_jacobian`.")
         popt = curve_fit(
             self.fit_function,
             (d1, d2),
@@ -286,7 +296,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
             **kwargs,
         )[0]
 
-        if True in np.isnan(popt):
+        if np.isnan(popt).any():
             return None
         return self._transform_params_from_fit(popt)
 
