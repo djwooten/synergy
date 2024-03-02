@@ -173,13 +173,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         if n_samples - n_parameters - 1 > 0:  # TODO: What is this watching out for?
             self._score(d, E)
             kwargs["p0"] = self._transform_params_to_fit(popt)
-            self._bootstrap_resample(
-                d,
-                E,
-                use_jacobian,
-                bootstrap_iterations,
-                **kwargs,
-            )
+            self._bootstrap_resample(d, E, use_jacobian, bootstrap_iterations, **kwargs)
 
     def get_confidence_intervals(self, confidence_interval: float = 95):
         """Returns the lower bound and upper bound estimate for each parameter.

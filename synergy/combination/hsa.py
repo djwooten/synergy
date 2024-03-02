@@ -15,10 +15,12 @@
 
 import numpy as np
 
-from synergy.combination.nonparametric_base import DoseDependentModel
+from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
+from synergy.single.log_linear import LogLinear
 
 
-class HSA(DoseDependentModel):
+class HSA(DoseDependentSynergyModel2D):
     """Highest single agent (HSA)
 
     HSA says that any improvement a combination gives over the strongest single agent counts as synergy.
@@ -28,7 +30,7 @@ class HSA(DoseDependentModel):
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
         self.stronger_orientation = stronger_orientation
 
-    def _E_reference(self, d1, d2):
+    def E_reference(self, d1, d2):
         E1_alone = self.drug1_model.E(d1)
         E2_alone = self.drug2_model.E(d2)
 
@@ -37,3 +39,13 @@ class HSA(DoseDependentModel):
     def _get_synergy(self, d1, d2, E):
         synergy = self.reference - E
         return self._sanitize_synergy(d1, d2, synergy, 0)
+
+    @property
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return DoseResponseModel1D
+
+    @property
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return LogLinear

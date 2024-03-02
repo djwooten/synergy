@@ -11,10 +11,10 @@ from synergy.testing_utils.synthetic_data_generators import BlissDataGenerator
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
-class HSATests(TestCase):
-    """Tests for the HSA model."""
+class BlissTests(TestCase):
+    """Tests for the Bliss Independence model."""
 
-    def test_fit_hsa(self):
+    def test_fit_bliss(self):
         """-"""
         np.random.seed(943)
         drug1 = Hill(E0=1.0, Emax=0.1, h=1.0, C=1.0)

@@ -16,13 +16,14 @@
 import numpy as np
 
 from synergy.single import Hill, LogLinear
-from .nonparametric_base import DoseDependentModel
+from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
 
 # Used for delta mode of Loewe
 from scipy.optimize import minimize_scalar
 
 
-class Loewe(DoseDependentModel):
+class Loewe(DoseDependentSynergyModel2D):
     """The Loewe additivity non-parametric synergy model for combinations of two drugs.
 
     Loewe's model of drug combination additivity expects a linear tradeoff, such that withholding ```X``` parts of
@@ -51,23 +52,23 @@ class Loewe(DoseDependentModel):
         """Ctor."""
         mode = mode.lower()
         if mode not in ["ci", "delta", "delta_hsa", "delta_nan", "delta_synergyfinder"]:
-            raise ValueError("Only 'ci' and 'delta' modes are supported for Loewe ({mode})")
+            raise ValueError("Unrecognized mode for Loewe ({mode})")
         self.mode = mode
 
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
 
     @property
-    def _default_single_drug_class(self) -> type:
-        """The default drug model to use"""
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
         if self.mode == "ci":
-            return LogLinear
+            return DoseResponseModel1D
         return Hill
 
     @property
-    def _required_single_drug_class(self) -> type:
-        """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
         if self.mode == "ci":
-            return None
+            return LogLinear
         return Hill
 
     def _get_synergy(self, d1, d2, E):
@@ -78,15 +79,15 @@ class Loewe(DoseDependentModel):
     def _get_synergy_delta(self, d1, d2, E):
         # Save reference and synergy
         if self.reference is None:
-            self.reference = self._E_reference(d1, d2)
+            self.reference = self.E_reference(d1, d2)
         synergy = self.reference - E
 
         return self._sanitize_synergy(d1, d2, synergy, 0)
 
-    def _get_synergy_CI(self, d1, d2, E, drug1_model, drug2_model):
+    def _get_synergy_CI(self, d1, d2, E):
         with np.errstate(divide="ignore", invalid="ignore"):
-            d1_alone = drug1_model.E_inv(E)
-            d2_alone = drug2_model.E_inv(E)
+            d1_alone = self.drug1_model.E_inv(E)
+            d2_alone = self.drug2_model.E_inv(E)
             synergy = d1 / d1_alone + d2 / d2_alone
 
         return self._sanitize_synergy(d1, d2, synergy, 1.0)
@@ -100,6 +101,8 @@ class Loewe(DoseDependentModel):
 
         Returns scipy.optimize.minimize_scalar object
         """
+        if not (isinstance(self.drug1_model, Hill) and isinstance(self.drug2_model, Hill)):
+            raise ValueError("Drug models are incorrect")
         # Compute the bounds within which Y_Loewe is valid.
         # Any value outside these bounds causes algorithm to take a root of a negative.
         bounds1 = sorted([self.drug1_model.E0, self.drug1_model.Emax])
@@ -125,12 +128,12 @@ class Loewe(DoseDependentModel):
         """
         return np.float_power((d1 / self.drug1_model.E_inv(E)) + (d2 / self.drug2_model.E_inv(E)) - 1.0, 2.0)
 
-    def _E_reference(self, d1, d2):
+    def E_reference(self, d1, d2):
         """Calculates a reference (null) model for Loewe for drug1 and drug2.
 
         Credits: Mark Russo, David Wooten
         """
-        if not (isinstance(self.drug1_model, Hill), isinstance(self.drug2_model, Hill)):
+        if not (isinstance(self.drug1_model, Hill) and isinstance(self.drug2_model, Hill)):
             # TODO: Log a warning
             return d1 * np.nan
 
@@ -161,7 +164,7 @@ class Loewe(DoseDependentModel):
             elif self.mode == "delta_synergyfinder":
                 option = 4
             else:
-                raise ValueError(f"Unrecognized mode {self.mode} in Loewe.")
+                option = 1
 
             for i in range(len(E_ref)):
                 D1, D2 = d1[i], d2[i]
@@ -205,7 +208,7 @@ class Loewe(DoseDependentModel):
                 neglog = False
             else:
                 neglog = True
-        super().plot_heatmap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
+        # super().plot_heatmap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
 
     def plot_surface_plotly(self, cmap="PRGn", neglog=None, center_on_zero=True, **kwargs):
         if neglog is None:
@@ -213,4 +216,4 @@ class Loewe(DoseDependentModel):
                 neglog = False
             else:
                 neglog = True
-        super().plot_surface_plotly(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
+        # super().plot_surface_plotly(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)

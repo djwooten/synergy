@@ -16,11 +16,12 @@
 import numpy as np
 
 from synergy.single import Hill_CI
-from synergy.combination.nonparametric_base import DoseDependentModel
+from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.combination.schindler import Schindler
 
 
-class CombinationIndex(DoseDependentModel):
+class CombinationIndex(DoseDependentSynergyModel2D):
     """Combination Index (CI).
 
     CI is a mass-action-derived model of drug combination synergy. In the original 1984 paper (TODO: doi), CI was
@@ -38,11 +39,10 @@ class CombinationIndex(DoseDependentModel):
         [0,1)=synergism, (1,inf)=antagonism
     """
 
-    def _E_reference(self, d1, d2):
+    def E_reference(self, d1, d2):
         """Use the Schindler model to calculate a reference response."""
-        return np.nan * d1
         reference_model = Schindler(drug1_model=self.drug1_model, drug2_model=self.drug2_model)
-        return reference_model._E_reference(d1, d2)
+        return reference_model.E_reference(d1, d2)
 
     def _get_synergy(self, d1, d2, E):
         """Calculate CI.
@@ -57,17 +57,19 @@ class CombinationIndex(DoseDependentModel):
         return self._sanitize_synergy(d1, d2, synergy, 1.0)
 
     @property
-    def _default_single_drug_class(self) -> type:
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
         """The default drug model to use"""
         return Hill_CI
 
     @property
-    def _required_single_drug_class(self) -> type:
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
         """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
         return Hill_CI
 
     def plot_heatmap(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
-        super().plot_heatmap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
+        """-"""
+        # super().plot_heatmap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
 
     def plot_surface_plotly(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
-        super().plot_surface_plotly(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
+        """-"""
+        # super().plot_surface_plotly(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)

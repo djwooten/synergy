@@ -13,8 +13,10 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from synergy.combination.nonparametric_base import DoseDependentModel
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
+from synergy.exceptions import InvalidDrugModelError
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
+from synergy.single.log_linear import LogLinear
 
 
 class Bliss(DoseDependentSynergyModel2D):
@@ -28,7 +30,9 @@ class Bliss(DoseDependentSynergyModel2D):
         (-inf,0)=antagonism, (0,inf)=synergism
     """
 
-    def _E_reference(self, d1, d2):
+    def E_reference(self, d1, d2):
+        if not self.is_specified:
+            raise InvalidDrugModelError("Model is not specified.")
         E1_alone = self.drug1_model.E(d1)
         E2_alone = self.drug2_model.E(d2)
 
@@ -37,3 +41,13 @@ class Bliss(DoseDependentSynergyModel2D):
     def _get_synergy(self, d1, d2, E):
         synergy = self.reference - E
         return self._sanitize_synergy(d1, d2, synergy, 0)
+
+    @property
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return DoseResponseModel1D
+
+    @property
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return LogLinear

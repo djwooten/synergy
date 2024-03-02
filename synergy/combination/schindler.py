@@ -16,10 +16,11 @@
 import numpy as np
 
 from synergy.single import Hill
-from synergy.combination.nonparametric_base import DoseDependentModel
+from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
 
 
-class Schindler(DoseDependentModel):
+class Schindler(DoseDependentSynergyModel2D):
     """Schindler's multidimensional Hill equation model.
 
     From "Theory of synergistic effects: Hill-type response surfaces as 'null-interaction' models for mixtures" by
@@ -40,7 +41,10 @@ class Schindler(DoseDependentModel):
         (-inf,0)=antagonism, (0,inf)=synergism
     """
 
-    def _E_reference(self, d1, d2):
+    def E_reference(self, d1, d2):
+        if not (isinstance(self.drug1_model, Hill) and isinstance(self.drug2_model, Hill)):
+            raise ValueError("Drug models are incorrect")
+
         E0_1, E1, h1, C1 = self.drug1_model.E0, self.drug1_model.Emax, self.drug1_model.h, self.drug1_model.C
         E0_2, E2, h2, C2 = self.drug2_model.E0, self.drug2_model.Emax, self.drug2_model.h, self.drug2_model.C
         E0 = (E0_1 + E0_2) / 2.0
@@ -71,11 +75,11 @@ class Schindler(DoseDependentModel):
         return u_max * power / (1.0 + power)
 
     @property
-    def _default_single_drug_class(self) -> type:
-        """The default drug model to use"""
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
         return Hill
 
     @property
-    def _required_single_drug_class(self) -> type:
-        """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
         return Hill

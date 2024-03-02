@@ -16,11 +16,11 @@
 import numpy as np
 
 from synergy.single import Hill
-from synergy.combination.nonparametric_base import DoseDependentModel
-from synergy.utils import base as utils
+from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
 
 
-class ZIP(DoseDependentModel):
+class ZIP(DoseDependentSynergyModel2D):
     """A model used to fit the Zero Interaction Potency (ZIP) model (doi: 10.1016/j.csbj.2015.09.001).
 
     This model is based on the multiplicative survival principal (i.e., Bliss). All across the dose-response surface,
@@ -64,18 +64,21 @@ class ZIP(DoseDependentModel):
         self._Emax_12: list[float] = []  # Emax of drug 2, holding drug 1 fixed
 
     @property
-    def _default_single_drug_class(self) -> type:
-        """The default drug model to use"""
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
         return Hill
 
     @property
-    def _required_single_drug_class(self) -> type:
-        """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
         return Hill
 
     def _get_synergy(self, d1, d2, E):
         drug1_model = self.drug1_model
         drug2_model = self.drug2_model
+
+        if not (isinstance(drug1_model, Hill) and isinstance(drug2_model, Hill)):
+            raise ValueError("Drug models are incorrect")
 
         E0_1, Emax_1, h1, C1 = drug1_model.get_parameters()
         E0_2, Emax_2, h2, C2 = drug2_model.get_parameters()
@@ -131,7 +134,7 @@ class ZIP(DoseDependentModel):
 
         return self._sanitize_synergy(d1, d2, synergy, 0.0)
 
-    def _E_reference(self, d1, d2):
+    def E_reference(self, d1, d2):
         E1_alone, E2_alone = self._get_single_drug_Es(d1, d2)
         return E1_alone * E2_alone
 
@@ -159,6 +162,8 @@ class ZIP(DoseDependentModel):
 
     def _get_single_drug_Es(self, d1, d2):
         """Calculate these manually so that E0 uses the average, rather than E0_1 and E0_2"""
+        if not (isinstance(self.drug1_model, Hill) and isinstance(self.drug2_model, Hill)):
+            raise ValueError("Drug models are incorrect")
         E0_1 = self.drug1_model.E0
         E0_2 = self.drug2_model.E0
         E0 = (E0_1 + E0_2) / 2.0
@@ -173,19 +178,14 @@ class ZIP(DoseDependentModel):
 class _Hill_3P(Hill):
     """ZIP uses a three parameter Hill equation which has E0=1, but fits Emax, C, and h"""
 
-    def __init__(
-        self, E0=1, Emax=0, h=None, C=None, Emax_bounds=(-np.inf, np.inf), h_bounds=(0, np.inf), C_bounds=(0, np.inf)
-    ):
-        """-"""
-        super().__init__(h=h, C=C, E0=E0, Emax=Emax, Emax_bounds=Emax_bounds, h_bounds=h_bounds, C_bounds=C_bounds)
-        self.fit_function = self._model_to_fit
-        self.jacobian_function = self._model_jacobian
-        self.bounds = tuple(zip(self.Emax_bounds, self.logh_bounds, self.logC_bounds))
+    @property
+    def _parameter_names(self) -> list[str]:
+        return ["Emax", "h", "C"]
 
     def _model_to_fit(self, d, Emax, logh, logC):
         return self._model(d, self.E0, Emax, np.exp(logh), np.exp(logC))
 
-    def _model_jacobian(self, d, Emax, logh, logC):
+    def _model_jacobian_for_fit(self, d, Emax, logh, logC):
         dh = d ** (np.exp(logh))
         Ch = (np.exp(logC)) ** (np.exp(logh))
         logd = np.log(d)
@@ -197,14 +197,11 @@ class _Hill_3P(Hill):
         jac[np.isnan(jac)] = 0
         return jac
 
-    def _get_initial_guess(self, d, E, p0=None):
+    def _get_initial_guess(self, d, E, p0, bounds):
         if p0 is None:
             p0 = [np.nanmin(E), 1, np.median(d)]
 
-        p0 = list(self._transform_params_to_fit(p0))
-        utils.sanitize_initial_guess(p0, self.bounds)
-
-        return p0
+        return super()._get_initial_guess(d, E, p0, bounds)
 
     def get_parameters(self):
         """Gets the model's parameters
@@ -224,13 +221,14 @@ class _Hill_3P(Hill):
         self.C = C
 
     def _transform_params_from_fit(self, params):
-        return params[0], np.exp(params[1]), np.exp(params[2])
+        return params[0], np.exp(params[1]), np.exp(params[2]) * self._dose_scale
 
     def _transform_params_to_fit(self, params):
-        return params[0], np.log(params[1]), np.log(params[2])
+        with np.errstate(divide="ignore"):
+            return params[0], np.log(params[1]), np.log(params[2] / self._dose_scale)
 
     def __repr__(self):
         if not self.is_specified:
             return "Hill_3P()"
 
-        return "Hill_3P(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)" % (self.E0, self.Emax, self.h, self.C)
+        return "Hill_3P(E0=%0.2g, Emax=%0.2g, h=%0.2g, C=%0.2g)" % (self.E0, self.Emax, self.h, self.C)
