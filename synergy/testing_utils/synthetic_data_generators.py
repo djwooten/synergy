@@ -257,10 +257,37 @@ class MuSyCDataGenerator:
         C2: float = 1.0,
         h1: float = 1.0,
         h2: float = 1.0,
+        d1min=None,
+        d1max=None,
+        d2min=None,
+        d2max=None,
+        n_points1: int = 6,
+        n_points2: int = 6,
+        replicates: int = 1,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
     ):
         if E1 < 0 or E1 > 1 or E2 < 0 or E2 > 1:
             raise ValueError("E1 and E2 must be between 0 and 1 for a Bliss model")
-        return MuSyCDataGenerator.get_2drug_combination(E0=1.0, E1=E1, E2=E2, E3=E1 * E2, h1=h1, h2=h2, C1=C1, C2=C2)
+        return MuSyCDataGenerator.get_2drug_combination(
+            E0=1.0,
+            E1=E1,
+            E2=E2,
+            E3=E1 * E2,
+            h1=h1,
+            h2=h2,
+            C1=C1,
+            C2=C2,
+            d1min=d1min,
+            d1max=d1max,
+            d2min=d2min,
+            d2max=d2max,
+            n_points1=n_points1,
+            n_points2=n_points2,
+            replicates=replicates,
+            E_noise=E_noise,
+            d_noise=d_noise,
+        )
 
     @staticmethod
     def get_2drug_linear_isoboles(
@@ -269,9 +296,33 @@ class MuSyCDataGenerator:
         E2: float = 0.3,
         C1: float = 1.0,
         C2: float = 1.0,
-        h1: float = 1.0,
-        h2: float = 1.0,
+        d1min=None,
+        d1max=None,
+        d2min=None,
+        d2max=None,
+        n_points1: int = 6,
+        n_points2: int = 6,
+        replicates: int = 1,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
     ):
         return MuSyCDataGenerator.get_2drug_combination(
-            E0=E0, E1=E1, E2=E2, E3=0, h1=h1, h2=h2, C1=C1, C2=C2, alpha12=0, alpha21=0
+            E0=E0,
+            E1=E1,
+            E2=E2,
+            h1=1,
+            h2=1,
+            C1=C1,
+            C2=C2,
+            alpha12=0,
+            alpha21=0,
+            d1min=d1min,
+            d1max=d1max,
+            d2min=d2min,
+            d2max=d2max,
+            n_points1=n_points1,
+            n_points2=n_points2,
+            replicates=replicates,
+            E_noise=E_noise,
+            d_noise=d_noise,
         )

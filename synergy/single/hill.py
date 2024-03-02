@@ -124,7 +124,7 @@ class Hill(ParametricDoseResponseModel1D):
             self._bounds[1][C_idx] += np.log(self._dose_scale)
 
         # Calculate dose scale
-        self._dose_scale = np.exp(np.mean(np.log(d)))
+        self._dose_scale = np.exp(np.median(np.log(d[d > 0])))
 
         # Update C_bounds to C'_bounds
         if C_idx >= 0:

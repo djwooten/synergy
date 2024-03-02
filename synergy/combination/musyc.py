@@ -157,6 +157,38 @@ class MuSyC(ParametricSynergyModel2D):
         return Hill
 
     @property
+    def _default_drug1_kwargs(self) -> dict:
+        """-"""
+        lb, ub = self._bounds
+        param_names = self._parameter_names
+        E0_idx = param_names.index("E0")
+        Emax_idx = param_names.index("E1")
+        h_idx = param_names.index("h1")
+        C_idx = param_names.index("C1")
+        return {
+            "E0_bounds": (lb[E0_idx], ub[E0_idx]),
+            "Emax_bounds": (lb[Emax_idx], ub[Emax_idx]),
+            "h_bounds": (np.exp(lb[h_idx]), np.exp(ub[h_idx])),
+            "C_bounds": (np.exp(lb[C_idx]), np.exp(ub[C_idx])),
+        }
+
+    @property
+    def _default_drug2_kwargs(self) -> dict:
+        """-"""
+        lb, ub = self._bounds
+        param_names = self._parameter_names
+        E0_idx = param_names.index("E0")
+        Emax_idx = param_names.index("E2")
+        h_idx = param_names.index("h2")
+        C_idx = param_names.index("C2")
+        return {
+            "E0_bounds": (lb[E0_idx], ub[E0_idx]),
+            "Emax_bounds": (lb[Emax_idx], ub[Emax_idx]),
+            "h_bounds": (np.exp(lb[h_idx]), np.exp(ub[h_idx])),
+            "C_bounds": (np.exp(lb[C_idx]), np.exp(ub[C_idx])),
+        }
+
+    @property
     def beta(self):
         """-"""
         return MuSyC._get_beta(self.E0, self.E1, self.E2, self.E3)
@@ -236,12 +268,12 @@ class MuSyC(ParametricSynergyModel2D):
         Derivatives in the jacobian are already defined with respect to (e.g.) log(h) or log(alpha), rather than the
         linear values, so np.exp() is not required (or desired) here.
 
-        The [:, :, -2] gets rid of derivatives WRT gamma
+        The [:, :-2] gets rid of derivatives WRT gamma
         TODO: Speed things up by defining a no_gamma jacobian that doesn't even calculate them at all
         """
         return jacobian(
             d[0], d[1], E0, E1, E2, E3, logh1, logh2, logC1, logC2, self.r1r, self.r2r, logalpha12, logalpha21, 0, 0
-        )[:, :, -2]
+        )[:, :-2]
 
     def _get_initial_guess(self, d1, d2, E, p0):
 
@@ -585,84 +617,6 @@ class MuSyC(ParametricSynergyModel2D):
         beta = (strongest_E - E3) / (E0 - strongest_E)
         return beta
 
-    def get_confidence_intervals(self, confidence_interval=95):
-        if not self.is_specified:
-            raise ModelNotParameterizedError()
-
-        if self.converged and self.bootstrap_parameters is not None:
-            parameter_ranges = self.get_parameter_range(confidence_interval=confidence_interval)
-        else:
-            parameter_ranges = None
-
-        params = {}
-        params["E0"] = [
-            self.E0,
-        ]
-        params["E1"] = [
-            self.E1,
-        ]
-        params["E2"] = [
-            self.E2,
-        ]
-        params["E3"] = [
-            self.E3,
-        ]
-        params["h1"] = [
-            self.h1,
-        ]
-        params["h2"] = [
-            self.h2,
-        ]
-        params["C1"] = [
-            self.C1,
-        ]
-        params["C2"] = [
-            self.C2,
-        ]
-        params["beta"] = [
-            self.beta,
-        ]
-        params["alpha12"] = [
-            self.alpha12,
-        ]
-        params["alpha21"] = [
-            self.alpha21,
-        ]
-        if self.fit_gamma:
-            params["gamma12"] = [
-                self.gamma12,
-            ]
-            params["gamma21"] = [
-                self.gamma21,
-            ]
-
-        if parameter_ranges is not None:
-            params["E0"].append(parameter_ranges[:, 0])
-            params["E1"].append(parameter_ranges[:, 1])
-            params["E2"].append(parameter_ranges[:, 2])
-            params["E3"].append(parameter_ranges[:, 3])
-            params["h1"].append(parameter_ranges[:, 4])
-            params["h2"].append(parameter_ranges[:, 5])
-            params["C1"].append(parameter_ranges[:, 6])
-            params["C2"].append(parameter_ranges[:, 7])
-            params["alpha12"].append(parameter_ranges[:, 8])
-            params["alpha21"].append(parameter_ranges[:, 9])
-            if self.fit_gamma:
-                params["gamma12"].append(parameter_ranges[:, 10])
-                params["gamma21"].append(parameter_ranges[:, 11])
-
-            bsE0 = self.bootstrap_parameters[:, 0]  # type: ignore
-            bsE1 = self.bootstrap_parameters[:, 1]  # type: ignore
-            bsE2 = self.bootstrap_parameters[:, 2]  # type: ignore
-            bsE3 = self.bootstrap_parameters[:, 3]  # type: ignore
-            beta_bootstrap = MuSyC._get_beta(bsE0, bsE1, bsE2, bsE3)
-
-            beta_bootstrap = np.percentile(
-                beta_bootstrap, [(100 - confidence_interval) / 2.0, 50 + confidence_interval / 2.0]
-            )
-            params["beta"].append(beta_bootstrap)
-        return params
-
     def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
         """-"""
         pars = self.get_parameters(confidence_interval=confidence_interval)
@@ -677,32 +631,32 @@ class MuSyC(ParametricSynergyModel2D):
                 l = pars[key]
                 if len(l) == 1:
                     if l[0] < -tol:
-                        ret.append("%s\t%0.2f\t(<0) antagonistic" % (key, l[0]))
+                        ret.append("%s\t%0.3g\t(<0) antagonistic" % (key, l[0]))
                     elif l[0] > tol:
-                        ret.append("%s\t%0.2f\t(>0) synergistic" % (key, l[0]))
+                        ret.append("%s\t%0.3g\t(>0) synergistic" % (key, l[0]))
                 else:
                     v = l[0]
                     lb, ub = l[1]
                     if v < -tol and lb < -tol and ub < -tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<0) antagonistic" % (key, v, lb, ub))
+                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(<0) antagonistic" % (key, v, lb, ub))
                     elif v > tol and lb > tol and ub > tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>0) synergistic" % (key, v, lb, ub))
+                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(>0) synergistic" % (key, v, lb, ub))
         # alpha
         for key in keys:
             if "alpha" in key:
                 l = pars[key]
                 if len(l) == 1:
                     if np.log10(l[0]) < -tol:
-                        ret.append("%s\t%0.2f\t(<1) antagonistic" % (key, l[0]))
+                        ret.append("%s\t%0.3g\t(<1) antagonistic" % (key, l[0]))
                     elif np.log10(l[0]) > tol:
-                        ret.append("%s\t%0.2f\t(>1) synergistic" % (key, l[0]))
+                        ret.append("%s\t%0.3g\t(>1) synergistic" % (key, l[0]))
                 else:
                     v = l[0]
                     lb, ub = l[1]
                     if np.log10(v) < -tol and np.log10(lb) < -tol and np.log10(ub) < -tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<1) antagonistic" % (key, v, lb, ub))
+                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(<1) antagonistic" % (key, v, lb, ub))
                     elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>1) synergistic" % (key, v, lb, ub))
+                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(>1) synergistic" % (key, v, lb, ub))
 
         # gamma
         for key in keys:
@@ -710,16 +664,16 @@ class MuSyC(ParametricSynergyModel2D):
                 l = pars[key]
                 if len(l) == 1:
                     if np.log10(l[0]) < -tol:
-                        ret.append("%s\t%0.2f\t(<1) antagonistic" % (key, l[0]))
+                        ret.append("%s\t%0.3g\t(<1) antagonistic" % (key, l[0]))
                     elif np.log10(l[0]) > tol:
-                        ret.append("%s\t%0.2f\t(>1) synergistic" % (key, l[0]))
+                        ret.append("%s\t%0.3g\t(>1) synergistic" % (key, l[0]))
                 else:
                     v = l[0]
                     lb, ub = l[1]
                     if np.log10(v) < -tol and np.log10(lb) < -tol and np.log10(ub) < -tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<1) antagonistic" % (key, v, lb, ub))
+                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(<1) antagonistic" % (key, v, lb, ub))
                     elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>1) synergistic" % (key, v, lb, ub))
+                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(>1) synergistic" % (key, v, lb, ub))
         if len(ret) > 0:
             return "\n".join(ret)
         else:
@@ -747,7 +701,7 @@ class MuSyC(ParametricSynergyModel2D):
                 )
             )
         return (
-            "MuSyC(E0=%0.2f, E1=%0.2f, E2=%0.2f, E3=%0.2f, h1=%0.2f, h2=%0.2f, C1=%0.2e, C2=%0.2e, alpha12=%0.2f, alpha21=%0.2f, beta=%0.2f, gamma12=%0.2f, gamma21=%0.2f)"
+            "MuSyC(E0=%0.3g, E1=%0.3g, E2=%0.3g, E3=%0.3g, h1=%0.3g, h2=%0.3g, C1=%0.2e, C2=%0.2e, alpha12=%0.3g, alpha21=%0.3g, beta=%0.3g, gamma12=%0.3g, gamma21=%0.3g)"
             % (
                 self.E0,
                 self.E1,

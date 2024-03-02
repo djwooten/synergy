@@ -28,11 +28,12 @@ class SynergyModel2D(ABC):
 
         drug1_model = deepcopy(drug1_model)
         drug2_model = deepcopy(drug2_model)
+
         self.drug1_model: DoseResponseModel1D = utils.sanitize_single_drug_model(
-            drug1_model, default_type, required_type
+            drug1_model, default_type, required_type, **self._default_drug1_kwargs
         )
         self.drug2_model: DoseResponseModel1D = utils.sanitize_single_drug_model(
-            drug2_model, default_type, required_type
+            drug2_model, default_type, required_type, **self._default_drug2_kwargs
         )
 
     @abstractmethod
@@ -58,6 +59,16 @@ class SynergyModel2D(ABC):
     @abstractproperty
     def is_fit(self):
         """-"""
+
+    @property
+    def _default_drug1_kwargs(self) -> dict:
+        """-"""
+        return {}
+
+    @property
+    def _default_drug2_kwargs(self) -> dict:
+        """-"""
+        return {}
 
 
 class DoseDependentSynergyModel2D(SynergyModel2D):
@@ -130,14 +141,13 @@ class ParametricSynergyModel2D(SynergyModel2D):
         **kwargs,
     ):
         """Ctor."""
+        self._bounds = self._get_bounds(**kwargs)
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
         self.fit_function: Callable
         self.jacobian_function: Callable
 
         self._converged: bool = False
         self._is_fit: bool = False
-
-        self._bounds = self._get_bounds(**kwargs)
 
         self.sum_of_squares_residuals: Optional[float]
         self.r_squared: Optional[float]
@@ -216,7 +226,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
             p0 = list(p0)
 
         # Sanitize initial guesses
-        p0 = self._get_initial_guess(d1, d2, E, p0, self._bounds)
+        p0 = self._get_initial_guess(d1, d2, E, p0)
 
         # Pass bounds and p0 to kwargs for curve_fit()
         kwargs["p0"] = p0

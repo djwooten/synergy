@@ -101,6 +101,8 @@ class Loewe(DoseDependentSynergyModel2D):
 
         Returns scipy.optimize.minimize_scalar object
         """
+        # TODO: Add E_range to the base single drug model, because the only reason we need
+        # a Hill here is to get E0 and Emax. But we could get similar from LogLinear.
         if not (isinstance(self.drug1_model, Hill) and isinstance(self.drug2_model, Hill)):
             raise ValueError("Drug models are incorrect")
         # Compute the bounds within which Y_Loewe is valid.
