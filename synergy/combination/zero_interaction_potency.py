@@ -80,8 +80,8 @@ class ZIP(DoseDependentSynergyModel2D):
         if not (isinstance(drug1_model, Hill) and isinstance(drug2_model, Hill)):
             raise ValueError("Drug models are incorrect")
 
-        E0_1, Emax_1, h1, C1 = drug1_model.get_parameters()
-        E0_2, Emax_2, h2, C2 = drug2_model.get_parameters()
+        E0_1, Emax_1, h1, C1 = drug1_model.E0, drug1_model.Emax, drug1_model.h, drug1_model.C
+        E0_2, Emax_2, h2, C2 = drug2_model.E0, drug2_model.Emax, drug2_model.h, drug2_model.C
         E0 = (E0_1 + E0_2) / 2.0
         Emax = (Emax_1 + Emax_2) / 2.0
 
@@ -176,7 +176,7 @@ class ZIP(DoseDependentSynergyModel2D):
 
 
 class _Hill_3P(Hill):
-    """ZIP uses a three parameter Hill equation which has E0=1, but fits Emax, C, and h"""
+    """ZIP uses a three parameter Hill equation which fixes E0, but fits Emax, C, and h"""
 
     @property
     def _parameter_names(self) -> list[str]:
@@ -197,11 +197,11 @@ class _Hill_3P(Hill):
         jac[np.isnan(jac)] = 0
         return jac
 
-    def _get_initial_guess(self, d, E, p0, bounds):
+    def _get_initial_guess(self, d, E, p0):
         if p0 is None:
             p0 = [np.nanmin(E), 1, np.median(d)]
 
-        return super()._get_initial_guess(d, E, p0, bounds)
+        return super()._get_initial_guess(d, E, p0)
 
     def get_parameters(self):
         """Gets the model's parameters
@@ -211,7 +211,7 @@ class _Hill_3P(Hill):
         parameters : tuple
             (Emax, h, C)
         """
-        return (self.Emax, self.h, self.C)
+        return dict(zip(self._parameter_names, (self.Emax, self.h, self.C)))
 
     def _set_parameters(self, popt):
         Emax, h, C = popt

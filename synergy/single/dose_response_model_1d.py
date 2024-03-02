@@ -1,6 +1,6 @@
 from abc import ABC, abstractproperty, abstractmethod
 import logging
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -56,7 +56,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         self.bootstrap_parameters = None
 
     @abstractmethod
-    def get_parameters(self) -> list:
+    def get_parameters(self) -> dict[str, Any]:
         """Returns model parameters"""
 
     @abstractmethod
@@ -196,7 +196,8 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
 
         lb = (100 - confidence_interval) / 2.0
         ub = 100 - lb
-        return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
+        intervals = np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
+        return dict(zip(self._parameter_names, intervals))
 
     def _get_initial_guess(self, d, E, p0):
         """Transform user supplied initial guess to correct scale, and/or guess p0."""
@@ -302,9 +303,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
     @property
     def is_specified(self) -> bool:
         """True if all parameters are set."""
-        parameters = self.get_parameters()
-        if parameters is None:
-            return False
+        parameters = list(self.get_parameters().values())
 
         return None not in parameters and not np.isnan(np.asarray(parameters)).any()
 

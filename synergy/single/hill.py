@@ -102,10 +102,9 @@ class Hill(ParametricDoseResponseModel1D):
 
         Returns
         ----------
-        parameters : tuple
-            (E0, Emax, h, C)
+        parameters : dict[str, float]
         """
-        return (self.E0, self.Emax, self.h, self.C)
+        return dict(zip(self._parameter_names, (self.E0, self.Emax, self.h, self.C)))
 
     def _set_dose_scale(self, d):
         """Find the scaling factor that will normalize the dose scale to be log-centered around 0.
@@ -264,7 +263,7 @@ class Hill_2P(Hill):
         parameters : tuple
             (h, C)
         """
-        return (self.h, self.C)
+        return dict(zip(self._parameter_names, (self.h, self.C)))
 
     def _set_parameters(self, popt):
         h, C = popt

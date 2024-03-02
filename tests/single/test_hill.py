@@ -3,6 +3,7 @@
 import os
 import sys
 import unittest
+from copy import deepcopy
 from unittest import TestCase
 
 import hypothesis
@@ -12,6 +13,7 @@ from hypothesis.strategies import floats, sampled_from
 
 from synergy.single.hill import Hill, Hill_2P, Hill_CI
 from synergy.testing_utils.test_data_loader import load_test_data
+from synergy.testing_utils import assertions as synergy_assertions
 
 
 MAX_FLOAT = sys.float_info.max
@@ -173,7 +175,7 @@ class HillFitTests(TestCase):
     def setUpClass(cls) -> None:
         cls.MODEL = Hill
         cls.INIT_KWARGS = {}
-        cls.EXPECTED_PARAMETERS = {"synthetic_hill_1.csv": [1.0, 0.0, 1.0, 1.0]}
+        cls.EXPECTED_PARAMETERS = {"synthetic_hill_1.csv": {"E0": 1.0, "Emax": 0.0, "h": 1.0, "C": 1.0}}
 
     @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.differing_executors])
     @given(sampled_from(["synthetic_hill_1.csv"]))
@@ -191,9 +193,9 @@ class HillFitTests(TestCase):
         self.assertTrue(model.is_converged)
 
         # Ensure the parameters are approximately correct
-        observed = np.asarray(model.get_parameters())
-        expected = np.asarray(expected_parameters)
-        np.testing.assert_allclose(observed, expected, atol=0.2)
+        print(model.get_parameters())
+        print(expected_parameters)
+        synergy_assertions.assert_dict_allclose(model.get_parameters(), expected_parameters, atol=0.2)
 
         # Ensure the scores were calculated
         self.assertIsNotNone(model.aic)
@@ -220,38 +222,41 @@ class HillFitTests(TestCase):
         # Ensure there were bootstrap iterations
         self.assertIsNotNone(model.bootstrap_parameters)
 
-        # Ensure true values are within confidence intervals
         confidence_intervals_95 = model.get_confidence_intervals()
-        for interval, true_val in zip(confidence_intervals_95, expected_parameters):
-            self.assertTrue(interval[0] <= true_val <= interval[1])
+
+        # Ensure true values are within confidence intervals
+        synergy_assertions.assert_dict_values_in_intervals(expected_parameters, confidence_intervals_95)
 
         # Ensure that less stringent CI is narrower
         # [=====95=====]  More confidence requires wider interval
         #     [===50==]   Less confidence but tighter interval
         confidence_intervals_50 = model.get_confidence_intervals(confidence_interval=50)
-        for interval_95, interval_50 in zip(confidence_intervals_95, confidence_intervals_50):
-            self.assertLessEqual(interval_95[0], interval_50[0])
-            self.assertGreaterEqual(interval_95[1], interval_50[1])
+        synergy_assertions.assert_dict_interval_is_contained_in_other(confidence_intervals_50, confidence_intervals_95)
 
     @hypothesis.settings(suppress_health_check=[hypothesis.HealthCheck.differing_executors])
     @given(sampled_from(["synthetic_hill_1.csv"]))
     def test_dose_scale(self, fname):
         """Ensure confidence intervals work reasonably."""
-        expected = np.asarray(self.EXPECTED_PARAMETERS[fname])
-
         d, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
         scale = 1e9
         d *= scale
-        expected[-1] *= scale
-        expected_C = expected[-1]
+        expected = deepcopy(self.EXPECTED_PARAMETERS[fname])
+        expected["C"] *= scale
+        expected_C = expected["C"]
 
         model = self.MODEL(C_bounds=(expected_C / 10.0, expected_C * 10.0), **self.INIT_KWARGS)
 
         # Ensure the parameters are approximately correct
         model.fit(d, E)
-        observed = np.asarray(model.get_parameters())
-        np.testing.assert_allclose(observed[:-1], expected[:-1], atol=0.2)
-        np.testing.assert_allclose(observed[-1], expected[-1], atol=0.2 * scale)
+        observed = model.get_parameters()
+
+        # Do C differently from everything else, since it is on a different scale
+        synergy_assertions.assert_dict_allclose(
+            {k: observed[k] for k in observed.keys() if k != "C"},
+            {k: expected[k] for k in expected.keys() if k != "C"},
+            atol=0.2,
+        )
+        np.testing.assert_allclose(observed["C"], expected["C"], atol=0.2 * scale)
 
 
 class Hill2PTests(HillTests):
@@ -269,7 +274,7 @@ class Hill2PFitTests(HillFitTests):
     def setUpClass(cls) -> None:
         cls.MODEL = Hill_2P
         cls.INIT_KWARGS = {"E0": 1.0, "Emax": 0.0}
-        cls.EXPECTED_PARAMETERS = {"synthetic_hill_1.csv": [1.0, 1.0]}
+        cls.EXPECTED_PARAMETERS = {"synthetic_hill_1.csv": {"h": 1.0, "C": 1.0}}
 
 
 class HillCITests(HillTests):
@@ -287,7 +292,7 @@ class HillCIFitTests(HillFitTests):
     def setUpClass(cls) -> None:
         cls.MODEL = Hill_CI
         cls.INIT_KWARGS = {}
-        cls.EXPECTED_PARAMETERS = {"synthetic_hill_1.csv": [1.0, 1.0]}
+        cls.EXPECTED_PARAMETERS = {"synthetic_hill_1.csv": {"h": 1.0, "C": 1.0}}
 
     @given(sampled_from(["synthetic_hill_1.csv"]))
     def test_hill_fit_bootstrap(self, fname):
