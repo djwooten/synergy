@@ -19,9 +19,9 @@ import numpy as np
 from synergy.combination.jacobians.musyc_jacobian import jacobian
 from synergy.combination.synergy_model_2d import ParametricSynergyModel2D
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
-from synergy.utils import base as utils
 from synergy.single import Hill
-from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
+from synergy.utils.base import format_table
+from synergy.exceptions import ModelNotParameterizedError
 
 
 class MuSyC(ParametricSynergyModel2D):
@@ -47,27 +47,7 @@ class MuSyC(ParametricSynergyModel2D):
        ,              "> 1",    "Synergistic Cooperativity",  "Drug 2 increases the effective dose (potency) of drug 1"
     """
 
-    def __init__(
-        self,
-        drug1_model=None,
-        drug2_model=None,
-        E0=None,
-        E1=None,
-        E2=None,
-        E3=None,
-        h1=None,
-        h2=None,
-        C1=None,
-        C2=None,
-        alpha12=None,
-        alpha21=None,
-        gamma12=None,
-        gamma21=None,
-        r1r=1.0,
-        r2r=1.0,
-        fit_gamma=True,
-        **kwargs,
-    ):
+    def __init__(self, drug1_model=None, drug2_model=None, r1r=1.0, r2r=1.0, fit_gamma=True, **kwargs):
         """Ctor.
 
         :param float alpha12: Synergistic potency of drug 1 on drug 2 ([0, 1) = antagonism, (1, inf) = synergism)
@@ -79,18 +59,6 @@ class MuSyC(ParametricSynergyModel2D):
         self.fit_gamma = fit_gamma
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
 
-        self.E0 = E0
-        self.E1 = E1
-        self.E2 = E2
-        self.E3 = E3
-        self.h1 = h1
-        self.h2 = h2
-        self.C1 = C1
-        self.C2 = C2
-        self.alpha12 = alpha12
-        self.alpha21 = alpha21
-        self.gamma12 = gamma12
-        self.gamma21 = gamma21
         self.r1r = r1r
         self.r2r = r2r
 
@@ -103,6 +71,10 @@ class MuSyC(ParametricSynergyModel2D):
             self.jacobian_function = self._jacobian_no_gamma
             self.gamma12 = 1.0
             self.gamma21 = 1.0
+
+        # beta is not a parameter used in the curve_fit, rather it is based on E0, E1, E2, and E3. Thus it is not fit
+        # as a standard part of bootstrapping. So to get confidence intervals, we must handle it separately.
+        self.bootstrap_beta = None
 
     @property
     def _parameter_names(self) -> list[str]:
@@ -283,6 +255,9 @@ class MuSyC(ParametricSynergyModel2D):
             drug1 = self.drug1_model
             drug2 = self.drug2_model
 
+            if not (isinstance(drug1, Hill) and isinstance(drug2, Hill)):
+                raise ValueError("Wrong single drug types")
+
             # Fit the single drug models if they were not pre-specified by the user
             if not drug1.is_specified:
                 mask = np.where(d2 == min(d2))
@@ -422,36 +397,6 @@ class MuSyC(ParametricSynergyModel2D):
                 self.C2,
                 self.r1r,
                 self.r2r,
-                self.alpha12,
-                self.alpha21,
-                self.gamma12,
-                self.gamma21,
-            )
-
-    def get_parameters(self):
-        if not self.fit_gamma:
-            return (
-                self.E0,
-                self.E1,
-                self.E2,
-                self.E3,
-                self.h1,
-                self.h2,
-                self.C1,
-                self.C2,
-                self.alpha12,
-                self.alpha21,
-            )
-        else:
-            return (
-                self.E0,
-                self.E1,
-                self.E2,
-                self.E3,
-                self.h1,
-                self.h2,
-                self.C1,
-                self.C2,
                 self.alpha12,
                 self.alpha21,
                 self.gamma12,
@@ -617,104 +562,75 @@ class MuSyC(ParametricSynergyModel2D):
         beta = (strongest_E - E3) / (E0 - strongest_E)
         return beta
 
+    def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs):
+        super()._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs)
+        params = self._parameter_names
+        E0 = self.bootstrap_parameters[:, params.index("E0")]  # type: ignore
+        E1 = self.bootstrap_parameters[:, params.index("E1")]  # type: ignore
+        E2 = self.bootstrap_parameters[:, params.index("E2")]  # type: ignore
+        E3 = self.bootstrap_parameters[:, params.index("E3")]  # type: ignore
+        self.bootstrap_beta = MuSyC._get_beta(E0, E1, E2, E3)
+
+    def _make_summary_row(
+        self, key: str, comp_val: int, val: float, ci: dict[str, tuple[float, float]], tol: float, log: bool
+    ):
+        if ci:
+            lb, ub = ci[key]
+            if lb > comp_val:
+                comparison = f"> {comp_val}"
+                outcome = "synergistic"
+            elif ub < comp_val:
+                comparison = f"< {comp_val}"
+                outcome = "antagonistic"
+            else:
+                comparison = f"~= {comp_val}"
+                outcome = "additive"
+            return [key, f"{val:0.3g}", f"({lb:0.3g}, {ub:0.3g})", comparison, outcome]
+        val_scaled = np.log(val) if log else val
+        comp_val_scaled = np.log(comp_val) if log else comp_val
+        if val_scaled > comp_val_scaled + tol:
+            comparison = f"> {comp_val}"
+            outcome = "synergistic"
+        elif val_scaled < comp_val_scaled - tol:
+            comparison = f"< {comp_val}"
+            outcome = "antagonistic"
+        else:
+            comparison = f"~= {comp_val}"
+            outcome = "additive"
+        return [key, f"{val:0.3g}", comparison, outcome]
+
     def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
         """-"""
-        pars = self.get_parameters(confidence_interval=confidence_interval)
-        if pars is None:
-            return None
+        pars = self.get_parameters()
 
-        ret = []
-        keys = pars.keys()
+        header = ["Parameter", "Value", "Comparison", "Synergy"]
+        ci: dict[str, tuple[float, float]] = {}
+        ci_idx = 2
+        if self.bootstrap_parameters is not None:
+            ci = self.get_confidence_intervals(confidence_interval=confidence_interval)
+            # Manually handle beta bootstrap
+            lb = (100 - confidence_interval) / 2.0
+            ub = 100 - lb
+            ci["beta"] = np.percentile(self.bootstrap_beta, [lb, ub])
+            header.insert(ci_idx, f"{confidence_interval:0.3g}% CI")
+
+        rows = [header]
+
         # beta
-        for key in keys:
-            if "beta" in key:
-                l = pars[key]
-                if len(l) == 1:
-                    if l[0] < -tol:
-                        ret.append("%s\t%0.3g\t(<0) antagonistic" % (key, l[0]))
-                    elif l[0] > tol:
-                        ret.append("%s\t%0.3g\t(>0) synergistic" % (key, l[0]))
-                else:
-                    v = l[0]
-                    lb, ub = l[1]
-                    if v < -tol and lb < -tol and ub < -tol:
-                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(<0) antagonistic" % (key, v, lb, ub))
-                    elif v > tol and lb > tol and ub > tol:
-                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(>0) synergistic" % (key, v, lb, ub))
-        # alpha
-        for key in keys:
-            if "alpha" in key:
-                l = pars[key]
-                if len(l) == 1:
-                    if np.log10(l[0]) < -tol:
-                        ret.append("%s\t%0.3g\t(<1) antagonistic" % (key, l[0]))
-                    elif np.log10(l[0]) > tol:
-                        ret.append("%s\t%0.3g\t(>1) synergistic" % (key, l[0]))
-                else:
-                    v = l[0]
-                    lb, ub = l[1]
-                    if np.log10(v) < -tol and np.log10(lb) < -tol and np.log10(ub) < -tol:
-                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(<1) antagonistic" % (key, v, lb, ub))
-                    elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
-                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(>1) synergistic" % (key, v, lb, ub))
+        rows.append(self._make_summary_row("beta", 0, self.beta, ci, tol, False))
 
-        # gamma
-        for key in keys:
-            if "gamma" in key:
-                l = pars[key]
-                if len(l) == 1:
-                    if np.log10(l[0]) < -tol:
-                        ret.append("%s\t%0.3g\t(<1) antagonistic" % (key, l[0]))
-                    elif np.log10(l[0]) > tol:
-                        ret.append("%s\t%0.3g\t(>1) synergistic" % (key, l[0]))
-                else:
-                    v = l[0]
-                    lb, ub = l[1]
-                    if np.log10(v) < -tol and np.log10(lb) < -tol and np.log10(ub) < -tol:
-                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(<1) antagonistic" % (key, v, lb, ub))
-                    elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
-                        ret.append("%s\t%0.3g\t(%0.3g,%0.3g)\t(>1) synergistic" % (key, v, lb, ub))
-        if len(ret) > 0:
-            return "\n".join(ret)
-        else:
-            return "No synergy or antagonism detected with %d percent confidence interval" % (int(confidence_interval))
+        # alpha and gamma
+        for key in pars.keys():
+            if "alpha" in key or "gamma" in key:
+                rows.append(self._make_summary_row(key, 1, pars[key], ci, tol, True))
+
+        print(format_table(rows))
 
     def __repr__(self):
-        if not self.is_specified:
-            return "MuSyC()"
-
-        if not self.fit_gamma:
-            return (
-                "MuSyC(E0=%0.3g, E1=%0.3g, E2=%0.3g, E3=%0.3g, h1=%0.3g, h2=%0.3g, C1=%0.3g, C2=%0.3g, alpha12=%0.3g, alpha21=%0.3g, beta=%0.3g)"
-                % (
-                    self.E0,
-                    self.E1,
-                    self.E2,
-                    self.E3,
-                    self.h1,
-                    self.h2,
-                    self.C1,
-                    self.C2,
-                    self.alpha12,
-                    self.alpha21,
-                    self.beta,
-                )
-            )
-        return (
-            "MuSyC(E0=%0.3g, E1=%0.3g, E2=%0.3g, E3=%0.3g, h1=%0.3g, h2=%0.3g, C1=%0.2e, C2=%0.2e, alpha12=%0.3g, alpha21=%0.3g, beta=%0.3g, gamma12=%0.3g, gamma21=%0.3g)"
-            % (
-                self.E0,
-                self.E1,
-                self.E2,
-                self.E3,
-                self.h1,
-                self.h2,
-                self.C1,
-                self.C2,
-                self.alpha12,
-                self.alpha21,
-                self.beta,
-                self.gamma12,
-                self.gamma21,
-            )
-        )
+        if self.is_specified:
+            parameters = self.get_parameters()
+            parameters["beta"] = self.beta
+            param_vals = ", ".join([f"{param}={val:0.3g}" for param, val in parameters.items()])  # typing: ignore
+        else:
+            param_vals = ""
+        return f"MuSyC({param_vals})"

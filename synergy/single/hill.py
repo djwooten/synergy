@@ -31,17 +31,8 @@ class Hill(ParametricDoseResponseModel1D):
     This is the base model for Hill_2P and Hill_CI.
     """
 
-    def __init__(self, E0=None, Emax=None, h=None, C=None, **kwargs):
+    def __init__(self, **kwargs):
         """Ctor."""
-        if h is not None and h <= 0:
-            raise ValueError(f"h must be > 0 ({h})")
-        if C is not None and C <= 0:
-            raise ValueError(f"C must be > 0 ({C})")
-        self.E0 = E0
-        self.Emax = Emax
-        self.h = h
-        self.C = C
-
         # To minimize risk of overflow or floating-point precision issues, we linearly scale
         # doses passed into fit to be centered around 0 on a log scale.
         # This variable stores that scale and is used to reverse it when fitting C.
@@ -96,15 +87,6 @@ class Hill(ParametricDoseResponseModel1D):
     @property
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
         return {"h": (0.0, np.inf), "C": (0.0, np.inf)}
-
-    def get_parameters(self):
-        """Gets the model's parmaters.
-
-        Returns
-        ----------
-        parameters : dict[str, float]
-        """
-        return dict(zip(self._parameter_names, (self.E0, self.Emax, self.h, self.C)))
 
     def _set_dose_scale(self, d):
         """Find the scaling factor that will normalize the dose scale to be log-centered around 0.
@@ -209,7 +191,7 @@ class Hill(ParametricDoseResponseModel1D):
         if not self.is_specified:
             return "Hill()"
 
-        return "Hill(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)" % (self.E0, self.Emax, self.h, self.C)
+        return "Hill(E0=%0.3g, Emax=%0.3g, h=%0.3g, C=%0.3g)" % (self.E0, self.Emax, self.h, self.C)
 
 
 class Hill_2P(Hill):
@@ -220,8 +202,12 @@ class Hill_2P(Hill):
                          C^h + d^h
 
     Mathematically equivalent to the four-parameter Hill equation, but E0 and Emax are held constant (not fit to data).
-
     """
+
+    def __init__(self, E0=1.0, Emax=0.0, **kwargs):
+        self.E0 = E0
+        self.Emax = Emax
+        super().__init__(**kwargs)
 
     def _model_to_fit(self, d, logh, logC):
         return self._model(d, self.E0, self.Emax, np.exp(logh), np.exp(logC))
@@ -255,16 +241,6 @@ class Hill_2P(Hill):
 
         return super()._get_initial_guess(d, E, p0)
 
-    def get_parameters(self):
-        """Gets the model's parameters
-
-        Returns
-        ----------
-        parameters : tuple
-            (h, C)
-        """
-        return dict(zip(self._parameter_names, (self.h, self.C)))
-
     def _set_parameters(self, popt):
         h, C = popt
 
@@ -282,7 +258,7 @@ class Hill_2P(Hill):
         if not self.is_specified:
             return "Hill_2P()"
 
-        return "Hill_2P(E0=%0.2f, Emax=%0.2f, h=%0.2f, C=%0.2e)" % (
+        return "Hill_2P(E0=%0.3g, Emax=%0.3g, h=%0.3g, C=%0.3g)" % (
             self.E0,
             self.Emax,
             self.h,
@@ -297,8 +273,10 @@ class Hill_CI(Hill_2P):
     log-linearization approach to dose-response fitting used by the Combination Index.
     """
 
-    def __init__(self, h=None, C=None, **kwargs):
-        super().__init__(h=h, C=C, E0=1.0, Emax=0.0)
+    def __init__(self, **kwargs):
+        kwargs["E0"] = 1.0
+        kwargs["Emax"] = 0.0
+        super().__init__(**kwargs)
 
     def _fit(self, d, E, use_jacobian, **kwargs):
         """Override the parent function to use linregress() instead of curve_fit()"""
@@ -358,4 +336,4 @@ class Hill_CI(Hill_2P):
         if not self.is_specified:
             return "Hill_CI()"
 
-        return "Hill_CI(h=%0.2f, C=%0.2e)" % (self.h, self.C)
+        return "Hill_CI(h=%0.3g, C=%0.3g)" % (self.h, self.C)

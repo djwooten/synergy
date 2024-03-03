@@ -181,4 +181,21 @@ def sanitize_single_drug_model_OLD(model, default_class, expected_superclass=Non
                 )
 
             return default_class(**kwargs)
-    return default_class(**kwargs)
+
+
+def format_table(rows, first_row_is_header: bool = True, col_sep: str = "  |  ") -> str:
+    """-"""
+    if not rows:
+        return ""
+
+    num_columns = len(rows[0])
+    max_column_widths = [max(*[len(row[col]) for row in rows]) for col in range(num_columns)]
+    row_format = col_sep.join(["{:<%d}" % width for width in max_column_widths])
+
+    row_strings = [row_format.format(*row) for row in rows]
+
+    if first_row_is_header:
+        rowsep = "=" * (sum(max_column_widths) + len(col_sep) * (num_columns - 1))
+        row_strings = [row_strings[0]] + [rowsep] + row_strings[1:]
+
+    return "\n".join(row_strings)

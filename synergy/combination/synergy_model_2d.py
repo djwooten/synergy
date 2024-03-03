@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod, abstractproperty
 from copy import deepcopy
-from typing import Callable, Optional
+from typing import Any, Callable, Optional
 import logging
 
 from scipy.optimize import curve_fit
@@ -141,6 +141,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
         **kwargs,
     ):
         """Ctor."""
+        self._set_init_parameters(**kwargs)
         self._bounds = self._get_bounds(**kwargs)
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
         self.fit_function: Callable
@@ -159,9 +160,14 @@ class ParametricSynergyModel2D(SynergyModel2D):
     def E(self, d1, d2):
         """-"""
 
-    @abstractmethod
-    def get_parameters(self):
+    def get_parameters(self) -> dict[str, Any]:
+        """Returns model's parameters"""
+        return {param: self.__getattribute__(param) for param in self._parameter_names}
+
+    def _set_init_parameters(self, **kwargs):
         """-"""
+        for param in self._parameter_names:
+            self.__setattr__(param, kwargs.get(param, None))
 
     @abstractmethod
     def _set_parameters(self, parameters):
@@ -270,7 +276,8 @@ class ParametricSynergyModel2D(SynergyModel2D):
 
         lb = (100 - confidence_interval) / 2.0
         ub = 100 - lb
-        return np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
+        intervals = np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
+        return dict(zip(self._parameter_names, intervals))
 
     def _get_initial_guess(self, d1, d2, E, p0):
         """Transform user supplied initial guess to correct scale, and/or guess p0."""
@@ -376,9 +383,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
     @property
     def is_specified(self) -> bool:
         """True if all parameters are set."""
-        parameters = self.get_parameters()
-        if parameters is None:
-            return False
+        parameters = list(self.get_parameters().values())
 
         return None not in parameters and not np.isnan(np.asarray(parameters)).any()
 

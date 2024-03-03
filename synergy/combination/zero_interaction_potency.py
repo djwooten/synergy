@@ -178,6 +178,10 @@ class ZIP(DoseDependentSynergyModel2D):
 class _Hill_3P(Hill):
     """ZIP uses a three parameter Hill equation which fixes E0, but fits Emax, C, and h"""
 
+    def __init__(self, **kwargs):
+        self.E0 = 1.0  # this gets overwritten over the course of the algorithm
+        super().__init__(**kwargs)
+
     @property
     def _parameter_names(self) -> list[str]:
         return ["Emax", "h", "C"]
@@ -203,16 +207,6 @@ class _Hill_3P(Hill):
 
         return super()._get_initial_guess(d, E, p0)
 
-    def get_parameters(self):
-        """Gets the model's parameters
-
-        Returns
-        ----------
-        parameters : tuple
-            (Emax, h, C)
-        """
-        return dict(zip(self._parameter_names, (self.Emax, self.h, self.C)))
-
     def _set_parameters(self, popt):
         Emax, h, C = popt
 
@@ -231,4 +225,4 @@ class _Hill_3P(Hill):
         if not self.is_specified:
             return "Hill_3P()"
 
-        return "Hill_3P(E0=%0.2g, Emax=%0.2g, h=%0.2g, C=%0.2g)" % (self.E0, self.Emax, self.h, self.C)
+        return "Hill_3P(E0=%0.3g, Emax=%0.3g, h=%0.3g, C=%0.3g)" % (self.E0, self.Emax, self.h, self.C)

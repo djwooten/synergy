@@ -47,6 +47,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         self._converged: bool = False
         self._is_fit: bool = False
 
+        self._set_init_parameters(**kwargs)
         self._bounds = self._get_bounds(**kwargs)
 
         self.sum_of_squares_residuals: Optional[float]
@@ -55,9 +56,14 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         self.bic: Optional[float]
         self.bootstrap_parameters = None
 
-    @abstractmethod
+    def _set_init_parameters(self, **kwargs):
+        """-"""
+        for param in self._parameter_names:
+            self.__setattr__(param, kwargs.get(param, None))
+
     def get_parameters(self) -> dict[str, Any]:
-        """Returns model parameters"""
+        """Returns model's parameters"""
+        return {param: self.__getattribute__(param) for param in self._parameter_names}
 
     @abstractmethod
     def _set_parameters(self, parameters):
