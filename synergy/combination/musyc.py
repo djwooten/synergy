@@ -564,6 +564,10 @@ class MuSyC(ParametricSynergyModel2D):
 
     def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs):
         super()._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs)
+        self.bootstrap_beta = None
+        if self.bootstrap_parameters is None:
+            return
+
         params = self._parameter_names
         E0 = self.bootstrap_parameters[:, params.index("E0")]  # type: ignore
         E1 = self.bootstrap_parameters[:, params.index("E1")]  # type: ignore
@@ -599,20 +603,30 @@ class MuSyC(ParametricSynergyModel2D):
             outcome = "additive"
         return [key, f"{val:0.3g}", comparison, outcome]
 
+    def get_confidence_intervals(self, confidence_interval: float = 95):
+        """Returns the lower bound and upper bound estimate for each parameter.
+
+        Parameters:
+        -----------
+        confidence_interval : float, default=95
+            % confidence interval to return. Must be between 0 and 100.
+        """
+        ci = super().get_confidence_intervals(confidence_interval=confidence_interval)
+
+        lb = (100 - confidence_interval) / 2.0
+        ub = 100 - lb
+        ci["beta"] = np.percentile(self.bootstrap_beta, [lb, ub])
+        return ci
+
     def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
         """-"""
         pars = self.get_parameters()
 
         header = ["Parameter", "Value", "Comparison", "Synergy"]
         ci: dict[str, tuple[float, float]] = {}
-        ci_idx = 2
         if self.bootstrap_parameters is not None:
             ci = self.get_confidence_intervals(confidence_interval=confidence_interval)
-            # Manually handle beta bootstrap
-            lb = (100 - confidence_interval) / 2.0
-            ub = 100 - lb
-            ci["beta"] = np.percentile(self.bootstrap_beta, [lb, ub])
-            header.insert(ci_idx, f"{confidence_interval:0.3g}% CI")
+            header.insert(2, f"{confidence_interval:0.3g}% CI")
 
         rows = [header]
 

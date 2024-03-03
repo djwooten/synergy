@@ -21,7 +21,9 @@ def main():
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_musyc_reference_1.csv"),
         ["d1", "d2", "E"],
-        *MuSyCDataGenerator.get_2drug_combination(E1=0.5, E2=0.0, E3=0.0, h1=1.2, h2=0.8, replicates=3, d_noise=0.01),
+        *MuSyCDataGenerator.get_2drug_combination(
+            E1=0.5, E2=0.0, E3=0.0, h1=1.2, h2=0.8, replicates=3, d_noise=0.01, E_noise=0.01
+        ),
     )
 
     np.random.seed(3245)
@@ -29,7 +31,7 @@ def main():
         os.path.join(TEST_DATA_DIR, "synthetic_musyc_potency_1.csv"),
         ["d1", "d2", "E"],
         *MuSyCDataGenerator.get_2drug_combination(
-            E1=0.5, E2=0.0, E3=0.0, h1=0.8, h2=1.4, alpha12=0.5, alpha21=2.0, replicates=3, d_noise=0.01
+            E1=0.5, E2=0.3, E3=0.0, h1=0.8, h2=1.4, alpha12=0.5, alpha21=2.0, replicates=3, d_noise=0.01, E_noise=0.01
         ),
     )
 
@@ -37,14 +39,18 @@ def main():
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_musyc_efficacy_1.csv"),
         ["d1", "d2", "E"],
-        *MuSyCDataGenerator.get_2drug_combination(E1=0.5, E2=0.3, E3=0.0, h1=0.8, h2=1.4, replicates=3, d_noise=0.01),
+        *MuSyCDataGenerator.get_2drug_combination(
+            E1=0.5, E2=0.3, E3=0.0, h1=0.8, h2=1.4, replicates=3, d_noise=0.01, E_noise=0.01
+        ),
     )
 
     np.random.seed(28921892)
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_musyc_efficacy_2.csv"),
         ["d1", "d2", "E"],
-        *MuSyCDataGenerator.get_2drug_combination(E1=0.5, E2=0.0, E3=0.3, h1=0.8, h2=1.4, replicates=3, d_noise=0.01),
+        *MuSyCDataGenerator.get_2drug_combination(
+            E1=0.5, E2=0.0, E3=0.3, h1=0.8, h2=1.4, replicates=3, d_noise=0.01, E_noise=0.01
+        ),
     )
 
     np.random.seed(83289)
@@ -52,7 +58,18 @@ def main():
         os.path.join(TEST_DATA_DIR, "synthetic_musyc_cooperativity_1.csv"),
         ["d1", "d2", "E"],
         *MuSyCDataGenerator.get_2drug_combination(
-            E1=0.5, E2=0.0, E3=0.0, h1=0.8, h2=1.4, gamma12=0.5, gamma21=2.0, replicates=3, d_noise=0.01
+            E1=0.5,
+            E2=0.3,
+            E3=0.0,
+            h1=0.8,
+            h2=1.4,
+            gamma12=0.5,
+            gamma21=2.0,
+            replicates=3,
+            d_noise=0.01,
+            E_noise=0.01,
+            n_points1=6,
+            n_points2=6,
         ),
     )
 
@@ -60,14 +77,14 @@ def main():
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_musyc_linear_isobole_1.csv"),
         ["d1", "d2", "E"],
-        *MuSyCDataGenerator.get_2drug_linear_isoboles(E1=0.2, E2=0.0, replicates=3, d_noise=0.01),
+        *MuSyCDataGenerator.get_2drug_linear_isoboles(E1=0.2, E2=0.0, replicates=3, d_noise=0.01, E_noise=0.01),
     )
 
     np.random.seed(6587325)
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_musyc_bliss_independent_1.csv"),
         ["d1", "d2", "E"],
-        *MuSyCDataGenerator.get_2drug_bliss(E1=0.5, E2=0.3, h1=0.8, h2=1.4, replicates=3, d_noise=0.01),
+        *MuSyCDataGenerator.get_2drug_bliss(E1=0.5, E2=0.3, h1=0.8, h2=1.4, replicates=3, d_noise=0.01, E_noise=0.01),
     )
 
 
