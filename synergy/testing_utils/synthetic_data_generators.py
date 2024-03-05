@@ -19,6 +19,7 @@ import numpy as np
 from scipy.stats import norm
 
 from synergy.combination import MuSyC
+from synergy.combination.zimmer import Zimmer
 from synergy.utils import dose_utils
 from synergy.single import Hill
 
@@ -326,3 +327,45 @@ class MuSyCDataGenerator:
             E_noise=E_noise,
             d_noise=d_noise,
         )
+
+
+class EffectiveDoseModelDataGenerator:
+    """Data generator using the effective dose model."""
+
+    @staticmethod
+    def get_2drug_combination(
+        h1: float = 1.0,
+        h2: float = 1.0,
+        C1: float = 1.0,
+        C2: float = 1.0,
+        a12: float = 0.0,
+        a21: float = 0.0,
+        d1min=None,
+        d1max=None,
+        d2min=None,
+        d2max=None,
+        n_points1: int = 6,
+        n_points2: int = 6,
+        replicates: int = 1,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
+    ):
+        model = Zimmer(h1=h1, h2=h2, C1=C1, C2=C2, a12=a12, a21=a21)
+
+        if d1min is None:
+            d1min = C1 / 20.0
+        if d1max is None:
+            d1max = C1 * 20.0
+        if d2min is None:
+            d2min = C2 / 20.0
+        if d2max is None:
+            d2max = C2 * 20.0
+
+        d1, d2 = dose_utils.make_dose_grid(
+            d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates, include_zero=True
+        )
+
+        d1_noisy = _noisify(d1, d_noise, min_val=0)
+        d2_noisy = _noisify(d2, d_noise, min_val=0)
+        E = _noisify(model.E(d1_noisy, d2_noisy), E_noise)
+        return d1, d2, E

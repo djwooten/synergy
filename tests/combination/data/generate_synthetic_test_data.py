@@ -3,7 +3,7 @@ import os
 
 import numpy as np
 
-from synergy.testing_utils.synthetic_data_generators import MuSyCDataGenerator
+from synergy.testing_utils.synthetic_data_generators import MuSyCDataGenerator, EffectiveDoseModelDataGenerator
 
 TEST_DATA_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
@@ -85,6 +85,42 @@ def main():
         os.path.join(TEST_DATA_DIR, "synthetic_musyc_bliss_independent_1.csv"),
         ["d1", "d2", "E"],
         *MuSyCDataGenerator.get_2drug_bliss(E1=0.5, E2=0.3, h1=0.8, h2=1.4, replicates=3, d_noise=0.01, E_noise=0.01),
+    )
+
+    np.random.seed(34245)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_EDM_reference_1.csv"),
+        ["d1", "d2", "E"],
+        *EffectiveDoseModelDataGenerator.get_2drug_combination(
+            h1=0.8, h2=1.4, replicates=3, d_noise=0.0001, E_noise=0.0001, n_points1=10, n_points2=10
+        ),
+    )
+
+    np.random.seed(453425)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_EDM_synergy_1.csv"),
+        ["d1", "d2", "E"],
+        *EffectiveDoseModelDataGenerator.get_2drug_combination(
+            h1=0.8, h2=1.4, a12=-0.5, replicates=3, d_noise=0.0001, E_noise=0.0001, n_points1=10, n_points2=10
+        ),
+    )
+
+    np.random.seed(653634)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_EDM_synergy_2.csv"),
+        ["d1", "d2", "E"],
+        *EffectiveDoseModelDataGenerator.get_2drug_combination(
+            h1=0.8, h2=1.4, a21=-0.5, replicates=3, d_noise=0.0001, E_noise=0.0001, n_points1=10, n_points2=10
+        ),
+    )
+
+    np.random.seed(123546)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_EDM_synergy_3.csv"),
+        ["d1", "d2", "E"],
+        *EffectiveDoseModelDataGenerator.get_2drug_combination(
+            h1=0.8, h2=1.4, a12=-0.5, a21=-0.5, replicates=3, d_noise=0.0001, E_noise=0.0001, n_points1=10, n_points2=10
+        ),
     )
 
 

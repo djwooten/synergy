@@ -14,19 +14,17 @@ from hypothesis.strategies import sampled_from
 from synergy.combination import MuSyC
 from synergy.testing_utils.test_data_loader import load_test_data
 from synergy.testing_utils import assertions as synergy_assertions
+from synergy.utils import dose_utils
 
 
 MAX_FLOAT = sys.float_info.max
-MIN_FLOAT = sys.float_info.min
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
-HYP_E = {
-    "allow_nan": False,
-    "allow_infinity": False,
-    "min_value": -1e10,
-    "max_value": 1e10,
-}
+
+def _get_E3(E0, E1, E2, beta):
+    strongest_E = np.amin(np.asarray([E1, E2]), axis=0)
+    return strongest_E - beta * (E0 - strongest_E)
 
 
 class MuSyCTests(TestCase):
@@ -119,6 +117,62 @@ class MuSyCTests(TestCase):
                 self.assertAlmostEqual(model.E(d1, d2), E, places=1, msg=f"E({d1s}, {d2s}) should be {E:0.3g}")
             else:
                 self.assertAlmostEqual(model.E(d1, d2) / E, 1.0, places=2, msg=f"E({d1s}, {d2s}) should be {E:0.3g}")
+
+    def test_synergism(self):
+        """Ensure synergistic parameters lead to stronger E"""
+        E0, E1, E2, h1, h2, C1, C2 = 1, 0.5, 0.3, 1, 1, 1, 1
+        d1, d2 = dose_utils.make_dose_grid(C1 / 20, C1 * 20, C2 / 20, C2 * 20, n_points1=6, n_points2=6)
+        for beta, alpha12, alpha21 in [(0, 2, 1), (0, 1, 2), (0, 2, 2), (1, 1, 1), (1, 2, 1), (1, 1, 2), (1, 2, 2)]:
+            E3 = _get_E3(E0, E1, E2, beta)
+            model = MuSyC(
+                E0=E0,
+                E1=E1,
+                E2=E2,
+                E3=E3,
+                h1=h1,
+                h2=h2,
+                C1=C1,
+                C2=C2,
+                alpha12=alpha12,
+                alpha21=alpha21,
+                gamma12=1,
+                gamma21=1,
+            )
+            E = model.E(d1, d2)
+            reference = model.E_reference(d1, d2)
+            self.assertTrue((E < reference).all())
+
+    def test_antagonism(self):
+        """Ensure antagonistic parameters lead to weaker E"""
+        E0, E1, E2, h1, h2, C1, C2 = 1, 0.5, 0.3, 1, 1, 1, 1
+        d1, d2 = dose_utils.make_dose_grid(C1 / 20, C1 * 20, C2 / 20, C2 * 20, n_points1=6, n_points2=6)
+        for beta, alpha12, alpha21 in [
+            (0, 0.5, 1),
+            (0, 1, 0.5),
+            (0, 0.5, 0.5),
+            (-1, 1, 1),
+            (-1, 0.5, 1),
+            (-1, 1, 0.5),
+            (-1, 0.5, 0.5),
+        ]:
+            E3 = _get_E3(E0, E1, E2, beta)
+            model = MuSyC(
+                E0=E0,
+                E1=E1,
+                E2=E2,
+                E3=E3,
+                h1=h1,
+                h2=h2,
+                C1=C1,
+                C2=C2,
+                alpha12=alpha12,
+                alpha21=alpha21,
+                gamma12=1,
+                gamma21=1,
+            )
+            E = model.E(d1, d2)
+            reference = model.E_reference(d1, d2)
+            self.assertTrue((E > reference).all())
 
 
 class MuSyCFitTests(TestCase):

@@ -46,6 +46,7 @@ class Zimmer(ParametricSynergyModel2D):
     def __init__(self, drug1_model=None, drug2_model=None, **kwargs):
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
         self.fit_function = self._model_to_fit
+        self.jacobian_function = None  # TODO
 
     @property
     def _parameter_names(self) -> list[str]:
@@ -97,10 +98,11 @@ class Zimmer(ParametricSynergyModel2D):
     def _transform_params_to_fit(self, params):
         h1, h2, C1, C2, a12, a21 = params
 
-        logh1 = np.log(h1)
-        logh2 = np.log(h2)
-        logC1 = np.log(C1)
-        logC2 = np.log(C2)
+        with np.errstate(divide="ignore"):
+            logh1 = np.log(h1)
+            logh2 = np.log(h2)
+            logC1 = np.log(C1)
+            logC2 = np.log(C2)
 
         return logh1, logh2, logC1, logC2, a12, a21
 
@@ -112,7 +114,7 @@ class Zimmer(ParametricSynergyModel2D):
             return ModelNotParameterizedError("Must specify the model before calculating E")
         return self._model(d1, d2, self.h1, self.h2, self.C1, self.C2, self.a12, self.a21)
 
-    def reference_E(self, d1, d2):
+    def E_reference(self, d1, d2):
         if not self.is_specified:
             return ModelNotParameterizedError("Must specify the model before calculating E")
         return self._model(d1, d2, self.h1, self.h2, self.C1, self.C2, 0, 0)
@@ -122,11 +124,12 @@ class Zimmer(ParametricSynergyModel2D):
         B = d2 * C1 + C1 * C2 + a12 * d2 * C1 - d1 * (d2 + C2 * (a21 + 1))
         C = -d1 * (d2 * C1 + C1 * C2)
 
-        d1p = (-B + np.sqrt(np.power(B, 2.0) - 4 * A * C)) / (2.0 * A)
-        d2p = d2 / (1.0 + a21 / (1.0 + C1 / d1p))
+        d1p = (-B + np.sqrt(np.float_power(B, 2.0) - 4 * A * C)) / (2.0 * A)
+        with np.errstate(divide="ignore"):
+            d2p = d2 / (1.0 + a21 / (1.0 + C1 / d1p))
 
-        return (1 - np.power(d1p, h1) / (np.power(C1, h1) + np.power(d1p, h1))) * (
-            1 - np.power(d2p, h2) / (np.power(C2, h2) + np.power(d2p, h2))
+        return (1 - np.float_power(d1p, h1) / (np.float_power(C1, h1) + np.float_power(d1p, h1))) * (
+            1 - np.float_power(d2p, h2) / (np.float_power(C2, h2) + np.float_power(d2p, h2))
         )
 
     @property
