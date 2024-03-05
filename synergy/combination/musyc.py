@@ -15,7 +15,6 @@
 
 import numpy as np
 
-
 from synergy.combination.jacobians.musyc_jacobian import jacobian
 from synergy.combination.synergy_model_2d import ParametricSynergyModel2D
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
@@ -248,7 +247,6 @@ class MuSyC(ParametricSynergyModel2D):
         )[:, :-2]
 
     def _get_initial_guess(self, d1, d2, E, p0):
-
         # If there is no intial guess, use single-drug models to come up with intitial guess
         if p0 is None:
 
@@ -433,29 +431,6 @@ class MuSyC(ParametricSynergyModel2D):
                 self.gamma21,
             ) = popt
 
-    def _reference_E(self, d1, d2):
-        if not self.is_specified:
-            raise ModelNotParameterizedError()
-
-        return self._model(
-            d1,
-            d2,
-            self.E0,
-            self.E1,
-            self.E2,
-            min(self.E1, self.E2),
-            self.h1,
-            self.h2,
-            self.C1,
-            self.C2,
-            self.r1r,
-            self.r2r,
-            1,
-            1,
-            1,
-            1,
-        )
-
     def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, r1r, r2r, alpha12, alpha21, gamma12, gamma21):
         # Precompute some terms that are used repeatedly
         d1_pow_h1 = np.float_power(d1, h1)
@@ -575,34 +550,6 @@ class MuSyC(ParametricSynergyModel2D):
         E3 = self.bootstrap_parameters[:, params.index("E3")]  # type: ignore
         self.bootstrap_beta = MuSyC._get_beta(E0, E1, E2, E3)
 
-    def _make_summary_row(
-        self, key: str, comp_val: int, val: float, ci: dict[str, tuple[float, float]], tol: float, log: bool
-    ):
-        if ci:
-            lb, ub = ci[key]
-            if lb > comp_val:
-                comparison = f"> {comp_val}"
-                outcome = "synergistic"
-            elif ub < comp_val:
-                comparison = f"< {comp_val}"
-                outcome = "antagonistic"
-            else:
-                comparison = f"~= {comp_val}"
-                outcome = "additive"
-            return [key, f"{val:0.3g}", f"({lb:0.3g}, {ub:0.3g})", comparison, outcome]
-        val_scaled = np.log(val) if log else val
-        comp_val_scaled = np.log(comp_val) if log else comp_val
-        if val_scaled > comp_val_scaled + tol:
-            comparison = f"> {comp_val}"
-            outcome = "synergistic"
-        elif val_scaled < comp_val_scaled - tol:
-            comparison = f"< {comp_val}"
-            outcome = "antagonistic"
-        else:
-            comparison = f"~= {comp_val}"
-            outcome = "additive"
-        return [key, f"{val:0.3g}", comparison, outcome]
-
     def get_confidence_intervals(self, confidence_interval: float = 95):
         """Returns the lower bound and upper bound estimate for each parameter.
 
@@ -631,12 +578,12 @@ class MuSyC(ParametricSynergyModel2D):
         rows = [header]
 
         # beta
-        rows.append(self._make_summary_row("beta", 0, self.beta, ci, tol, False))
+        rows.append(self._make_summary_row("beta", 0, self.beta, ci, tol, False, "synergistic", "antagonistic"))
 
         # alpha and gamma
         for key in pars.keys():
             if "alpha" in key or "gamma" in key:
-                rows.append(self._make_summary_row(key, 1, pars[key], ci, tol, True))
+                rows.append(self._make_summary_row(key, 1, pars[key], ci, tol, True, "synergistic", "antagonistic"))
 
         print(format_table(rows))
 

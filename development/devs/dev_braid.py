@@ -59,7 +59,7 @@ for i in range(9):
         C2=C2,
         kappa=kappa,
         delta=delta,
-        variant="both",
+        mode="both",
     )
 
     break
@@ -71,7 +71,7 @@ D1, D2 = make_dose_grid(C1 / 100, C1 * 100, C2 / 100, C2 * 100, 8, 8)
 E = truemodel.E(D1, D2)
 Efit = E * (1 + (np.random.rand(len(D1)) - 0.5) / 200.0)
 
-model = BRAID(variant="delta")
+model = BRAID(mode="delta")
 model.fit(D1, D2, Efit, bootstrap_iterations=100)
 print(model.summary())
 

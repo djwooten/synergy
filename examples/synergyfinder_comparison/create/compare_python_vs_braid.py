@@ -87,7 +87,7 @@ for i in [1, 2, 3]:
         rm_results[i][variant] = dict()
 
         # Build and fit BRAID model
-        braid_model = BRAID(variant=variant)
+        braid_model = BRAID(mode=variant)
         braid_model.fit(D1, D2, E, bootstrap_iterations=100)
         results = braid_model.get_parameters()
         braidrm_fits = get_braidrm(variant, i)
@@ -99,7 +99,7 @@ for i in [1, 2, 3]:
         if "delta" in braidrm_fits.index:
             kappa = braidrm_fits.loc["delta", "best"]
         braidrm_model = BRAID(
-            variant=variant,
+            mode=variant,
             E0=braidrm_fits.loc["E0", "best"],
             E1=braidrm_fits.loc["E1", "best"],
             E2=braidrm_fits.loc["E2", "best"],

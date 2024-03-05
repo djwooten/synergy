@@ -9,7 +9,7 @@ def test_braid_kappa():
     kappa = 1
     delta = 0.5
 
-    model = BRAID(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, kappa=1, variant="kappa")
+    model = BRAID(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, kappa=1, mode="kappa")
 
     npoints = 8
     npoints2 = 12
@@ -35,9 +35,7 @@ def test_braid_delta():
     C1, C2 = 1e-2, 1e-1
     delta = 0.5
 
-    model = BRAID(
-        E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, delta=delta, variant="delta"
-    )
+    model = BRAID(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, delta=delta, mode="delta")
 
     npoints = 8
     npoints2 = 12
@@ -64,9 +62,7 @@ def test_braid_both():
     kappa = 1
     delta = 0.5
 
-    model = BRAID(
-        E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, kappa=1, delta=delta, variant="both"
-    )
+    model = BRAID(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, kappa=1, delta=delta, mode="both")
 
     npoints = 8
     npoints2 = 12

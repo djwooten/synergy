@@ -380,6 +380,43 @@ class ParametricSynergyModel2D(SynergyModel2D):
         else:
             self.bootstrap_parameters = None
 
+    def _make_summary_row(
+        self,
+        key: str,
+        comp_val: int,
+        val: float,
+        ci: dict[str, tuple[float, float]],
+        tol: float,
+        log: bool,
+        gt_outcome: str,
+        lt_outcome: str,
+        default_outcome: str = "additive",
+    ):
+        if ci:
+            lb, ub = ci[key]
+            if lb > comp_val:
+                comparison = f"> {comp_val}"
+                outcome = gt_outcome
+            elif ub < comp_val:
+                comparison = f"< {comp_val}"
+                outcome = lt_outcome
+            else:
+                comparison = f"~= {comp_val}"
+                outcome = default_outcome
+            return [key, f"{val:0.3g}", f"({lb:0.3g}, {ub:0.3g})", comparison, outcome]
+        val_scaled = np.log(val) if log else val
+        comp_val_scaled = np.log(comp_val) if log else comp_val
+        if val_scaled > comp_val_scaled + tol:
+            comparison = f"> {comp_val}"
+            outcome = gt_outcome
+        elif val_scaled < comp_val_scaled - tol:
+            comparison = f"< {comp_val}"
+            outcome = lt_outcome
+        else:
+            comparison = f"~= {comp_val}"
+            outcome = default_outcome
+        return [key, f"{val:0.3g}", comparison, outcome]
+
     @property
     def is_specified(self) -> bool:
         """True if all parameters are set."""

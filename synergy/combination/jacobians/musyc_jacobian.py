@@ -15,9 +15,12 @@
 
 import numpy as np
 
-def jacobian(d1, d2, E0, E1, E2, E3, logh1, logh2, logC1, logC2, r1r, r2r, logalpha12, logalpha21, loggamma12, loggamma21):
+
+def jacobian(
+    d1, d2, E0, E1, E2, E3, logh1, logh2, logC1, logC2, r1r, r2r, logalpha12, logalpha21, loggamma12, loggamma21
+):
     """Evaluates Jacobian of MuSyC (gamma)
-    
+
     Returns:
     -----------
     jacobian : tuple
@@ -35,88 +38,3642 @@ def jacobian(d1, d2, E0, E1, E2, E3, logh1, logh2, logC1, logC2, r1r, r2r, logal
     logd1 = np.log(d1)
     logd2 = np.log(d2)
 
-    logd1alpha21 = np.log(d1*alpha21)
-    logd2alpha12 = np.log(d2*alpha12)
+    logd1alpha21 = np.log(d1 * alpha21)
+    logd2alpha12 = np.log(d2 * alpha12)
 
-    #d1h1 = d1**h1
-    #d2h2 = d2**h2
-    d1h1 = np.power(d1,h1)
-    d2h2 = np.power(d2,h2)
+    d1_pow_h1 = np.float_power(d1, h1)
+    d2_pow_h2 = np.float_power(d2, h2)
 
-    #C1h1 = C1**h1
-    #C2h2 = C2**h2
-    C1h1 = np.power(C1,h1)
-    C2h2 = np.power(C2,h2)
+    C1_pow_h1 = np.float_power(C1, h1)
+    C2_pow_h2 = np.float_power(C2, h2)
 
-    r1 = r1r/C1h1
-    r2 = r2r/C2h2
+    r1 = r1r / C1_pow_h1
+    r2 = r2r / C2_pow_h2
 
-    #alpha21d1gamma21h1 = (alpha21*d1)**(gamma21*h1)
-    #alpha12d2gamma12h2 = (alpha12*d2)**(gamma12*h2)
-    alpha21d1gamma21h1 = np.power(alpha21*d1, gamma21*h1)
-    alpha12d2gamma12h2 = np.power(alpha12*d2, gamma12*h2)
+    alpha21d1_pow_gamma21h1 = np.float_power(alpha21 * d1, gamma21 * h1)
+    alpha12d2_pow_gamma12h2 = np.float_power(alpha12 * d2, gamma12 * h2)
 
-    #C12h1 = C1**(2*h1)
-    #C22h2 = C2**(2*h2)
-    C12h1 = np.power(C1,2*h1)
-    C22h2 = np.power(C2,2*h2)
+    r1_pow_gamma21p1 = np.float_power(r1, gamma21 + 1)
+    r2_pow_gamma12p1 = np.float_power(r2, gamma12 + 1)
+    r2C2h2_pow_gamma12 = np.float_power(r2 * C2_pow_h2, gamma12)
+    r1C1h1_pow_gamma21 = np.float_power(r1 * C1_pow_h1, gamma21)
 
-    exp = np.exp
+    r2_pow_gamma12 = np.float_power(r2, gamma12)
+    r1_pow_gamma21 = np.float_power(r1, gamma21)
     log = np.log
 
     # ********** logh1 ********
 
-    j_logh1 = E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*h1*logC1 - d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h1*logd1 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h1*logd1 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*h1*logd1 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1*logC1 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*h1*logd1 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*h1*logd1 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*h1*logd1 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*h1*logC1 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h1*logC1 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h1*logC1 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*h1*logC1 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1*logC1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*h1*logC1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h1*logC1 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h1*logC1 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*h1*logC1 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1)*logd1alpha21 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*h1*logC1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*h1*logC1 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h1*logC1 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h1*logC1 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*h1*logC1 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1)*logd1alpha21 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*h1*logC1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*h1*logC1 - d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h1*logd1 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h1*logd1 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*h1*logd1 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1*logC1 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*h1*logd1 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*h1*logd1 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*h1*logd1 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*h1*logC1 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h1*logC1 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h1*logC1 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*h1*logC1 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1*logC1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*h1*logC1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h1*logC1 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h1*logC1 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*h1*logC1 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1)*logd1alpha21 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*h1*logC1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*h1*logC1 + d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h1*logd1 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h1*logd1 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*h1*logd1 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*h1*logC1 - d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h1*logd1 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h1*logd1 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*h1*logd1 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1*logC1 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*h1*logd1 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*h1*logd1 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*h1*logd1 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*h1*logC1 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h1*logC1 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h1*logC1 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*h1*logC1 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1*logC1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*h1*logC1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h1*logC1 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h1*logC1 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*h1*logC1 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1)*logd1alpha21 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*h1*logC1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1*logC1 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*h1*logd1 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*h1*logC1 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h1*logC1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h1*logC1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1*logC1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E3*(d2h2*r1*r2*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*C1h1*h1*logC1 + d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1*h1*logd1 + r1*C1h1*h1*logC1) + d1h1*r1*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)*h1*logd1 + d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1)*h1*logd1 + (-d1h1*r1*h1*logd1 - r1*C1h1*h1*logC1)*(d1h1*r1 + d2h2*r2 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2*h1*logd1 + r1**gamma21*alpha21d1gamma21h1*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)*(gamma21*h1)*logd1alpha21 + (-d1h1*r1*h1*logd1 - r1*C1h1*h1*logC1)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(d1h1*r1*(d1h1*r1*h1*logd1 + r1*C1h1*h1*logC1) + d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1)*h1*logd1 - d1h1*r1*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*h1*logd1 + (-d1h1*r1 - d2h2*r2)*(d1h1*r1*h1*logd1 + r1*C1h1*h1*logC1)))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))) + E3*(d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)))*(-(-(-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2*h1*logd1 + r1**gamma21*alpha21d1gamma21h1*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)*(gamma21*h1)*logd1alpha21 + (-d1h1*r1*h1*logd1 - r1*C1h1*h1*logC1)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) - (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d1h1*d2h2*r1*r2*h1*logd1 - (r1*C1h1)**gamma21*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*gamma21*h1*logC1 + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1*h1*logd1 + r1*C1h1*h1*logC1)) - (-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*r1*(d1h1*r1*h1*logd1 + r1*C1h1*h1*logC1) + d1h1*r1*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)*h1*logd1 + d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1)*h1*logd1 + (-d1h1*r1*h1*logd1 - r1*C1h1*h1*logC1)*(d1h1*r1 + d2h2*r2 + r2*C2h2)) - (d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1)*h1*logd1 - d1h1*r1*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*h1*logd1 - (-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1*h1*logd1 + r1*C1h1*h1*logC1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1*h1*logd1 + r1*C1h1*h1*logC1)))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)))**2
+    j_logh1 = (
+        E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1 * logC1
+            - d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h1 * logd1
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h1 * logd1
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * h1 * logd1
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1 * logC1
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * h1 * logd1
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * h1
+            * logd1
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * h1 * logd1
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * h1 * logC1
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h1 * logC1
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1 * logC1
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * h1 * logC1
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * (gamma21 * h1) * logd1alpha21
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1 * logC1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * h1 * logC1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h1 * logC1
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h1 * logC1
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1 * logC1
+            - r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * (gamma21 * h1)
+            * logd1alpha21
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1 * logC1
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * h1 * logC1
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h1 * logC1
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h1 * logC1
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1 * logC1
+            + r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * (gamma21 * h1)
+            * logd1alpha21
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1 * logC1
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1 * logC1
+            - d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h1 * logd1
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h1 * logd1
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * h1 * logd1
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1 * logC1
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * h1 * logd1
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * h1
+            * logd1
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * h1 * logd1
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * h1 * logC1
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h1 * logC1
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1 * logC1
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * h1 * logC1
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * (gamma21 * h1) * logd1alpha21
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1 * logC1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * h1 * logC1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h1 * logC1
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h1 * logC1
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1 * logC1
+            - r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * (gamma21 * h1)
+            * logd1alpha21
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1 * logC1
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1 * logC1
+            + d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h1 * logd1
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h1 * logd1
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * h1 * logd1
+            + d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            + d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1 * logC1
+            - d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h1 * logd1
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h1 * logd1
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * h1 * logd1
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1 * logC1
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * h1 * logd1
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * h1
+            * logd1
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * h1 * logd1
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * h1 * logC1
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h1 * logC1
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1 * logC1
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * h1 * logC1
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * (gamma21 * h1) * logd1alpha21
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1 * logC1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * h1 * logC1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h1 * logC1
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h1 * logC1
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1 * logC1
+            - r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * (gamma21 * h1)
+            * logd1alpha21
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1 * logC1
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1 * logC1
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * h1 * logd1
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * h1 * logC1
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h1 * logC1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1 * logC1
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1 * logC1
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r1
+            * r2
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * C1_pow_h1
+            * h1
+            * logC1
+            + d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 * h1 * logd1 + r1 * C1_pow_h1 * h1 * logC1)
+                + d1_pow_h1
+                * r1
+                * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * h1
+                * logd1
+                + d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1) * h1 * logd1
+                + (-d1_pow_h1 * r1 * h1 * logd1 - r1 * C1_pow_h1 * h1 * logC1)
+                * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2 * h1 * logd1
+                + r1_pow_gamma21
+                * alpha21d1_pow_gamma21h1
+                * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (gamma21 * h1)
+                * logd1alpha21
+                + (-d1_pow_h1 * r1 * h1 * logd1 - r1 * C1_pow_h1 * h1 * logC1)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 * h1 * logd1 + r1 * C1_pow_h1 * h1 * logC1)
+                + d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1) * h1 * logd1
+                - d1_pow_h1
+                * r1
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * h1
+                * logd1
+                + (-d1_pow_h1 * r1 - d2_pow_h2 * r2) * (d1_pow_h1 * r1 * h1 * logd1 + r1 * C1_pow_h1 * h1 * logC1)
+            )
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+        )
+        * (
+            -(
+                -(-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2 * h1 * logd1
+                + r1_pow_gamma21
+                * alpha21d1_pow_gamma21h1
+                * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (gamma21 * h1)
+                * logd1alpha21
+                + (-d1_pow_h1 * r1 * h1 * logd1 - r1 * C1_pow_h1 * h1 * logC1)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            - (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d1_pow_h1 * d2_pow_h2 * r1 * r2 * h1 * logd1
+                - r1C1h1_pow_gamma21
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * gamma21
+                * h1
+                * logC1
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21) * (d1_pow_h1 * r1 * h1 * logd1 + r1 * C1_pow_h1 * h1 * logC1)
+            )
+            - (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 * h1 * logd1 + r1 * C1_pow_h1 * h1 * logC1)
+                + d1_pow_h1
+                * r1
+                * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * h1
+                * logd1
+                + d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1) * h1 * logd1
+                + (-d1_pow_h1 * r1 * h1 * logd1 - r1 * C1_pow_h1 * h1 * logC1)
+                * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+            )
+            - (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1) * h1 * logd1
+                - d1_pow_h1
+                * r1
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * h1
+                * logd1
+                - (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 * h1 * logd1 + r1 * C1_pow_h1 * h1 * logC1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2) * (d1_pow_h1 * r1 * h1 * logd1 + r1 * C1_pow_h1 * h1 * logC1)
+            )
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        ** 2
+    )
 
     # ********** logh2 ********
 
-    j_logh2 = E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h2*logC2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*h2*logC2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h2*logC2 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*h2*logC2 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*(gamma12*h2)*logd2alpha12 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2*logC2 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h2*logd2 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*h2*logC2 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h2*logd2 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*h2*logd2 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2*logC2 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*h2*logd2 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*h2*logd2 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*h2*logd2 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h2*logC2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*h2*logC2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h2*logC2 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*h2*logC2 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*h2*logC2 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2)*logd2alpha12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h2*logC2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*h2*logC2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h2*logC2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*h2*logC2 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*h2*logC2 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2)*logd2alpha12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h2*logC2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*h2*logC2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h2*logC2 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*h2*logC2 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*(gamma12*h2)*logd2alpha12 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2*logC2 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h2*logd2 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*h2*logC2 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h2*logd2 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*h2*logd2 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2*logC2 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*h2*logd2 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*h2*logd2 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*h2*logd2 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h2*logC2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*h2*logC2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h2*logC2 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*h2*logC2 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*h2*logC2 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2)*logd2alpha12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h2*logC2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*h2*logC2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h2*logC2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2*logC2 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2*logC2 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*h2*logd2)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h2*logC2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*h2*logC2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h2*logC2 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*h2*logC2 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*(gamma12*h2)*logd2alpha12 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2*logC2 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h2*logd2 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*h2*logC2 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h2*logd2 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*h2*logd2 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2*logC2 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*h2*logd2 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*h2*logd2 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*h2*logd2 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h2*logC2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*h2*logC2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h2*logC2 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*h2*logC2 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*h2*logC2 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2)*logd2alpha12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h2*logd2 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*h2*logC2 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h2*logd2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*h2*logd2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E3*(d2h2*r2*r2**gamma12*alpha12d2gamma12h2*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(gamma12*h2)*logd2alpha12 + d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*h2*logd2 + d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*d2h2*r1*r2*h2*logd2 - r2**gamma12*alpha12d2gamma12h2*(d1h1*r1 + d2h2*r2 + r2*C2h2)*(gamma12*h2)*logd2alpha12 + (d2h2*r2*h2*logd2 + r2*C2h2*h2*logC2)*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2*h2*logd2 - r2**gamma12*alpha12d2gamma12h2*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)*(gamma12*h2)*logd2alpha12 + (d2h2*r2*h2*logd2 + r2*C2h2*h2*logC2)*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)) + (d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(d1h1*d2h2*r1*r2*h2*logd2 - d2h2*r2*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*h2*logd2 + r2**gamma12*alpha12d2gamma12h2*(-d1h1*r1 - d2h2*r2)*(gamma12*h2)*logd2alpha12))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))) + E3*(d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)))*(-(-(-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2*h2*logd2 - r2**gamma12*alpha12d2gamma12h2*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)*(gamma12*h2)*logd2alpha12 + (d2h2*r2*h2*logd2 + r2*C2h2*h2*logC2)*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)) - (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d2h2*r2*(r2*C2h2)**gamma12*gamma12*h2*logC2 - d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12)*h2*logd2 + d2h2*r2*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*h2*logd2 + r2**gamma12*alpha12d2gamma12h2*(d2h2*r2 - (r1*C1h1)**gamma21)*(gamma12*h2)*logd2alpha12) - (-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2*h2*logd2 - r2**gamma12*alpha12d2gamma12h2*(d1h1*r1 + d2h2*r2 + r2*C2h2)*(gamma12*h2)*logd2alpha12 + (d2h2*r2*h2*logd2 + r2*C2h2*h2*logC2)*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)) - (d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(-d2h2*r2*(-d1h1*r1 + (r2*C2h2)**gamma12)*h2*logd2 - d2h2*r2*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*h2*logd2 - r2**gamma12*alpha12d2gamma12h2*(d1h1*r1 + d2h2*r2)*(gamma12*h2)*logd2alpha12 - (r2*C2h2)**gamma12*(d1h1*r1 + d2h2*r2 + r1*C1h1)*gamma12*h2*logC2))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)))**2
+    j_logh2 = (
+        E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2 * logC2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * h2 * logC2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h2 * logC2
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * h2 * logC2
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * (gamma12 * h2) * logd2alpha12
+            - d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2 * logC2
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h2 * logd2
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2 * logC2
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h2 * logd2
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * h2 * logd2
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2 * logC2
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * h2 * logd2
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * h2
+            * logd2
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * h2 * logd2
+            - d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h2 * logC2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * h2 * logC2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h2 * logC2
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2 * logC2
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2 * logC2
+            - r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * (gamma12 * h2)
+            * logd2alpha12
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h2 * logC2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * h2 * logC2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h2 * logC2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2 * logC2
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2 * logC2
+            + r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * (gamma12 * h2)
+            * logd2alpha12
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2 * logC2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * h2 * logC2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h2 * logC2
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * h2 * logC2
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * (gamma12 * h2) * logd2alpha12
+            - d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2 * logC2
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h2 * logd2
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2 * logC2
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h2 * logd2
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * h2 * logd2
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2 * logC2
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * h2 * logd2
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * h2
+            * logd2
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * h2 * logd2
+            - d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h2 * logC2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * h2 * logC2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h2 * logC2
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2 * logC2
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2 * logC2
+            - r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * (gamma12 * h2)
+            * logd2alpha12
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2 * logC2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * h2 * logC2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h2 * logC2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2 * logC2
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2 * logC2
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * h2 * logd2
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2 * logC2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * h2 * logC2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h2 * logC2
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * h2 * logC2
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * (gamma12 * h2) * logd2alpha12
+            - d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2 * logC2
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h2 * logd2
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2 * logC2
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h2 * logd2
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * h2 * logd2
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2 * logC2
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * h2 * logd2
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * h2
+            * logd2
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * h2 * logd2
+            - d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h2 * logC2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * h2 * logC2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h2 * logC2
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2 * logC2
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2 * logC2
+            - r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * (gamma12 * h2)
+            * logd2alpha12
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E2
+        * (
+            d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h2 * logd2
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2 * logC2
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h2 * logd2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * h2 * logd2
+            + d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r2
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (gamma12 * h2)
+            * logd2alpha12
+            + d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * h2
+            * logd2
+            + d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2 * h2 * logd2
+                - r2_pow_gamma12
+                * alpha12d2_pow_gamma12h2
+                * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (gamma12 * h2)
+                * logd2alpha12
+                + (d2_pow_h2 * r2 * h2 * logd2 + r2 * C2_pow_h2 * h2 * logC2)
+                * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2 * h2 * logd2
+                - r2_pow_gamma12
+                * alpha12d2_pow_gamma12h2
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+                * (gamma12 * h2)
+                * logd2alpha12
+                + (d2_pow_h2 * r2 * h2 * logd2 + r2 * C2_pow_h2 * h2 * logC2)
+                * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            + (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2 * h2 * logd2
+                - d2_pow_h2
+                * r2
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * h2
+                * logd2
+                + r2_pow_gamma12
+                * alpha12d2_pow_gamma12h2
+                * (-d1_pow_h1 * r1 - d2_pow_h2 * r2)
+                * (gamma12 * h2)
+                * logd2alpha12
+            )
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+        )
+        * (
+            -(
+                -(-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2 * h2 * logd2
+                - r2_pow_gamma12
+                * alpha12d2_pow_gamma12h2
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+                * (gamma12 * h2)
+                * logd2alpha12
+                + (d2_pow_h2 * r2 * h2 * logd2 + r2 * C2_pow_h2 * h2 * logC2)
+                * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            - (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d2_pow_h2 * r2 * r2C2h2_pow_gamma12 * gamma12 * h2 * logC2
+                - d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12) * h2 * logd2
+                + d2_pow_h2
+                * r2
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * h2
+                * logd2
+                + r2_pow_gamma12
+                * alpha12d2_pow_gamma12h2
+                * (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (gamma12 * h2)
+                * logd2alpha12
+            )
+            - (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2 * h2 * logd2
+                - r2_pow_gamma12
+                * alpha12d2_pow_gamma12h2
+                * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (gamma12 * h2)
+                * logd2alpha12
+                + (d2_pow_h2 * r2 * h2 * logd2 + r2 * C2_pow_h2 * h2 * logC2)
+                * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            - (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * h2 * logd2
+                - d2_pow_h2
+                * r2
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * h2
+                * logd2
+                - r2_pow_gamma12
+                * alpha12d2_pow_gamma12h2
+                * (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (gamma12 * h2)
+                * logd2alpha12
+                - r2C2h2_pow_gamma12 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1) * gamma12 * h2 * logC2
+            )
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        ** 2
+    )
 
     # ********** logC1 ********
 
-    j_logC1 = E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*h1 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*h1 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h1 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h1 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*h1 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*h1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h1 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h1 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*h1 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*h1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*h1 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h1 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h1 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*h1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E1*d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*h1/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*h1 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*h1 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h1 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h1 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*h1 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*h1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h1 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h1 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*h1 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*h1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*h1 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*h1 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h1 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h1 - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*h1 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*h1 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h1 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h1 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*h1 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*h1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*h1 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*h1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E3*(d2h2*r1*r2*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*C1h1*h1 + d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1**2*C1h1*h1 - r1*(d1h1*r1 + d2h2*r2 + r2*C2h2)*C1h1*h1) - r1*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)*C1h1*h1 + (d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(d1h1*r1**2*C1h1*h1 + r1*(-d1h1*r1 - d2h2*r2)*C1h1*h1))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))) + E3*(d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)))*(r1*(-(-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)*C1h1*h1 - (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(r1*(d2h2*r2 - (r1*C1h1)**gamma21)*C1h1*h1 - (r1*C1h1)**gamma21*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*gamma21*h1) - (-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*r1**2*C1h1*h1 - r1*(d1h1*r1 + d2h2*r2 + r2*C2h2)*C1h1*h1) - (d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(-r1*(-d1h1*r1 + (r2*C2h2)**gamma12)*C1h1*h1 - r1*(d1h1*r1 + d2h2*r2)*C1h1*h1))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)))**2
+    j_logC1 = (
+        E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * h1
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h1
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * h1
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * h1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h1
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h1
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * h1
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h1
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h1
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E1
+        * d1_pow_h1
+        * r1
+        * r2
+        * r1C1h1_pow_gamma21
+        * C2_pow_h2
+        * gamma21
+        * h1
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * h1
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h1
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * h1
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * h1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h1
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h1
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * h1
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h1
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * h1
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * h1
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h1
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h1
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * h1
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * h1
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * h1
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma21 * h1
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r1
+            * r2
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * C1_pow_h1
+            * h1
+            + d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1**2 * C1_pow_h1 * h1
+                - r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2) * C1_pow_h1 * h1
+            )
+            - r1
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            * C1_pow_h1
+            * h1
+            + (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (d1_pow_h1 * r1**2 * C1_pow_h1 * h1 + r1 * (-d1_pow_h1 * r1 - d2_pow_h2 * r2) * C1_pow_h1 * h1)
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+        )
+        * (
+            r1
+            * (
+                -(-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            * C1_pow_h1
+            * h1
+            - (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                r1 * (d2_pow_h2 * r2 - r1C1h1_pow_gamma21) * C1_pow_h1 * h1
+                - r1C1h1_pow_gamma21
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * gamma21
+                * h1
+            )
+            - (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * r1**2 * C1_pow_h1 * h1
+                - r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2) * C1_pow_h1 * h1
+            )
+            - (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (
+                -r1 * (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * C1_pow_h1 * h1
+                - r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2) * C1_pow_h1 * h1
+            )
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        ** 2
+    )
 
     # ********** logC2 ********
 
-    j_logC2 = E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*h2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h2 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*h2 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*h2 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*h2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h2 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*h2 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*h2)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*h2 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*h2)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*h2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h2 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*h2 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*h2 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*h2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h2 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*h2 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*h2)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E2*d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*h2/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*h2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*h2 - d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*h2 - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*h2 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2 - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*h2 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*h2 - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*h2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*h2 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*h2 - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*h2 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*h2)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E3*(d2h2*r2**2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)*C2h2*h2 + r2*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)*C2h2*h2)/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))) + E3*(d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)))*(-d2h2*r2*(r2*C2h2)**gamma12*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*gamma12*h2 - r2*(-(-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)*C2h2*h2 - r2*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)*C2h2*h2 + (r2*C2h2)**gamma12*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(d1h1*r1 + d2h2*r2 + r1*C1h1)*gamma12*h2)/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)))**2
+    j_logC2 = (
+        E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * h2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h2
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * h2
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * h2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h2
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * h2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h2
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * h2
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * h2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h2
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E2
+        * d2_pow_h2
+        * r1
+        * r2
+        * r2C2h2_pow_gamma12
+        * C1_pow_h1
+        * gamma12
+        * h2
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * h2
+            - d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * h2
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * h2
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma12 * h2
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * h2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * h2
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * h2
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * h2
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * h2
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E3
+        * (
+            d2_pow_h2
+            * r2**2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * C2_pow_h2
+            * h2
+            + r2
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * C2_pow_h2
+            * h2
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+        )
+        * (
+            -d2_pow_h2
+            * r2
+            * r2C2h2_pow_gamma12
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * gamma12
+            * h2
+            - r2
+            * (
+                -(-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * C2_pow_h2
+            * h2
+            - r2
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * C2_pow_h2
+            * h2
+            + r2C2h2_pow_gamma12
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+            * gamma12
+            * h2
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        ** 2
+    )
 
     # ********** logalpha12 ********
 
-    j_logalpha12 = E0*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)*(-d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*(gamma12*h2) - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2) - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2) - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12)*(-d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*(gamma12*h2) - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2) - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2) - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2) + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21)*(-d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*(gamma12*h2) - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2) - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2) - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E3*(-d2h2*r2*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1 + d2h2*r2 + r2*C2h2)*(gamma12*h2) + d2h2*r2*r2**gamma12*alpha12d2gamma12h2*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(gamma12*h2) + r2**gamma12*alpha12d2gamma12h2*(-d1h1*r1 - d2h2*r2)*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(gamma12*h2) - r2**gamma12*alpha12d2gamma12h2*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)*(gamma12*h2))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))) + E3*(d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)))*(r2**gamma12*alpha12d2gamma12h2*(d1h1*r1 + d2h2*r2)*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(gamma12*h2) - r2**gamma12*alpha12d2gamma12h2*(d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(gamma12*h2) + r2**gamma12*alpha12d2gamma12h2*(-(-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)*(gamma12*h2) + r2**gamma12*alpha12d2gamma12h2*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*r1 + d2h2*r2 + r2*C2h2)*(gamma12*h2))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)))**2
+    j_logalpha12 = (
+        E0
+        * r2_pow_gamma12p1
+        * alpha12d2_pow_gamma12h2
+        * r1C1h1_pow_gamma21
+        * C2_pow_h2
+        * (gamma12 * h2)
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        * (
+            -d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * (gamma12 * h2)
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * (gamma12 * h2)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * (gamma12 * h2)
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * (gamma12 * h2)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        )
+        * (
+            -d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * (gamma12 * h2)
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * (gamma12 * h2)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * (gamma12 * h2)
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * (gamma12 * h2)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * (gamma12 * h2)
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * (gamma12 * h2)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        )
+        * (
+            -d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * (gamma12 * h2)
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * (gamma12 * h2)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * (gamma12 * h2)
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * (gamma12 * h2)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E3
+        * (
+            -d2_pow_h2
+            * r2
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+            * (gamma12 * h2)
+            + d2_pow_h2
+            * r2
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (gamma12 * h2)
+            + r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * (-d1_pow_h1 * r1 - d2_pow_h2 * r2)
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (gamma12 * h2)
+            - r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            * (gamma12 * h2)
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+        )
+        * (
+            r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (gamma12 * h2)
+            - r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (gamma12 * h2)
+            + r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * (
+                -(-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            * (gamma12 * h2)
+            + r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+            * (gamma12 * h2)
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        ** 2
+    )
 
     # ********** logalpha21 ********
 
-    j_logalpha21 = E0*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)*(-d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1) - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1) - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*(gamma21*h1) - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E1*(d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1) + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12)*(-d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1) - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1) - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*(gamma21*h1) - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21)*(-d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1) - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1) - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*(gamma21*h1) - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 - E3*r1**gamma21*alpha21d1gamma21h1*(-(-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)))*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)*(gamma21*h1)/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)))**2 + E3*r1**gamma21*alpha21d1gamma21h1*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)*(gamma21*h1)/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)))
+    j_logalpha21 = (
+        E0
+        * r1_pow_gamma21p1
+        * alpha21d1_pow_gamma21h1
+        * r2C2h2_pow_gamma12
+        * C1_pow_h1
+        * (gamma21 * h1)
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        * (
+            -d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * (gamma21 * h1)
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * (gamma21 * h1)
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * (gamma21 * h1)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * (gamma21 * h1)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E1
+        * (
+            d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * (gamma21 * h1)
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * (gamma21 * h1)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        )
+        * (
+            -d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * (gamma21 * h1)
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * (gamma21 * h1)
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * (gamma21 * h1)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * (gamma21 * h1)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        )
+        * (
+            -d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * (gamma21 * h1)
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * (gamma21 * h1)
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * (gamma21 * h1)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * (gamma21 * h1)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        - E3
+        * r1_pow_gamma21
+        * alpha21d1_pow_gamma21h1
+        * (
+            -(-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+            - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+            * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        )
+        * (
+            d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+        )
+        * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        * (gamma21 * h1)
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        ** 2
+        + E3
+        * r1_pow_gamma21
+        * alpha21d1_pow_gamma21h1
+        * (
+            d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+            - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+            * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        )
+        * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        * (gamma21 * h1)
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+    )
 
     # ********** loggamma12 ********
 
-    j_loggamma12 = E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)*(-d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*log(r2*C2h2) - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*gamma12*log(r2) - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*(gamma12*h2)*logd2alpha12 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma12*log(r2) - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma12*log(r2) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*log(r2*C2h2) - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*log(r2*C2h2) - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*log(r2*C2h2) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma12*log(r2) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma12*log(r2) - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*log(r2*C2h2) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*log(r2*C2h2) - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma12*log(r2) - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2)*logd2alpha12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E0*(r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*log(r2*C2h2) + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*log(r2*C2h2) + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma12*log(r2) + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2)*logd2alpha12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E1*(d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*log(r2*C2h2) + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*log(r2*C2h2) + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*log(r2*C2h2))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12)*(-d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*log(r2*C2h2) - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*gamma12*log(r2) - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*(gamma12*h2)*logd2alpha12 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma12*log(r2) - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma12*log(r2) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*log(r2*C2h2) - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*log(r2*C2h2) - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*log(r2*C2h2) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma12*log(r2) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma12*log(r2) - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*log(r2*C2h2) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*log(r2*C2h2) - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma12*log(r2) - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2)*logd2alpha12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21)*(-d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2*gamma12*log(r2*C2h2) - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*gamma12*log(r2) - d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2*(gamma12*h2)*logd2alpha12 - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma12*log(r2) - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma12*log(r2) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*log(r2*C2h2) - d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*log(r2*C2h2) - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma12*log(r2*C2h2) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma12*log(r2) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma12*log(r2) - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 - r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2*gamma12*log(r2*C2h2) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma12*log(r2*C2h2) - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma12*log(r2) - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*(gamma12*h2)*logd2alpha12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma12*log(r2) + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1*gamma12*log(r2*C2h2) + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma12*log(r2) + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*(gamma12*h2)*logd2alpha12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E3*(d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(-r2**gamma12*alpha12d2gamma12h2*gamma12*log(r2) - r2**gamma12*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12)*(d1h1*r1 + d2h2*r2 + r2*C2h2) + d2h2*r2*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(r2**gamma12*alpha12d2gamma12h2*gamma12*log(r2) + r2**gamma12*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12) + (-d1h1*r1 - d2h2*r2)*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(r2**gamma12*alpha12d2gamma12h2*gamma12*log(r2) + r2**gamma12*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-r2**gamma12*alpha12d2gamma12h2*gamma12*log(r2) - r2**gamma12*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))) + E3*(d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)))*(-(-(-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-r2**gamma12*alpha12d2gamma12h2*gamma12*log(r2) - r2**gamma12*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2) - (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d2h2*r2*(r2*C2h2)**gamma12*gamma12*log(r2*C2h2) + (d2h2*r2 - (r1*C1h1)**gamma21)*(r2**gamma12*alpha12d2gamma12h2*gamma12*log(r2) + r2**gamma12*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12)) - (-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-r2**gamma12*alpha12d2gamma12h2*gamma12*log(r2) - r2**gamma12*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12)*(d1h1*r1 + d2h2*r2 + r2*C2h2) - (d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2))*(-(r2*C2h2)**gamma12*(d1h1*r1 + d2h2*r2 + r1*C1h1)*gamma12*log(r2*C2h2) - (d1h1*r1 + d2h2*r2)*(r2**gamma12*alpha12d2gamma12h2*gamma12*log(r2) + r2**gamma12*alpha12d2gamma12h2*(gamma12*h2)*logd2alpha12)))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)))**2
+    j_loggamma12 = (
+        E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * log(r2 * C2_pow_h2)
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * gamma12 * log(r2)
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * (gamma12 * h2) * logd2alpha12
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma12 * log(r2)
+            - d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma12
+            * log(r2)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * log(r2 * C2_pow_h2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma12
+            * log(r2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma12 * log(r2)
+            - d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * log(r2 * C2_pow_h2)
+            - r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma12 * log(r2)
+            - r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * (gamma12 * h2)
+            * logd2alpha12
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E0
+        * (
+            r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * log(r2 * C2_pow_h2)
+            + r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma12 * log(r2)
+            + r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * (gamma12 * h2)
+            * logd2alpha12
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * log(r2 * C2_pow_h2)
+            + d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            + d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * gamma12
+            * log(r2 * C2_pow_h2)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * log(r2 * C2_pow_h2)
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * gamma12 * log(r2)
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * (gamma12 * h2) * logd2alpha12
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma12 * log(r2)
+            - d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma12
+            * log(r2)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * log(r2 * C2_pow_h2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma12
+            * log(r2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma12 * log(r2)
+            - d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * log(r2 * C2_pow_h2)
+            - r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma12 * log(r2)
+            - r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * (gamma12 * h2)
+            * logd2alpha12
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2 * gamma12 * log(r2 * C2_pow_h2)
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * gamma12 * log(r2)
+            - d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2 * (gamma12 * h2) * logd2alpha12
+            - d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma12 * log(r2)
+            - d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma12
+            * log(r2)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            - d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * log(r2 * C2_pow_h2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma12
+            * log(r2)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma12 * h2)
+            * logd2alpha12
+            - d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma12 * log(r2)
+            - d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            - r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2 * gamma12 * log(r2 * C2_pow_h2)
+            - r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * gamma12
+            * log(r2 * C2_pow_h2)
+            - r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma12 * log(r2)
+            - r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * (gamma12 * h2)
+            * logd2alpha12
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma12 * log(r2)
+            + d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma12 * log(r2 * C2_pow_h2)
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * gamma12 * log(r2)
+            + d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * (gamma12 * h2)
+            * logd2alpha12
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                -(r2_pow_gamma12) * alpha12d2_pow_gamma12h2 * gamma12 * log(r2)
+                - r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * (gamma12 * h2) * logd2alpha12
+            )
+            * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+            + d2_pow_h2
+            * r2
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * gamma12 * log(r2)
+                + r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * (gamma12 * h2) * logd2alpha12
+            )
+            + (-d1_pow_h1 * r1 - d2_pow_h2 * r2)
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (
+                r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * gamma12 * log(r2)
+                + r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * (gamma12 * h2) * logd2alpha12
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -(r2_pow_gamma12) * alpha12d2_pow_gamma12h2 * gamma12 * log(r2)
+                - r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * (gamma12 * h2) * logd2alpha12
+            )
+            * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+        )
+        * (
+            -(
+                -(-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -(r2_pow_gamma12) * alpha12d2_pow_gamma12h2 * gamma12 * log(r2)
+                - r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * (gamma12 * h2) * logd2alpha12
+            )
+            * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            - (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d2_pow_h2 * r2 * r2C2h2_pow_gamma12 * gamma12 * log(r2 * C2_pow_h2)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (
+                    r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * gamma12 * log(r2)
+                    + r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * (gamma12 * h2) * logd2alpha12
+                )
+            )
+            - (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -(r2_pow_gamma12) * alpha12d2_pow_gamma12h2 * gamma12 * log(r2)
+                - r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * (gamma12 * h2) * logd2alpha12
+            )
+            * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+            - (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            * (
+                -(r2C2h2_pow_gamma12)
+                * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                * gamma12
+                * log(r2 * C2_pow_h2)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (
+                    r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * gamma12 * log(r2)
+                    + r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * (gamma12 * h2) * logd2alpha12
+                )
+            )
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        ** 2
+    )
 
     # ********** loggamma21 ********
 
-    j_loggamma21 = E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*log(r1*C1h1) - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*log(r1*C1h1) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma21*log(r1) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma21*log(r1) - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*log(r1*C1h1) - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*gamma21*log(r1) - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma21*log(r1) - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma21*log(r1) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*log(r1*C1h1) - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*log(r1*C1h1) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma21*log(r1) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1)*logd1alpha21 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*log(r1*C1h1))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E0*(r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*log(r1*C1h1) + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma21*log(r1) + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1)*logd1alpha21 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*log(r1*C1h1))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*log(r1*C1h1) - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*log(r1*C1h1) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma21*log(r1) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma21*log(r1) - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*log(r1*C1h1) - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*gamma21*log(r1) - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma21*log(r1) - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma21*log(r1) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*log(r1*C1h1) - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*log(r1*C1h1) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma21*log(r1) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1)*logd1alpha21 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*log(r1*C1h1))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E1*(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*log(r1*C1h1) + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma21*log(r1) + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma21*log(r1) + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*log(r1*C1h1) + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*log(r1*C1h1) + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*log(r1*C1h1))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2) + E2*(d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21)*(-d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2*gamma21*log(r1*C1h1) - d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*log(r1*C1h1) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma21*log(r1) - d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma21*log(r1) - d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1*gamma21*log(r1*C1h1) - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*gamma21*log(r1) - d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*gamma21*log(r1) - d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12*(gamma21*h1)*logd1alpha21 - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*gamma21*log(r1) - d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2*(gamma21*h1)*logd1alpha21 - d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*gamma21*log(r1*C1h1) - r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2*gamma21*log(r1*C1h1) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*gamma21*log(r1) - r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1*(gamma21*h1)*logd1alpha21 - r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2*gamma21*log(r1*C1h1))/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)**2 + E3*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(r1**gamma21*alpha21d1gamma21h1*gamma21*log(r1) + r1**gamma21*alpha21d1gamma21h1*(gamma21*h1)*logd1alpha21)*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2)/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))) + E3*(d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)))*((r1*C1h1)**gamma21*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*gamma21*log(r1*C1h1) - (-(-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(r1**gamma21*alpha21d1gamma21h1*gamma21*log(r1) + r1**gamma21*alpha21d1gamma21h1*(gamma21*h1)*logd1alpha21)*(-d1h1*r1 - r1*C1h1 - r2**gamma12*alpha12d2gamma12h2))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)))**2
+    j_loggamma21 = (
+        E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * log(r1 * C1_pow_h1)
+            - d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * gamma21
+            * log(r1 * C1_pow_h1)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma21
+            * log(r1)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma21 * log(r1)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * log(r1 * C1_pow_h1)
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * gamma21 * log(r1)
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * (gamma21 * h1) * logd1alpha21
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma21 * log(r1)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma21
+            * log(r1)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * gamma21
+            * log(r1 * C1_pow_h1)
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * log(r1 * C1_pow_h1)
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma21 * log(r1)
+            - r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * (gamma21 * h1)
+            * logd1alpha21
+            - r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * gamma21
+            * log(r1 * C1_pow_h1)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E0
+        * (
+            r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * log(r1 * C1_pow_h1)
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma21 * log(r1)
+            + r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * (gamma21 * h1)
+            * logd1alpha21
+            + r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * gamma21
+            * log(r1 * C1_pow_h1)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * log(r1 * C1_pow_h1)
+            - d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * gamma21
+            * log(r1 * C1_pow_h1)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma21
+            * log(r1)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma21 * log(r1)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * log(r1 * C1_pow_h1)
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * gamma21 * log(r1)
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * (gamma21 * h1) * logd1alpha21
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma21 * log(r1)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma21
+            * log(r1)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * gamma21
+            * log(r1 * C1_pow_h1)
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * log(r1 * C1_pow_h1)
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma21 * log(r1)
+            - r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * (gamma21 * h1)
+            * logd1alpha21
+            - r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * gamma21
+            * log(r1 * C1_pow_h1)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E1
+        * (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * log(r1 * C1_pow_h1)
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma21 * log(r1)
+            + d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma21 * log(r1)
+            + d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E2
+        * (
+            d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * gamma21
+            * log(r1 * C1_pow_h1)
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * log(r1 * C1_pow_h1)
+            + d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * gamma21
+            * log(r1 * C1_pow_h1)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        + E2
+        * (
+            d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        )
+        * (
+            -d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2 * gamma21 * log(r1 * C1_pow_h1)
+            - d1_pow_h1
+            * r1
+            * r2_pow_gamma12
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * gamma21
+            * log(r1 * C1_pow_h1)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma21
+            * log(r1)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * r2_pow_gamma12
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma21 * log(r1)
+            - d1_pow_h1
+            * r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * gamma21 * log(r1 * C1_pow_h1)
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * gamma21 * log(r1)
+            - d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1 * (gamma21 * h1) * logd1alpha21
+            - d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * gamma21 * log(r1)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * gamma21
+            * log(r1)
+            - d2_pow_h2
+            * r1_pow_gamma21
+            * r2_pow_gamma12p1
+            * alpha21d1_pow_gamma21h1
+            * alpha12d2_pow_gamma12h2
+            * (gamma21 * h1)
+            * logd1alpha21
+            - d2_pow_h2
+            * r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * gamma21
+            * log(r1 * C1_pow_h1)
+            - r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2 * gamma21 * log(r1 * C1_pow_h1)
+            - r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1 * gamma21 * log(r1)
+            - r1_pow_gamma21p1
+            * alpha21d1_pow_gamma21h1
+            * r2C2h2_pow_gamma12
+            * C1_pow_h1
+            * (gamma21 * h1)
+            * logd1alpha21
+            - r2_pow_gamma12p1
+            * alpha12d2_pow_gamma12h2
+            * r1C1h1_pow_gamma21
+            * C2_pow_h2
+            * gamma21
+            * log(r1 * C1_pow_h1)
+        )
+        / (
+            d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+            + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+            + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+            + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+            + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+            + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+            + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+            + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+            + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+            + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        )
+        ** 2
+        + E3
+        * (
+            d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+            - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+            * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        )
+        * (
+            r1_pow_gamma21 * alpha21d1_pow_gamma21h1 * gamma21 * log(r1)
+            + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 * (gamma21 * h1) * logd1alpha21
+        )
+        * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        + E3
+        * (
+            d2_pow_h2
+            * r2
+            * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+        )
+        * (
+            r1C1h1_pow_gamma21
+            * (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * gamma21
+            * log(r1 * C1_pow_h1)
+            - (
+                -(-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                r1_pow_gamma21 * alpha21d1_pow_gamma21h1 * gamma21 * log(r1)
+                + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 * (gamma21 * h1) * logd1alpha21
+            )
+            * (-d1_pow_h1 * r1 - r1 * C1_pow_h1 - r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        )
+        / (
+            -(
+                (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                d1_pow_h1 * d2_pow_h2 * r1 * r2
+                - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+                * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+            )
+            + (
+                d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+                - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+            * (
+                -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+                + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+                * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            )
+        )
+        ** 2
+    )
 
     # ********** E0 ********
 
-    j_E0 = (r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)
+    j_E0 = (
+        r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+        + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+        + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+        + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+    ) / (
+        d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+        + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+        + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+        + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+        + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+        + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+        + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+        + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+        + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+        + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+        + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+    )
 
     # ********** E1 ********
 
-    j_E1 = (d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)
+    j_E1 = (
+        d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+        + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+    ) / (
+        d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+        + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+        + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+        + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+        + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+        + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+        + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+        + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+        + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+        + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+        + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+    )
 
     # ********** E2 ********
 
-    j_E2 = (d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21)/(d1h1*r1*r2*(r1*C1h1)**gamma21*C2h2 + d1h1*r1*r2*(r2*C2h2)**gamma12*C2h2 + d1h1*r1*r2**(gamma12 + 1)*alpha12d2gamma12h2*C2h2 + d1h1*r1*r2**gamma12*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + d1h1*r1**(gamma21 + 1)*r2**gamma12*alpha21d1gamma21h1*alpha12d2gamma12h2 + d1h1*r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1*r2*(r1*C1h1)**gamma21*C1h1 + d2h2*r1*r2*(r2*C2h2)**gamma12*C1h1 + d2h2*r1**(gamma21 + 1)*r2*alpha21d1gamma21h1*C1h1 + d2h2*r1**gamma21*r2*alpha21d1gamma21h1*(r2*C2h2)**gamma12 + d2h2*r1**gamma21*r2**(gamma12 + 1)*alpha21d1gamma21h1*alpha12d2gamma12h2 + d2h2*r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21 + r1*r2*(r1*C1h1)**gamma21*C1h1*C2h2 + r1*r2*(r2*C2h2)**gamma12*C1h1*C2h2 + r1**(gamma21 + 1)*alpha21d1gamma21h1*(r2*C2h2)**gamma12*C1h1 + r2**(gamma12 + 1)*alpha12d2gamma12h2*(r1*C1h1)**gamma21*C2h2)
+    j_E2 = (
+        d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+        + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+        + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+    ) / (
+        d1_pow_h1 * r1 * r2 * r1C1h1_pow_gamma21 * C2_pow_h2
+        + d1_pow_h1 * r1 * r2 * r2C2h2_pow_gamma12 * C2_pow_h2
+        + d1_pow_h1 * r1 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * C2_pow_h2
+        + d1_pow_h1 * r1 * r2_pow_gamma12 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        + d1_pow_h1 * r1_pow_gamma21p1 * r2_pow_gamma12 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+        + d1_pow_h1 * r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        + d2_pow_h2 * r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1
+        + d2_pow_h2 * r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1
+        + d2_pow_h2 * r1_pow_gamma21p1 * r2 * alpha21d1_pow_gamma21h1 * C1_pow_h1
+        + d2_pow_h2 * r1_pow_gamma21 * r2 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12
+        + d2_pow_h2 * r1_pow_gamma21 * r2_pow_gamma12p1 * alpha21d1_pow_gamma21h1 * alpha12d2_pow_gamma12h2
+        + d2_pow_h2 * r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21
+        + r1 * r2 * r1C1h1_pow_gamma21 * C1_pow_h1 * C2_pow_h2
+        + r1 * r2 * r2C2h2_pow_gamma12 * C1_pow_h1 * C2_pow_h2
+        + r1_pow_gamma21p1 * alpha21d1_pow_gamma21h1 * r2C2h2_pow_gamma12 * C1_pow_h1
+        + r2_pow_gamma12p1 * alpha12d2_pow_gamma12h2 * r1C1h1_pow_gamma21 * C2_pow_h2
+    )
 
     # ********** E3 ********
 
-    j_E3 = (d2h2*r2*(r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)))/(-((-d1h1*r1 + (r2*C2h2)**gamma12)*(d1h1*r1 + d2h2*r2 + r1*C1h1) + (d1h1*r1 + d2h2*r2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(d1h1*d2h2*r1*r2 - (d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)*(d2h2*r2 + r1**gamma21*alpha21d1gamma21h1 + r2*C2h2)) + (d1h1*r1*(d1h1*r1 + d2h2*r2 + r1*C1h1) - (d1h1*r1 + d2h2*r2 + r2*C2h2)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2))*(-d2h2*r2*(d1h1*r1 - (r2*C2h2)**gamma12) + (d2h2*r2 - (r1*C1h1)**gamma21)*(d1h1*r1 + r1*C1h1 + r2**gamma12*alpha12d2gamma12h2)))
-
-
-
-
+    j_E3 = (
+        d2_pow_h2
+        * r2
+        * (r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        * (
+            d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+            - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+            * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        )
+        + (
+            d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+            - (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+            * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        )
+        * (
+            d1_pow_h1 * d2_pow_h2 * r1 * r2
+            - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+        )
+    ) / (
+        -(
+            (-d1_pow_h1 * r1 + r2C2h2_pow_gamma12) * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+            + (d1_pow_h1 * r1 + d2_pow_h2 * r2)
+            * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        )
+        * (
+            d1_pow_h1 * d2_pow_h2 * r1 * r2
+            - (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+            * (d2_pow_h2 * r2 + r1_pow_gamma21 * alpha21d1_pow_gamma21h1 + r2 * C2_pow_h2)
+        )
+        + (
+            d1_pow_h1 * r1 * (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r1 * C1_pow_h1)
+            - (d1_pow_h1 * r1 + d2_pow_h2 * r2 + r2 * C2_pow_h2)
+            * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        )
+        * (
+            -d2_pow_h2 * r2 * (d1_pow_h1 * r1 - r2C2h2_pow_gamma12)
+            + (d2_pow_h2 * r2 - r1C1h1_pow_gamma21)
+            * (d1_pow_h1 * r1 + r1 * C1_pow_h1 + r2_pow_gamma12 * alpha12d2_pow_gamma12h2)
+        )
+    )
 
     # E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21
-    jac = np.hstack([j.reshape(-1,1) for j in [j_E0, j_E1, j_E2, j_E3, j_logh1, j_logh2, j_logC1, j_logC2, j_logalpha12, j_logalpha21, j_loggamma12, j_loggamma21]])
+    jac = np.hstack(
+        [
+            j.reshape(-1, 1)
+            for j in [
+                j_E0,
+                j_E1,
+                j_E2,
+                j_E3,
+                j_logh1,
+                j_logh2,
+                j_logC1,
+                j_logC2,
+                j_logalpha12,
+                j_logalpha21,
+                j_loggamma12,
+                j_loggamma21,
+            ]
+        ]
+    )
     jac[np.isnan(jac)] = 0
     return jac
