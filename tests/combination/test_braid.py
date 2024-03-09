@@ -128,7 +128,7 @@ class BRAIDFitTests(TestCase):
     @classmethod
     def setUpClass(cls) -> None:
         cls.EXPECTED_PARAMETERS = {
-            "synthetic_musyc_reference_1.csv": {
+            "synthetic_BRAID_reference_1.csv": {
                 "E0": 1,
                 "E1": 0.5,
                 "E2": 0.3,
