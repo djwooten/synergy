@@ -32,14 +32,16 @@ def assert_dict_allclose(actual: dict, desired: dict, rtol=1e-07, atol=0, equal_
     )
 
 
-def assert_dict_values_in_intervals(values: dict, intervals: dict, err_msg=""):
+def assert_dict_values_in_intervals(values: dict, intervals: dict, tol: float = 0):
     _assert_keys_equal(values, intervals)
-
+    failed_vals = []
     for key in values.keys():
         val = values[key]
         interval = intervals[key]
-        if not (interval[0] <= val <= interval[1]):
-            raise AssertionError(err_msg)
+        if not (interval[0] - tol <= val <= interval[1] + tol):
+            failed_vals.append(f"{key}: {val} not in ({interval[0]}, {interval[1]})")
+    if failed_vals:
+        raise AssertionError("\n".join(failed_vals))
 
 
 def assert_dict_interval_is_contained_in_other(inner_intervals: dict, outer_intervals: dict, err_msg=""):

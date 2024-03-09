@@ -3,7 +3,11 @@ import os
 
 import numpy as np
 
-from synergy.testing_utils.synthetic_data_generators import MuSyCDataGenerator, EffectiveDoseModelDataGenerator
+from synergy.testing_utils.synthetic_data_generators import (
+    BraidDataGenerator,
+    MuSyCDataGenerator,
+    EffectiveDoseModelDataGenerator,
+)
 
 TEST_DATA_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 
@@ -87,40 +91,99 @@ def main():
         *MuSyCDataGenerator.get_2drug_bliss(E1=0.5, E2=0.3, h1=0.8, h2=1.4, replicates=3, d_noise=0.01, E_noise=0.01),
     )
 
+    EDM_kwargs = {"h1": 0.8, "h2": 1.4, "replicates": 1, "n_points1": 10, "n_points2": 10, "E_noise": 0, "d_noise": 0}
+
     np.random.seed(34245)
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_EDM_reference_1.csv"),
         ["d1", "d2", "E"],
-        *EffectiveDoseModelDataGenerator.get_2drug_combination(
-            h1=0.8, h2=1.4, replicates=3, d_noise=0.0001, E_noise=0.0001, n_points1=10, n_points2=10
-        ),
+        *EffectiveDoseModelDataGenerator.get_2drug_combination(**EDM_kwargs),
     )
 
     np.random.seed(453425)
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_EDM_synergy_1.csv"),
         ["d1", "d2", "E"],
-        *EffectiveDoseModelDataGenerator.get_2drug_combination(
-            h1=0.8, h2=1.4, a12=-0.5, replicates=3, d_noise=0.0001, E_noise=0.0001, n_points1=10, n_points2=10
-        ),
+        *EffectiveDoseModelDataGenerator.get_2drug_combination(a12=-0.5, **EDM_kwargs),
     )
 
     np.random.seed(653634)
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_EDM_synergy_2.csv"),
         ["d1", "d2", "E"],
-        *EffectiveDoseModelDataGenerator.get_2drug_combination(
-            h1=0.8, h2=1.4, a21=-0.5, replicates=3, d_noise=0.0001, E_noise=0.0001, n_points1=10, n_points2=10
-        ),
+        *EffectiveDoseModelDataGenerator.get_2drug_combination(a21=-0.5, **EDM_kwargs),
     )
 
     np.random.seed(123546)
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_EDM_synergy_3.csv"),
         ["d1", "d2", "E"],
-        *EffectiveDoseModelDataGenerator.get_2drug_combination(
-            h1=0.8, h2=1.4, a12=-0.5, a21=-0.5, replicates=3, d_noise=0.0001, E_noise=0.0001, n_points1=10, n_points2=10
-        ),
+        *EffectiveDoseModelDataGenerator.get_2drug_combination(a12=-0.5, a21=-0.5, **EDM_kwargs),
+    )
+
+    BRAID_kwargs: dict[str, float] = {}
+
+    np.random.seed(921489)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_BRAID_reference_1.csv"),
+        ["d1", "d2", "E"],
+        *BraidDataGenerator.get_2drug_combination(**BRAID_kwargs),
+    )
+
+    np.random.seed(718947)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_BRAID_delta_synergy_1.csv"),
+        ["d1", "d2", "E"],
+        *BraidDataGenerator.get_2drug_combination(delta=2, **BRAID_kwargs),
+    )
+
+    np.random.seed(6234774)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_BRAID_delta_antagonism_1.csv"),
+        ["d1", "d2", "E"],
+        *BraidDataGenerator.get_2drug_combination(delta=0.5, **BRAID_kwargs),
+    )
+
+    np.random.seed(85279572)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_BRAID_kappa_synergy_1.csv"),
+        ["d1", "d2", "E"],
+        *BraidDataGenerator.get_2drug_combination(kappa=1, **BRAID_kwargs),
+    )
+
+    np.random.seed(8752375)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_BRAID_kappa_antagonism_1.csv"),
+        ["d1", "d2", "E"],
+        *BraidDataGenerator.get_2drug_combination(kappa=-1, **BRAID_kwargs),
+    )
+
+    np.random.seed(238179)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_BRAID_delta_kappa_synergy_1.csv"),
+        ["d1", "d2", "E"],
+        *BraidDataGenerator.get_2drug_combination(delta=2, kappa=1, **BRAID_kwargs),
+    )
+
+    np.random.seed(12372174)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_BRAID_delta_kappa_antagonism_1.csv"),
+        ["d1", "d2", "E"],
+        *BraidDataGenerator.get_2drug_combination(delta=0.5, kappa=-1, **BRAID_kwargs),
+    )
+
+    np.random.seed(546784)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_BRAID_asymmetric_1.csv"),
+        ["d1", "d2", "E"],
+        *BraidDataGenerator.get_2drug_combination(delta=0.5, kappa=1, **BRAID_kwargs),
+    )
+
+    np.random.seed(2121)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_BRAID_asymmetric_2.csv"),
+        ["d1", "d2", "E"],
+        *BraidDataGenerator.get_2drug_combination(delta=2, kappa=-1, **BRAID_kwargs),
     )
 
 

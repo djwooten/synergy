@@ -19,6 +19,7 @@ import numpy as np
 from scipy.stats import norm
 
 from synergy.combination import MuSyC
+from synergy.combination.braid import BRAID
 from synergy.combination.zimmer import Zimmer
 from synergy.utils import dose_utils
 from synergy.single import Hill
@@ -363,6 +364,52 @@ class EffectiveDoseModelDataGenerator:
 
         d1, d2 = dose_utils.make_dose_grid(
             d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates, include_zero=True
+        )
+
+        d1_noisy = _noisify(d1, d_noise, min_val=0)
+        d2_noisy = _noisify(d2, d_noise, min_val=0)
+        E = _noisify(model.E(d1_noisy, d2_noisy), E_noise)
+        return d1, d2, E
+
+
+class BraidDataGenerator:
+    """Data generator using the BRAID model."""
+
+    @staticmethod
+    def get_2drug_combination(
+        E0: float = 1.0,
+        E1: float = 0.5,
+        E2: float = 0.3,
+        E3: float = 0.0,
+        h1: float = 1.0,
+        h2: float = 1.0,
+        C1: float = 1.0,
+        C2: float = 1.0,
+        delta: float = 1.0,
+        kappa: float = 0.0,
+        d1min=None,
+        d1max=None,
+        d2min=None,
+        d2max=None,
+        n_points1: int = 6,
+        n_points2: int = 6,
+        replicates: int = 1,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
+    ):
+        model = BRAID(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, delta=delta, kappa=kappa, mode="both")
+
+        if d1min is None:
+            d1min = C1 / 20.0
+        if d1max is None:
+            d1max = C1 * 20.0
+        if d2min is None:
+            d2min = C2 / 20.0
+        if d2max is None:
+            d2max = C2 * 20.0
+
+        d1, d2 = dose_utils.make_dose_grid(
+            d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates, include_zero=False
         )
 
         d1_noisy = _noisify(d1, d_noise, min_val=0)

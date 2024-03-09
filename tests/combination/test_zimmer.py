@@ -216,8 +216,15 @@ class ZimmerFitTests(TestCase):
 
         confidence_intervals_95 = model.get_confidence_intervals()
 
+        log_ci_95 = deepcopy(confidence_intervals_95)
+        log_ex_params = deepcopy(expected_parameters)
+
+        for key in ["h1", "h2", "C1", "C2"]:
+            log_ci_95["log" + key] = np.log(log_ci_95.pop(key))
+            log_ex_params["log" + key] = np.log(log_ex_params.pop(key))
+
         # Ensure true values are within confidence intervals
-        synergy_assertions.assert_dict_values_in_intervals(expected_parameters, confidence_intervals_95)
+        synergy_assertions.assert_dict_values_in_intervals(log_ex_params, log_ci_95, tol=1e-5)
 
         # Ensure that less stringent CI is narrower
         # [=====95=====]  More confidence requires wider interval

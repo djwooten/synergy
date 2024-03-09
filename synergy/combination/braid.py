@@ -51,6 +51,32 @@ class BRAID(ParametricSynergyModel2D):
         elif mode == "both":
             self.fit_function = self._model_to_fit_both
 
+        self.jacobian_function = None  # TODO
+
+    @property
+    def _parameter_names(self):
+        params = ["E0", "E1", "E2", "E3", "h1", "h2", "C1", "C2"]
+        if self.mode in ["kappa", "both"]:
+            params.append("kappa")
+        if self.mode in ["delta", "both"]:
+            params.append("delta")
+        return params
+
+    @property
+    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
+        """-"""
+        bounds: dict[str, tuple[float, float]] = {
+            "h1": (0, np.inf),
+            "h2": (0, np.inf),
+            "C1": (0, np.inf),
+            "C2": (0, np.inf),
+        }
+        if self.mode in ["kappa", "both"]:
+            bounds["kappa"] = (-2, np.inf)
+        if self.mode in ["delta", "both"]:
+            bounds["delta"] = (0, np.inf)
+        return bounds
+
     def _model_to_fit_kappa(self, d, E0, E1, E2, E3, logh1, logh2, logC1, logC2, kappa):
         return self._model(
             d[0], d[1], E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), kappa, 1
@@ -119,18 +145,6 @@ class BRAID(ParametricSynergyModel2D):
             "C_bounds": (np.exp(lb[C_idx]), np.exp(ub[C_idx])),
         }
 
-    @property
-    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
-        """-"""
-        return {
-            "h1": (0, np.inf),
-            "h2": (0, np.inf),
-            "C1": (0, np.inf),
-            "C2": (0, np.inf),
-            "kappa": (-2, np.inf),
-            "delta": (0, np.inf),
-        }
-
     def _get_initial_guess(self, d1, d2, E, p0):
         # If there is no intial guess, use single-drug models to come up with intitial guess
         if p0 is None:
@@ -196,19 +210,20 @@ class BRAID(ParametricSynergyModel2D):
         return E0, E1, E2, E3, h1, h2, C1, C2, kappa, delta
 
     def _transform_params_to_fit(self, params):
-        if self.mode == "kappa":
-            E0, E1, E2, E3, h1, h2, C1, C2, kappa = params
-        elif self.mode == "delta":
-            E0, E1, E2, E3, h1, h2, C1, C2, delta = params
-            logdelta = np.log(delta)
-        else:
-            E0, E1, E2, E3, h1, h2, C1, C2, kappa, delta = params
-            logdelta = np.log(delta)
+        with np.errstate(divide="ignore"):
+            if self.mode == "kappa":
+                E0, E1, E2, E3, h1, h2, C1, C2, kappa = params
+            elif self.mode == "delta":
+                E0, E1, E2, E3, h1, h2, C1, C2, delta = params
+                logdelta = np.log(delta)
+            else:
+                E0, E1, E2, E3, h1, h2, C1, C2, kappa, delta = params
+                logdelta = np.log(delta)
 
-        logh1 = np.log(h1)
-        logh2 = np.log(h2)
-        logC1 = np.log(C1)
-        logC2 = np.log(C2)
+            logh1 = np.log(h1)
+            logh2 = np.log(h2)
+            logC1 = np.log(C1)
+            logC2 = np.log(C2)
 
         if self.mode == "kappa":
             return E0, E1, E2, E3, logh1, logh2, logC1, logC2, kappa
