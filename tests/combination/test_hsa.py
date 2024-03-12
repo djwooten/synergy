@@ -6,7 +6,7 @@ import numpy as np
 
 from synergy.single.hill import Hill
 from synergy.combination import HSA
-from synergy.testing_utils.synthetic_data_generators import ShamDataGenerator
+from synergy.testing_utils.synthetic_data_generators import HSADataGenerator
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
@@ -14,17 +14,60 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 class HSATests(TestCase):
     """Tests for the HSA model."""
 
-    def test_fit_hsa(self):
+    def test_fit_hsa_reference(self):
         """-"""
         np.random.seed(2193)
-        single_drug = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)
-        d1, d2, E = ShamDataGenerator.get_sham(single_drug, 0.01, 100, 5, 2, E_noise=0, d_noise=0)
+        C = 1.0
+        dmin = 0.01
+        dmax = 100
+        drug1 = Hill(E0=1.0, Emax=0.1, h=1.0, C=C)
+        drug2 = Hill(E0=1.0, Emax=0.3, h=1.0, C=1.0)
+        d1, d2, E = HSADataGenerator.get_2drug_combination(drug1, drug2, dmin, dmax, dmin, dmax, E_noise=0, d_noise=0)
 
-        # Give it non-prefit single-drug models
         model = HSA()
         synergy = model.fit(d1, d2, E)
-        # synergy should be > 0 for all of these
-        self.assertTrue((synergy >= 0).all(), msg="HSA should all be synergistic")
+
+        np.testing.assert_almost_equal(synergy, 0)
+
+    def test_fit_hsa_synergy(self):
+        """Ensure a synergistic combination has synergy > 0 when d1 and d2 > 0, and 0 when d1 or d2 == 0"""
+        np.random.seed(81924)
+        C = 1.0
+        dmin = 0.01
+        dmax = 100
+        drug1 = Hill(E0=1.0, Emax=0.1, h=1.0, C=C)
+        drug2 = Hill(E0=1.0, Emax=0.3, h=1.0, C=1.0)
+        d1, d2, E = HSADataGenerator.get_2drug_combination(drug1, drug2, dmin, dmax, dmin, dmax, E_noise=0, d_noise=0)
+
+        single_mask = np.where((d1 == 0) | (d2 == 0))
+        combo_mask = np.where((d1 != 0) & (d2 != 0))
+        E[combo_mask] *= 0.9  # Make the combo stronger than HSA expects
+
+        model = HSA()
+        synergy = model.fit(d1, d2, E)
+
+        self.assertTrue((synergy[combo_mask] > 0).all())
+        np.testing.assert_almost_equal(synergy[single_mask], 0)
+
+    def test_fit_zip_antagonism(self):
+        """Ensure an antagonistic combination has synergy < 0 when d1 and d2 > 0, and 0 when d1 or d2 == 0"""
+        np.random.seed(891248)
+        C = 1.0
+        dmin = 0.01
+        dmax = 100
+        drug1 = Hill(E0=1.0, Emax=0.1, h=1.0, C=C)
+        drug2 = Hill(E0=1.0, Emax=0.3, h=1.0, C=1.0)
+        d1, d2, E = HSADataGenerator.get_2drug_combination(drug1, drug2, dmin, dmax, dmin, dmax, E_noise=0, d_noise=0)
+
+        single_mask = np.where((d1 == 0) | (d2 == 0))
+        combo_mask = np.where((d1 != 0) & (d2 != 0))
+        E[combo_mask] *= 1.1  # Make the combo weaker than HSA expects
+
+        model = HSA()
+        synergy = model.fit(d1, d2, E)
+
+        self.assertTrue((synergy[combo_mask] < 0).all())
+        np.testing.assert_almost_equal(synergy[single_mask], 0)
 
 
 if __name__ == "__main__":

@@ -121,7 +121,19 @@ def main():
         *EffectiveDoseModelDataGenerator.get_2drug_combination(a12=-0.5, a21=-0.5, **EDM_kwargs),
     )
 
-    BRAID_kwargs: dict[str, float] = {}
+    BRAID_kwargs: dict[str, float] = {
+        "E2": 0.1,
+        "E3": 0,
+        "replicates": 1,
+        "n_points1": 10,
+        "n_points2": 10,
+        "d1min": 1 / 50,
+        "d1max": 50,
+        "d2min": 1 / 50,
+        "d2max": 50,
+        "E_noise": 0.05,
+        "d_noise": 0,
+    }
 
     np.random.seed(921489)
     write_data(

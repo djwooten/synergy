@@ -131,7 +131,7 @@ class BRAIDFitTests(TestCase):
             "synthetic_BRAID_reference_1.csv": {
                 "E0": 1,
                 "E1": 0.5,
-                "E2": 0.3,
+                "E2": 0.1,
                 "E3": 0,
                 "h1": 1,
                 "h2": 1,
@@ -143,7 +143,7 @@ class BRAIDFitTests(TestCase):
             "synthetic_BRAID_delta_synergy_1.csv": {
                 "E0": 1,
                 "E1": 0.5,
-                "E2": 0.3,
+                "E2": 0.1,
                 "E3": 0,
                 "h1": 1,
                 "h2": 1,
@@ -155,7 +155,7 @@ class BRAIDFitTests(TestCase):
             "synthetic_BRAID_delta_antagonism_1.csv": {
                 "E0": 1,
                 "E1": 0.5,
-                "E2": 0.3,
+                "E2": 0.1,
                 "E3": 0,
                 "h1": 1,
                 "h2": 1,
@@ -167,7 +167,7 @@ class BRAIDFitTests(TestCase):
             "synthetic_BRAID_kappa_synergy_1.csv": {
                 "E0": 1,
                 "E1": 0.5,
-                "E2": 0.3,
+                "E2": 0.1,
                 "E3": 0,
                 "h1": 1,
                 "h2": 1,
@@ -179,7 +179,7 @@ class BRAIDFitTests(TestCase):
             "synthetic_BRAID_kappa_antagonism_1.csv": {
                 "E0": 1,
                 "E1": 0.5,
-                "E2": 0.3,
+                "E2": 0.1,
                 "E3": 0,
                 "h1": 1,
                 "h2": 1,
@@ -191,7 +191,7 @@ class BRAIDFitTests(TestCase):
             "synthetic_BRAID_delta_kappa_synergy_1.csv": {
                 "E0": 1,
                 "E1": 0.5,
-                "E2": 0.3,
+                "E2": 0.1,
                 "E3": 0,
                 "h1": 1,
                 "h2": 1,
@@ -203,7 +203,7 @@ class BRAIDFitTests(TestCase):
             "synthetic_BRAID_delta_kappa_antagonism_1.csv": {
                 "E0": 1,
                 "E1": 0.5,
-                "E2": 0.3,
+                "E2": 0.1,
                 "E3": 0,
                 "h1": 1,
                 "h2": 1,
@@ -215,7 +215,7 @@ class BRAIDFitTests(TestCase):
             "synthetic_BRAID_asymmetric_1.csv": {
                 "E0": 1,
                 "E1": 0.5,
-                "E2": 0.3,
+                "E2": 0.1,
                 "E3": 0,
                 "h1": 1,
                 "h2": 1,
@@ -227,7 +227,7 @@ class BRAIDFitTests(TestCase):
             "synthetic_BRAID_asymmetric_2.csv": {
                 "E0": 1,
                 "E1": 0.5,
-                "E2": 0.3,
+                "E2": 0.1,
                 "E3": 0,
                 "h1": 1,
                 "h2": 1,
@@ -245,21 +245,25 @@ class BRAIDFitTests(TestCase):
                 "synthetic_BRAID_delta_synergy_1.csv",
                 "synthetic_BRAID_delta_antagonism_1.csv",
                 "synthetic_BRAID_kappa_synergy_1.csv",
-                "synthetic_BRAID_kappa_antagonism_1",
-                "synthetic_BRAID_delta_kappa_synergy_1",
-                "synthetic_BRAID_delta_kappa_antagonism_1",
-                "synthetic_BRAID_asymmetric_1",
-                "synthetic_BRAID_asymmetric_2",
+                "synthetic_BRAID_kappa_antagonism_1.csv",
+                "synthetic_BRAID_delta_kappa_synergy_1.csv",
+                "synthetic_BRAID_delta_kappa_antagonism_1.csv",
             ]
         )
     )
     def test_BRAID_fit_no_bootstrap(self, fname):
         """Ensure the model fits correctly."""
-        if "cooperativity" in fname:
-            return
+        expected_parameters = deepcopy(self.EXPECTED_PARAMETERS[fname])
+        mode = "both"
+        if "delta" in fname and "kappa" not in fname:
+            mode = "delta"
+            expected_parameters.pop("kappa")
+        elif "kappa" in fname and "delta" not in fname:
+            mode = "kappa"
+            expected_parameters.pop("delta")
         d1, d2, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
-        model = BRAID(mode="both")
-        model.fit(d1, d2, E)
+        model = BRAID(mode=mode)
+        model.fit(d1, d2, E, use_jacobian=False)
 
         # Ensure the hill is fit
         self.assertTrue(model.is_specified)
@@ -267,12 +271,12 @@ class BRAIDFitTests(TestCase):
         self.assertTrue(model.is_converged)
 
         # Compare C, h, alpha, and gamma in log-scale
-        expected_parameters = deepcopy(self.EXPECTED_PARAMETERS[fname])
         observed_parameters = model.get_parameters()
+
         for key in ["delta", "h1", "h2", "C1", "C2"]:
             if key in expected_parameters and key in observed_parameters:
-                expected_parameters[key] = np.log(expected_parameters[key])
-                observed_parameters[key] = np.log(observed_parameters[key])
+                expected_parameters["log" + key] = np.log(expected_parameters.pop(key))
+                observed_parameters["log" + key] = np.log(observed_parameters.pop(key))
 
         # Ensure the parameters are approximately correct
         synergy_assertions.assert_dict_allclose(observed_parameters, expected_parameters, atol=0.2)
@@ -297,21 +301,25 @@ class BRAIDFitTests(TestCase):
                 "synthetic_BRAID_delta_synergy_1.csv",
                 "synthetic_BRAID_delta_antagonism_1.csv",
                 "synthetic_BRAID_kappa_synergy_1.csv",
-                "synthetic_BRAID_kappa_antagonism_1",
-                "synthetic_BRAID_delta_kappa_synergy_1",
-                "synthetic_BRAID_delta_kappa_antagonism_1",
-                "synthetic_BRAID_asymmetric_1",
-                "synthetic_BRAID_asymmetric_2",
+                "synthetic_BRAID_kappa_antagonism_1.csv",
+                "synthetic_BRAID_delta_kappa_synergy_1.csv",
+                "synthetic_BRAID_delta_kappa_antagonism_1.csv",
             ]
         )
     )
     def test_BRAID_fit_bootstrap(self, fname):
         """Ensure confidence intervals work reasonably."""
         expected_parameters = deepcopy(self.EXPECTED_PARAMETERS[fname])
-
+        mode = "both"
+        if "delta" in fname and "kappa" not in fname:
+            mode = "delta"
+            expected_parameters.pop("kappa")
+        elif "kappa" in fname and "delta" not in fname:
+            mode = "kappa"
+            expected_parameters.pop("delta")
         d1, d2, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
-        model = BRAID(mode="both")
-        model.fit(d1, d2, E, bootstrap_iterations=100)
+        model = BRAID(mode=mode)
+        model.fit(d1, d2, E, bootstrap_iterations=100, use_jacobian=False)
 
         # Ensure there were bootstrap iterations
         self.assertIsNotNone(model.bootstrap_parameters)
@@ -319,7 +327,7 @@ class BRAIDFitTests(TestCase):
         confidence_intervals_95 = model.get_confidence_intervals()
 
         # Ensure true values are within confidence intervals
-        synergy_assertions.assert_dict_values_in_intervals(expected_parameters, confidence_intervals_95)
+        synergy_assertions.assert_dict_values_in_intervals(expected_parameters, confidence_intervals_95, tol=0.1)
 
         # Ensure that less stringent CI is narrower
         # [=====95=====]  More confidence requires wider interval

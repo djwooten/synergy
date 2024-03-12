@@ -162,6 +162,7 @@ class ZimmerFitTests(TestCase):
         """Ensure the model fits correctly."""
         d1, d2, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
         model = Zimmer()
+        np.random.seed(2178217)
         model.fit(d1, d2, E, use_jacobian=False)
 
         # Ensure the model is fit
@@ -207,6 +208,7 @@ class ZimmerFitTests(TestCase):
         """Ensure confidence intervals work reasonably."""
         expected_parameters = deepcopy(self.EXPECTED_PARAMETERS[fname])
 
+        np.random.seed(8932849)
         d1, d2, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
         model = Zimmer()
         model.fit(d1, d2, E, use_jacobian=False, bootstrap_iterations=100)

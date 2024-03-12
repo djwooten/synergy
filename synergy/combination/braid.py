@@ -25,7 +25,8 @@ from synergy.exceptions import ModelNotParameterizedError
 class BRAID(ParametricSynergyModel2D):
     """BRAID synergy (doi:10.1038/srep25523).
 
-    kappa and delta are the BRAID synergy parameters, though E3 is related to how much more effective the combination is than either drug alone.
+    kappa and delta are the BRAID synergy parameters, though E3 is related to how much more effective the combination is
+    than either drug alone. Note though that lim_{d1 -> inf, d2 -> inf}E(d1, d2) does not equal E3 in BRAID.
 
     Parameters
     ----------
