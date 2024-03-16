@@ -21,6 +21,7 @@ from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.single import Hill
 from synergy.utils.base import format_table
 from synergy.exceptions import ModelNotParameterizedError
+from synergy.utils.model_mixins import ParametricModelMixins
 
 
 class MuSyC(ParametricSynergyModel2D):
@@ -70,10 +71,6 @@ class MuSyC(ParametricSynergyModel2D):
             self.jacobian_function = self._jacobian_no_gamma
             self.gamma12 = 1.0
             self.gamma21 = 1.0
-
-        # beta is not a parameter used in the curve_fit, rather it is based on E0, E1, E2, and E3. Thus it is not fit
-        # as a standard part of bootstrapping. So to get confidence intervals, we must handle it separately.
-        self.bootstrap_beta = None
 
     @property
     def _parameter_names(self) -> list[str]:
@@ -537,19 +534,6 @@ class MuSyC(ParametricSynergyModel2D):
         beta = (strongest_E - E3) / (E0 - strongest_E)
         return beta
 
-    def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs):
-        super()._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs)
-        self.bootstrap_beta = None
-        if self.bootstrap_parameters is None:
-            return
-
-        params = self._parameter_names
-        E0 = self.bootstrap_parameters[:, params.index("E0")]  # type: ignore
-        E1 = self.bootstrap_parameters[:, params.index("E1")]  # type: ignore
-        E2 = self.bootstrap_parameters[:, params.index("E2")]  # type: ignore
-        E3 = self.bootstrap_parameters[:, params.index("E3")]  # type: ignore
-        self.bootstrap_beta = MuSyC._get_beta(E0, E1, E2, E3)
-
     def get_confidence_intervals(self, confidence_interval: float = 95):
         """Returns the lower bound and upper bound estimate for each parameter.
 
@@ -560,9 +544,19 @@ class MuSyC(ParametricSynergyModel2D):
         """
         ci = super().get_confidence_intervals(confidence_interval=confidence_interval)
 
+        if self.bootstrap_parameters is None:
+            return ci
+
+        params = self._parameter_names
+        E0 = self.bootstrap_parameters[:, params.index("E0")]  # type: ignore
+        E1 = self.bootstrap_parameters[:, params.index("E1")]  # type: ignore
+        E2 = self.bootstrap_parameters[:, params.index("E2")]  # type: ignore
+        E3 = self.bootstrap_parameters[:, params.index("E3")]  # type: ignore
+        bootstrap_beta = MuSyC._get_beta(E0, E1, E2, E3)
+
         lb = (100 - confidence_interval) / 2.0
         ub = 100 - lb
-        ci["beta"] = np.percentile(self.bootstrap_beta, [lb, ub])
+        ci["beta"] = np.percentile(bootstrap_beta, [lb, ub])
         return ci
 
     def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
@@ -578,12 +572,19 @@ class MuSyC(ParametricSynergyModel2D):
         rows = [header]
 
         # beta
-        rows.append(self._make_summary_row("beta", 0, self.beta, ci, tol, False, "synergistic", "antagonistic"))
+
+        rows.append(
+            ParametricModelMixins.make_summary_row("beta", 0, self.beta, ci, tol, False, "synergistic", "antagonistic")
+        )
 
         # alpha and gamma
         for key in pars.keys():
             if "alpha" in key or "gamma" in key:
-                rows.append(self._make_summary_row(key, 1, pars[key], ci, tol, True, "synergistic", "antagonistic"))
+                rows.append(
+                    ParametricModelMixins.make_summary_row(
+                        key, 1, pars[key], ci, tol, True, "synergistic", "antagonistic"
+                    )
+                )
 
         print(format_table(rows))
 

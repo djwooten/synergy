@@ -20,6 +20,7 @@ from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.single import Hill_2P
 from synergy.utils.base import format_table
 from synergy.exceptions import ModelNotParameterizedError
+from synergy.utils.model_mixins import ParametricModelMixins
 
 
 class Zimmer(ParametricSynergyModel2D):
@@ -184,7 +185,11 @@ class Zimmer(ParametricSynergyModel2D):
 
         for key in pars.keys():
             if key in ["a12", "a21"]:
-                rows.append(self._make_summary_row(key, 1, pars[key], ci, tol, False, "antagonistic", "synergistic"))
+                rows.append(
+                    ParametricModelMixins.make_summary_row(
+                        key, 1, pars[key], ci, tol, False, "antagonistic", "synergistic"
+                    )
+                )
 
         print(format_table(rows))
 

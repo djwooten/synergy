@@ -20,6 +20,7 @@ from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.single import Hill
 from synergy.utils.base import format_table
 from synergy.exceptions import ModelNotParameterizedError
+from synergy.utils.model_mixins import ParametricModelMixins
 
 
 class BRAID(ParametricSynergyModel2D):
@@ -327,9 +328,17 @@ class BRAID(ParametricSynergyModel2D):
 
         for key in pars.keys():
             if key == "kappa":
-                rows.append(self._make_summary_row(key, 0, pars[key], ci, tol, False, "synergistic", "antagonistic"))
+                rows.append(
+                    ParametricModelMixins.make_summary_row(
+                        key, 0, pars[key], ci, tol, False, "synergistic", "antagonistic"
+                    )
+                )
             elif key == "delta":
-                rows.append(self._make_summary_row(key, 1, pars[key], ci, tol, True, "synergistic", "antagonistic"))
+                rows.append(
+                    ParametricModelMixins.make_summary_row(
+                        key, 1, pars[key], ci, tol, True, "synergistic", "antagonistic"
+                    )
+                )
 
         print(format_table(rows))
 

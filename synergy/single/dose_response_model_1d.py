@@ -8,6 +8,7 @@ from scipy.stats import norm
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.utils import base as utils
+from synergy.utils.model_mixins import ParametricModelMixins
 
 _LOGGER = logging.Logger(__name__)
 
@@ -47,19 +48,16 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         self._converged: bool = False
         self._is_fit: bool = False
 
-        self._set_init_parameters(**kwargs)
-        self._bounds = self._get_bounds(**kwargs)
+        ParametricModelMixins.set_init_parameters(self, self._parameter_names, **kwargs)
+        ParametricModelMixins.set_bounds(
+            self, self._transform_params_to_fit, self._default_fit_bounds, self._parameter_names, **kwargs
+        )
 
         self.sum_of_squares_residuals: Optional[float]
         self.r_squared: Optional[float]
         self.aic: Optional[float]
         self.bic: Optional[float]
         self.bootstrap_parameters = None
-
-    def _set_init_parameters(self, **kwargs):
-        """-"""
-        for param in self._parameter_names:
-            self.__setattr__(param, kwargs.get(param, None))
 
     def get_parameters(self) -> dict[str, Any]:
         """Returns model's parameters"""
@@ -108,24 +106,6 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
         """-"""
 
-    def _get_bounds(self, **kwargs):
-        """Find all {X}_bounds kwargs and format them into self._bounds as expected by curve_fit()."""
-        lower_bounds = []
-        upper_bounds = []
-        for param in self._parameter_names:
-            default_bounds = self._default_fit_bounds.get(param, (-np.inf, np.inf))
-            lb, ub = kwargs.pop(f"{param}_bounds", default_bounds)
-            lower_bounds.append(lb)
-            upper_bounds.append(ub)
-        lower_bounds = list(self._transform_params_to_fit(lower_bounds))
-        upper_bounds = list(self._transform_params_to_fit(upper_bounds))
-
-        # Log warnings for any other "bounds" passed in
-        for key in kwargs:
-            if "_bounds" in key:
-                _LOGGER.warn(f"Ignoring unexpected bounds for {type(self).__name__}: {key}={kwargs[key]}")
-        return lower_bounds, upper_bounds
-
     def fit(self, d, E, **kwargs):
         """Fit the model to data.
 
@@ -153,6 +133,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         # Parse optional kwargs
         use_jacobian = kwargs.pop("use_jacobian", True)
         bootstrap_iterations = kwargs.pop("bootstrap_iterations", 0)
+        max_iterations = kwargs.pop("max_iterations", 10000)
         p0 = kwargs.pop("p0", None)
         if p0 is not None:
             p0 = list(p0)
@@ -179,7 +160,10 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         if n_samples - n_parameters - 1 > 0:  # TODO: What is this watching out for?
             self._score(d, E)
             kwargs["p0"] = self._transform_params_to_fit(popt)
-            self._bootstrap_resample(d, E, use_jacobian, bootstrap_iterations, **kwargs)
+            ParametricModelMixins.bootstrap_parameter_ranges(
+                self, E, use_jacobian, bootstrap_iterations, max_iterations, d, **kwargs
+            )
+            # self._bootstrap_resample(d, E, use_jacobian, bootstrap_iterations, **kwargs)
 
     def get_confidence_intervals(self, confidence_interval: float = 95):
         """Returns the lower bound and upper bound estimate for each parameter.
@@ -229,7 +213,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         """Fit the model to data (d, E)"""
         jac = self.jacobian_function if use_jacobian else None
         if use_jacobian and jac is None:
-            _LOGGER.warn(f"No jacobian function is specified for {type(self).__name__}, ignoring `use_jacobian`.")
+            _LOGGER.warning(f"No jacobian function is specified for {type(self).__name__}, ignoring `use_jacobian`.")
         popt = curve_fit(
             self.fit_function,
             d,

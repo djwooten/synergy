@@ -12,6 +12,7 @@ import numpy as np
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.utils import base as utils
+from synergy.utils.model_mixins import ParametricModelMixins
 
 _LOGGER = logging.Logger(__name__)
 
@@ -95,15 +96,17 @@ class SynergyModelND(ABC):
         """-"""
         return {}
 
+    def _is_monotherapy(doses):
+        """-"""
+        vals, counts = np.unique(doses > 0, return_counts=True)
+        drugs_present_count = counts[vals]
+        if len(drugs_present_count) == 0:
+            return True
+        return drugs_present_count[0] == 1
+
     def _get_single_drug_mask(self, d):
         """Return a mask of where no more than 1 drug is present."""
-        def is_monotherapy(doses):
-            vals, counts = np.unique(doses > 0, return_counts=True)
-            drugs_present_count = counts[vals]
-            if len(drugs_present_count) == 0:
-                return True
-            return drugs_present_count[0] == 1
-        return np.where(np.apply_along_axis(is_monotherapy, 1, d))
+        return np.where(np.apply_along_axis(self._is_monotherapy, 1, d))
 
 
 class DoseDependentSynergyModelND(SynergyModelND):
@@ -119,13 +122,14 @@ class DoseDependentSynergyModelND(SynergyModelND):
 
     def fit(self, d, E, **kwargs):
         """-"""
-        super.fit(d, E, **kwargs)
-        if not self.is_specified:
-            raise ModelNotParameterizedError("Cannot calculate synergy because the model is not specified")
         self.d = d
         self.synergy = E * np.nan
-        self._is_fit = True
 
+        super.fit(d, E, **kwargs)
+        if not self.is_specified:
+            raise ModelNotParameterizedError("The model failed to fit")
+
+        self._is_fit = True
         self.reference = self.E_reference(d)
         self.synergy = self._get_synergy(d, E)
 
@@ -150,39 +154,31 @@ class DoseDependentSynergyModelND(SynergyModelND):
     def _get_synergy(self, d, E):
         """-"""
 
-    def _get_single_drug_mask(self, d):
-        N = d.shape[1]
-        for drug_idx in N:
-        mask = d[:, drug_idx] >= 0  # This inits it to "True"
-        for other_idx in range(N):
-            if other_idx == drug_idx:
-                continue
-            mask == mask & (d[:, other_idx] == np.min(d[:, other_idx]))
-        return np.where(mask)
-
     def _sanitize_synergy(self, d, synergy, default_val: float):
-        if hasattr(synergy, "__iter__"):
-            synergy[(d1 == 0) | (d2 == 0)] = default_val
-        elif d1 == 0 or d2 == 0:
-            synergy = default_val
+        if len(d.shape) == 2:
+            synergy[self._get_single_drug_mask(d)] = default_val
+        elif len(d.shape) == 1:
+            if self._is_monotherapy(d):
+                synergy = default_val
+        else:
+            raise ValueError("d must be a 1 or 2 dimensional array")
         return synergy
 
 
-class ParametricSynergyModel2D(SynergyModel2D):
+class ParametricSynergyModelND(SynergyModelND):
     """-"""
 
     def __init__(
         self,
-        drug1_model: Optional[DoseResponseModel1D] = None,
-        drug2_model: Optional[DoseResponseModel1D] = None,
+        single_drug_models: Optional[list[DoseResponseModel1D]] = None,
         **kwargs,
     ):
         """Ctor."""
         self._set_init_parameters(**kwargs)
         self._bounds = self._get_bounds(**kwargs)
-        super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
+        super().__init__(single_drug_models=single_drug_models)
         self.fit_function: Callable
-        self.jacobian_function: Callable
+        self.jacobian_function: Callable  # Currently no jacobian for any N-drug models
 
         self._converged: bool = False
         self._is_fit: bool = False
@@ -194,7 +190,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
         self.bootstrap_parameters = None
 
     @abstractmethod
-    def E(self, d1, d2):
+    def E(self, d):
         """-"""
 
     def get_parameters(self) -> dict[str, Any]:
@@ -222,9 +218,9 @@ class ParametricSynergyModel2D(SynergyModel2D):
         """Find all {X}_bounds kwargs and format them into self._bounds as expected by curve_fit()."""
         lower_bounds = []
         upper_bounds = []
+        default_bounds = self._default_fit_bounds
         for param in self._parameter_names:
-            default_bounds = self._default_fit_bounds.get(param, (-np.inf, np.inf))
-            lb, ub = kwargs.pop(f"{param}_bounds", default_bounds)
+            lb, ub = kwargs.pop(f"{param}_bounds", default_bounds.get(param, (-np.inf, np.inf)))
             lower_bounds.append(lb)
             upper_bounds.append(ub)
         lower_bounds = list(self._transform_params_to_fit(lower_bounds))
@@ -233,7 +229,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
         # Log warnings for any other "bounds" passed in
         for key in kwargs:
             if "_bounds" in key:
-                _LOGGER.warn(f"Ignoring unexpected bounds for {type(self).__name__}: {key}={kwargs[key]}")
+                _LOGGER.warning(f"Ignoring unexpected bounds for {type(self).__name__}: {key}={kwargs[key]}")
         return lower_bounds, upper_bounds
 
     def fit(self, d1, d2, E, **kwargs):
@@ -340,7 +336,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
         """Fit the model to data (d, E)"""
         jac = self.jacobian_function if use_jacobian else None
         if use_jacobian and jac is None:
-            _LOGGER.warn(f"No jacobian function is specified for {type(self).__name__}, ignoring `use_jacobian`.")
+            _LOGGER.warning(f"No jacobian function is specified for {type(self).__name__}, ignoring `use_jacobian`.")
         popt = curve_fit(
             self.fit_function,
             (d1, d2),
