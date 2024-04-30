@@ -169,6 +169,27 @@ class BlissDataGenerator:
         E = _noisify(E1_alone * E2_alone, E_noise, min_val=0, max_val=1)
         return d1, d2, E
 
+    @staticmethod
+    def get_Ndrug_combination(
+        drug_models: list,
+        dmin: list[float],
+        dmax: list[float],
+        n_points: list[int],
+        replicates: int = 6,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
+    ):
+        """-"""
+        N = len(drug_models)
+        d = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, replicates=replicates)
+        E = d * 0
+        for i, model in enumerate(drug_models):
+            d_noisy = _noisify(d[:, i], d_noise, min_val=0)
+            E[:, i] = model.E(d_noisy)
+        E = np.prod(E, axis=1)
+        E = _noisify(E, E_noise, min_val=0, max_val=1)
+        return d, E
+
 
 class HSADataGenerator:
     """Tools to simulate noisy data following HSA."""

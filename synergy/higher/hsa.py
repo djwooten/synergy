@@ -15,60 +15,38 @@
 
 import numpy as np
 
-from ..single import LogLinear
-from .nonparametric_base import DoseDependentHigher
+from synergy.exceptions import InvalidDrugModelError
+from synergy.higher.synergy_model_Nd import DoseDependentSynergyModelND
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
+from synergy.single.log_linear import LogLinear
 
 
-class HSA(DoseDependentHigher):
+class HSA(DoseDependentSynergyModelND):
     """Highest single agent (HSA)
 
     HSA says that any improvement a combination gives over the strongest single agent counts as synergy.
     """
 
-    def fit(self, d, E, single_models=None, **kwargs):
-        d = np.asarray(d)
-        E = np.asarray(E)
-        n = d.shape[1]
+    def E_reference(self, d):
+        """-"""
+        if not self.is_specified:
+            raise InvalidDrugModelError("Model is not specified.")
+        E = d * np.nan  # Initialize to NaN
+        for i, model in enumerate(self.single_models):
+            E[:, i] = model.E(d[:, i])
+        return np.nanmin(E, axis=1)
 
-        super().fit(d, E, single_models=single_models, **kwargs)
+    def _get_synergy(self, d, E):
+        """-"""
+        synergy = self.reference - E
+        return self._sanitize_synergy(d, synergy, 0)
 
-        # Fit single drugs
-        if single_models is None:
-            single_models = []
+    @property
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return DoseResponseModel1D
 
-            for i in range(n):
-                # Mask where all other drugs are minimum (ideally 0)
-                mask = d[:, i] >= 0  # This should always be true
-                for j in range(n):
-                    if i == j:
-                        continue
-                    mask = mask & (d[:, j] == np.min(d[:, j]))
-                mask = np.where(mask)
-                single = LogLinear()
-                single.fit(d[mask, i].flatten(), E[mask], **kwargs)
-                single_models.append(single)
-        self.single_models = single_models
-
-        E_singles = d * 0
-        for i in range(n):
-            E_singles[:, i] = single_models[i].E(d[:, i])
-        E_HSA = np.min(E_singles, axis=1)
-
-        # Calculate synergy as excess over HSA
-        self.synergy = E_HSA - E
-
-        # Ensure all single-drug HSA scores are 1
-        for i in range(n):
-            # Mask where all other drugs are minimum (ideally 0)
-            mask = d[:, i] >= 0  # This should always be true
-            for j in range(n):
-                if i == j:
-                    continue
-                mask = mask & (d[:, j] == np.min(d[:, j]))
-            mask = np.where(mask)
-            self.synergy[mask] = 0
-
-        return self.synergy
-
-    def _get_single_drug_classes(self):
-        return LogLinear, None
+    @property
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return LogLinear

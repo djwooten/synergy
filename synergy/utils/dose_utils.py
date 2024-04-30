@@ -78,9 +78,9 @@ def make_dose_grid(
     return D1, D2
 
 
-def make_dose_grid_multi(dmin, dmax, npoints, logscale=True, include_zero=False):
+def make_dose_grid_multi(dmin, dmax, npoints, logscale=True, include_zero=False, replicates: int = 1):
     if not (len(dmin) == len(dmax) and len(dmin) == len(npoints)):
-        return None
+        raise ValueError("Cannot generate Nd drug grid with unequal N.")
     doses = []
     for Dmin, Dmax, n in zip(dmin, dmax, npoints):
         if logscale:
@@ -104,6 +104,7 @@ def make_dose_grid_multi(dmin, dmax, npoints, logscale=True, include_zero=False)
     for i in range(n):
         return_d[:, i] = dosegrid[i].flatten()
 
+    return_d = np.hstack(return_d * replicates)
     return return_d
 
 

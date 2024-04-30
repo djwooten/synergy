@@ -1,12 +1,11 @@
 """Base classes for 2-drug synergy models."""
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Callable, Optional
 import logging
 
 from scipy.optimize import curve_fit
-from scipy.stats import norm
 import numpy as np
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
@@ -18,7 +17,7 @@ _LOGGER = logging.Logger(__name__)
 
 
 class SynergyModel2D(ABC):
-    """-"""
+    """Base class for all 2-drug synergy models."""
 
     def __init__(
         self,
@@ -26,7 +25,7 @@ class SynergyModel2D(ABC):
         drug2_model: Optional[DoseResponseModel1D] = None,
         **kwargs,
     ):
-        """-"""
+        """Ctor."""
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
 
@@ -46,42 +45,52 @@ class SynergyModel2D(ABC):
 
     @abstractmethod
     def E_reference(self, d1, d2):
-        """-"""
+        """Return the expected effect of the combination of drugs at doses d1 and d2."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
+        """The required type of single drug model for this synergy model."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
+        """The default type of single drug model for this synergy model."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_specified(self):
-        """-"""
+        """True if all parameters are set, or synergy has been calculated."""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_fit(self):
-        """-"""
+        """True if the model has been fit to data."""
 
     @property
     def _default_drug1_kwargs(self) -> dict:
-        """-"""
+        """Default keyword arguments for drug 1's model.
+
+        Used if drug1_model is None.
+        """
         return {}
 
     @property
     def _default_drug2_kwargs(self) -> dict:
-        """-"""
+        """Default keyword arguments for drug 2's model.
+
+        Used if drug2_model is None.
+        """
         return {}
 
 
 class DoseDependentSynergyModel2D(SynergyModel2D):
-    """-"""
+    """Base class for 2-drug synergy models for which synergy varies based on dose."""
 
     def __init__(
         self, drug1_model: Optional[DoseResponseModel1D] = None, drug2_model: Optional[DoseResponseModel1D] = None
     ):
-        """-"""
+        """Ctor."""
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
         self.synergy = None
         self.d1 = None
@@ -175,11 +184,13 @@ class ParametricSynergyModel2D(SynergyModel2D):
     def _set_parameters(self, parameters):
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _parameter_names(self) -> list[str]:
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
         """-"""
 

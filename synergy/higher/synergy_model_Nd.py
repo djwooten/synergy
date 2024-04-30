@@ -1,6 +1,6 @@
 """Base classes for N-drug synergy models (N > 2)."""
 
-from abc import ABC, abstractmethod, abstractproperty
+from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Callable, Optional
 import logging
@@ -18,13 +18,16 @@ _LOGGER = logging.Logger(__name__)
 
 
 class SynergyModelND(ABC):
-    """-"""
+    """Base class for all N-drug synergy models (N > 2)."""
 
     def __init__(self, single_drug_models: Optional[list[DoseResponseModel1D]] = None):
         """-"""
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
-        if self.single_drug_models:
+        if single_drug_models:
+            if len(single_drug_models) < 2:
+                raise ValueError(f"Cannot fit a model with fewer than two drugs (N={len(single_drug_models)})")
+
             self.N = len(self.single_drug_models)
             self.single_drug_models = [
                 utils.sanitize_single_drug_model(
@@ -39,11 +42,16 @@ class SynergyModelND(ABC):
     @abstractmethod
     def fit(self, d, E, **kwargs):
         """-"""
+
+    def _fit_single_drugs(self, d, E, **kwargs):
+        """-"""
         N = d.shape[1]
+
         if self.N > 1 and N != self.N:
             raise ValueError(f"This is an {self.N} drug model, which cannot be used with {N}-dimensional dose data")
         if self.single_drug_models is None:
             self.single_drug_models = []
+
         # Fit all non-specified single drug models
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
@@ -63,6 +71,10 @@ class SynergyModelND(ABC):
             model.fit(d[mask, single_idx].flatten(), E[mask], **single_kwargs)
 
     def _get_drug_alone_mask(self, d, drug_idx):
+        """Find all dose combinations where only one drug is present.
+
+        Note: other drugs are considered to be absent as long as they are at their minimum dose.
+        """
         N = d.shape[1]
         mask = d[:, drug_idx] >= 0  # This inits it to "True"
         for other_idx in range(N):
@@ -75,42 +87,37 @@ class SynergyModelND(ABC):
     def E_reference(self, d):
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_specified(self):
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_fit(self):
         """-"""
 
     @property
     def _default_single_drug_kwargs(self) -> dict:
-        """-"""
+        """Default keyword arguments for all single drug models.
+
+        Used if the user does not specify any single drug models.
+        """
         return {}
-
-    def _is_monotherapy(doses):
-        """-"""
-        vals, counts = np.unique(doses > 0, return_counts=True)
-        drugs_present_count = counts[vals]
-        if len(drugs_present_count) == 0:
-            return True
-        return drugs_present_count[0] == 1
-
-    def _get_single_drug_mask(self, d):
-        """Return a mask of where no more than 1 drug is present."""
-        return np.where(np.apply_along_axis(self._is_monotherapy, 1, d))
 
 
 class DoseDependentSynergyModelND(SynergyModelND):
-    """-"""
+    """Base class for N-drug synergy models (N > 2) for which synergy varies based on dose."""
 
     def __init__(self, single_drug_models: Optional[list[DoseResponseModel1D]] = None):
         """-"""
@@ -125,7 +132,7 @@ class DoseDependentSynergyModelND(SynergyModelND):
         self.d = d
         self.synergy = E * np.nan
 
-        super.fit(d, E, **kwargs)
+        self._fit_single_drugs(d, E, **kwargs)
         if not self.is_specified:
             raise ModelNotParameterizedError("The model failed to fit")
 
@@ -137,7 +144,7 @@ class DoseDependentSynergyModelND(SynergyModelND):
 
     @property
     def is_specified(self):
-        """-"""
+        """True if all single drug models are specified."""
         if not self.single_drug_models or len(self.single_drug_models) < 2:
             return False
         for model in self.single_drug_models:
@@ -147,12 +154,27 @@ class DoseDependentSynergyModelND(SynergyModelND):
 
     @property
     def is_fit(self):
-        """-"""
+        """True if the model was fit to data."""
         return self._is_fit
 
     @abstractmethod
     def _get_synergy(self, d, E):
-        """-"""
+        """Return the synergy for the given dose combination(s)."""
+
+    def _is_monotherapy(doses):
+        """Return True if no more than 1 drug is present."""
+        vals, counts = np.unique(doses > 0, return_counts=True)
+        drugs_present_count = counts[vals]
+        if len(drugs_present_count) == 0:
+            return True
+        return drugs_present_count[0] == 1
+
+    def _get_single_drug_mask(self, d):
+        """Return a mask of where no more than 1 drug is present.
+
+        This helps to set synergy to the default value for monotherapy combinations.
+        """
+        return np.where(np.apply_along_axis(self._is_monotherapy, 1, d))
 
     def _sanitize_synergy(self, d, synergy, default_val: float):
         if len(d.shape) == 2:
@@ -206,11 +228,13 @@ class ParametricSynergyModelND(SynergyModelND):
     def _set_parameters(self, parameters):
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _parameter_names(self) -> list[str]:
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
         """-"""
 

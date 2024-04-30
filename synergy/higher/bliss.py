@@ -13,13 +13,13 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+from synergy.exceptions import InvalidDrugModelError
+from synergy.higher.synergy_model_Nd import DoseDependentSynergyModelND
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
+from synergy.single.log_linear import LogLinear
 
-from ..single import LogLinear
-from .nonparametric_base import DoseDependentHigher
 
-
-class Bliss(DoseDependentHigher):
+class Bliss(DoseDependentSynergyModelND):
     """Bliss independence model
 
     Bliss synergy is defined as the difference between the observed E and the E predicted by the Bliss Independence assumption (E_pred = E_drug1_alone * E_drug2_alone). This is also known as excess over Bliss.
@@ -28,35 +28,26 @@ class Bliss(DoseDependentHigher):
         (-inf,0)=antagonism, (0,inf)=synergism
     """
 
-    def fit(self, d, E, single_models=None, **kwargs):
+    def E_reference(self, d):
+        """-"""
+        if not self.is_specified:
+            raise InvalidDrugModelError("Model is not specified.")
+        E = 0 * d[:, 0] + 1  # Initialize to 1
+        for i, model in enumerate(self.single_models):
+            E *= model.E(d[:, i])
+        return E
 
-        d = np.asarray(d)
-        E = np.asarray(E)
-        n = d.shape[1]
-        super().fit(d, E, single_models=single_models, **kwargs)
-        single_models = self.single_models
+    def _get_synergy(self, d, E):
+        """-"""
+        synergy = self.reference - E
+        return self._sanitize_synergy(d, synergy, 0)
 
-        # Get E for each single drug
-        E_singles = d * 0
-        for i in range(n):
-            E_singles[:, i] = single_models[i].E(d[:, i])
-        E_bliss = np.prod(E_singles, axis=1)
+    @property
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return DoseResponseModel1D
 
-        # Calculate synergy as excess over bliss
-        self.synergy = E_bliss - E
-
-        # Ensure all single-drug bliss scores are 0
-        for i in range(n):
-            # Mask where all other drugs are minimum (ideally 0)
-            mask = d[:, i] >= 0  # This should always be true
-            for j in range(n):
-                if i == j:
-                    continue
-                mask = mask & (d[:, j] == np.min(d[:, j]))
-            mask = np.where(mask)
-            self.synergy[mask] = 0
-
-        return self.synergy
-
-    def _get_single_drug_classes(self):
-        return LogLinear, None
+    @property
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return LogLinear

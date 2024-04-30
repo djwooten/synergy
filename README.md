@@ -2,7 +2,16 @@
 
 # synergy
 
-A python package to calculate, analyze, and visualize drug combination synergy and antagonism. Currently supports multiple models of synergy, including MuSyC, Bliss, Loewe, Combination Index, ZIP, Zimmer, BRAID, Schindler, and HSA.
+A python package to calculate, analyze, and visualize drug combination synergy and antagonism. Supports multiple models of synergy:
+- MuSyC
+- Bliss
+- Loewe
+- Combination Index
+- ZIP
+- Zimmer
+- BRAID
+- Schindler
+- HSA
 
 #### Citation
 
