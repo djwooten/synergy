@@ -143,8 +143,11 @@ class ShamDataGenerator:
         return doses, E
 
 
-class BlissDataGenerator:
-    """Tools to simulate noisy data following Bliss independence."""
+class MultiplicativeSurvivalDataGenerator:
+    """Tools to simulate noisy data following the multiplicative survival principal.
+
+    Also known as Bliss Independence.
+    """
 
     @staticmethod
     def get_2drug_combination(
@@ -175,13 +178,12 @@ class BlissDataGenerator:
         dmin: list[float],
         dmax: list[float],
         n_points: list[int],
-        replicates: int = 6,
+        replicates: int = 1,
         E_noise: float = 0.05,
         d_noise: float = 0.05,
     ):
         """-"""
-        N = len(drug_models)
-        d = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, replicates=replicates)
+        d = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, replicates=replicates, include_zero=True)
         E = d * 0
         for i, model in enumerate(drug_models):
             d_noisy = _noisify(d[:, i], d_noise, min_val=0)

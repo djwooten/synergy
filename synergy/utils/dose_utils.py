@@ -95,17 +95,47 @@ def make_dose_grid_multi(dmin, dmax, npoints, logscale=True, include_zero=False,
     dosegrid = np.meshgrid(*doses)
 
     if include_zero:
-        total_length = np.prod([i + 1 for i in npoints])
+        total_length = np.prod([n + 1 for n in npoints])
     else:
         total_length = np.prod(npoints)
-    n = len(dmin)
-    return_d = np.zeros((total_length, n))
 
-    for i in range(n):
+    return_d = np.zeros((total_length, len(dmin)))
+
+    for i in range(return_d.shape[1]):
         return_d[:, i] = dosegrid[i].flatten()
 
-    return_d = np.hstack(return_d * replicates)
-    return return_d
+    return np.vstack([return_d] * replicates)
+
+
+def is_monotherapy_ND(d):
+    """Return True if no more than 1 drug is present."""
+    vals, counts = np.unique(d > 0, return_counts=True)
+    drugs_present_count = counts[vals]
+    if len(drugs_present_count) == 0:
+        return True
+    return drugs_present_count[0] == 1
+
+
+def get_monotherapy_mask_ND(d):
+    """Return a mask of where no more than 1 drug is present.
+
+    This helps to set synergy to the default value for monotherapy combinations.
+    """
+    return np.where(np.apply_along_axis(is_monotherapy_ND, 1, d))
+
+
+def get_drug_alone_mask_ND(d, drug_idx):
+    """Find all dose combinations where only the requested drug is present.
+
+    Note: other drugs are considered to be absent as long as they are at their minimum dose.
+    """
+    N = d.shape[1]
+    mask = d[:, drug_idx] >= 0  # This inits it to "True"
+    for other_idx in range(N):
+        if other_idx == drug_idx:
+            continue
+        mask = mask & (d[:, other_idx] == np.min(d[:, other_idx]))
+    return np.where(mask)
 
 
 def get_num_replicates(d1, d2):
@@ -129,7 +159,9 @@ def get_num_replicates(d1, d2):
 
 @DeprecationWarning
 def remove_replicates(d1, d2):
-    """Given 1d dose arrays d1 and d2, remove replicates. This is needed sometimes for plotting, since some plot functions expect a single d1, d2 -> E for each dose.
+    """Given 1d dose arrays d1 and d2, remove replicates.
+
+    This is needed sometimes for plotting, since some plot functions expect a single d1, d2 -> E for each dose.
 
     Parameters:
     -----------

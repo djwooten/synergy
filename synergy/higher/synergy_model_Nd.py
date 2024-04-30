@@ -12,6 +12,7 @@ import numpy as np
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.utils import base as utils
+from synergy.utils import dose_utils
 from synergy.utils.model_mixins import ParametricModelMixins
 
 _LOGGER = logging.Logger(__name__)
@@ -64,24 +65,11 @@ class SynergyModelND(ABC):
             model = self.single_drug_models[single_idx]
             if model.is_specified:
                 continue
-            mask = self._get_drug_alone_mask(d, single_idx)
+            mask = dose_utils.get_drug_alone_mask_ND(d, single_idx)
             single_kwargs = deepcopy(kwargs)
-            single_kwargs.pop("bootstrap_iterations")
+            single_kwargs.pop("bootstrap_iterations", None)
             # TODO: Get single drug p0
             model.fit(d[mask, single_idx].flatten(), E[mask], **single_kwargs)
-
-    def _get_drug_alone_mask(self, d, drug_idx):
-        """Find all dose combinations where only one drug is present.
-
-        Note: other drugs are considered to be absent as long as they are at their minimum dose.
-        """
-        N = d.shape[1]
-        mask = d[:, drug_idx] >= 0  # This inits it to "True"
-        for other_idx in range(N):
-            if other_idx == drug_idx:
-                continue
-            mask == mask & (d[:, other_idx] == np.min(d[:, other_idx]))
-        return np.where(mask)
 
     @abstractmethod
     def E_reference(self, d):
@@ -161,26 +149,11 @@ class DoseDependentSynergyModelND(SynergyModelND):
     def _get_synergy(self, d, E):
         """Return the synergy for the given dose combination(s)."""
 
-    def _is_monotherapy(doses):
-        """Return True if no more than 1 drug is present."""
-        vals, counts = np.unique(doses > 0, return_counts=True)
-        drugs_present_count = counts[vals]
-        if len(drugs_present_count) == 0:
-            return True
-        return drugs_present_count[0] == 1
-
-    def _get_single_drug_mask(self, d):
-        """Return a mask of where no more than 1 drug is present.
-
-        This helps to set synergy to the default value for monotherapy combinations.
-        """
-        return np.where(np.apply_along_axis(self._is_monotherapy, 1, d))
-
     def _sanitize_synergy(self, d, synergy, default_val: float):
         if len(d.shape) == 2:
-            synergy[self._get_single_drug_mask(d)] = default_val
+            synergy[dose_utils.get_monotherapy_mask_ND(d)] = default_val
         elif len(d.shape) == 1:
-            if self._is_monotherapy(d):
+            if dose_utils.is_monotherapy(d):
                 synergy = default_val
         else:
             raise ValueError("d must be a 1 or 2 dimensional array")

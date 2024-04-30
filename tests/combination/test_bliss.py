@@ -6,7 +6,7 @@ import numpy as np
 
 from synergy.single.hill import Hill
 from synergy.combination import Bliss
-from synergy.testing_utils.synthetic_data_generators import BlissDataGenerator
+from synergy.testing_utils.synthetic_data_generators import MultiplicativeSurvivalDataGenerator
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
@@ -19,7 +19,7 @@ class BlissTests(TestCase):
         np.random.seed(943)
         drug1 = Hill(E0=1.0, Emax=0.1, h=1.0, C=1.0)
         drug2 = Hill(E0=1.0, Emax=0.3, h=1.0, C=1.0)
-        d1, d2, E = BlissDataGenerator.get_2drug_combination(
+        d1, d2, E = MultiplicativeSurvivalDataGenerator.get_2drug_combination(
             drug1, drug2, 0.01, 100, 0.01, 100, 5, 5, E_noise=0, d_noise=0
         )
 

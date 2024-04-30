@@ -33,7 +33,7 @@ class Bliss(DoseDependentSynergyModelND):
         if not self.is_specified:
             raise InvalidDrugModelError("Model is not specified.")
         E = 0 * d[:, 0] + 1  # Initialize to 1
-        for i, model in enumerate(self.single_models):
+        for i, model in enumerate(self.single_drug_models):
             E *= model.E(d[:, i])
         return E
 
