@@ -2,7 +2,7 @@
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Sequence
 import logging
 
 from scipy.optimize import curve_fit
@@ -21,13 +21,13 @@ _LOGGER = logging.Logger(__name__)
 class SynergyModelND(ABC):
     """Base class for all N-drug synergy models (N > 2)."""
 
-    def __init__(self, single_drug_models: Optional[list[DoseResponseModel1D]] = None):
+    def __init__(self, single_drug_models: Sequence[DoseResponseModel1D] = None):
         """-"""
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
 
-        self.N: int = -1
-        self.single_drug_models: Optional[list[DoseResponseModel1D]] = None
+        self.single_drug_models: Sequence[DoseResponseModel1D] = None
+        self.N = -1
 
         if single_drug_models:
             if len(single_drug_models) < 2:
@@ -53,6 +53,7 @@ class SynergyModelND(ABC):
             raise ValueError(f"This is an {self.N} drug model, which cannot be used with {N}-dimensional dose data")
         if self.single_drug_models is None:
             self.single_drug_models = []
+            self.N = N
 
         # Fit all non-specified single drug models
         default_type = self._default_single_drug_class
@@ -108,7 +109,7 @@ class SynergyModelND(ABC):
 class DoseDependentSynergyModelND(SynergyModelND):
     """Base class for N-drug synergy models (N > 2) for which synergy varies based on dose."""
 
-    def __init__(self, single_drug_models: Optional[list[DoseResponseModel1D]] = None):
+    def __init__(self, single_drug_models: Sequence[DoseResponseModel1D] = None):
         """-"""
         super().__init__(single_drug_models=single_drug_models)
         self.synergy = None
@@ -166,13 +167,21 @@ class ParametricSynergyModelND(SynergyModelND):
 
     def __init__(
         self,
-        single_drug_models: Optional[list[DoseResponseModel1D]] = None,
+        single_drug_models: Sequence[DoseResponseModel1D] = None,
+        num_drugs: int = -1,
         **kwargs,
     ):
         """Ctor."""
-        self._set_init_parameters(**kwargs)
-        self._bounds = self._get_bounds(**kwargs)
+        if single_drug_models:
+            self.N = len(single_drug_models)
+        else:
+            self.N = num_drugs
+        ParametricModelMixins.set_init_parameters(self, self._parameter_names, **kwargs)
+        ParametricModelMixins.set_bounds(
+            self, self._transform_params_to_fit, self._default_fit_bounds, self._parameter_names, **kwargs
+        )
         super().__init__(single_drug_models=single_drug_models)
+
         self.fit_function: Callable
         self.jacobian_function: Callable  # Currently no jacobian for any N-drug models
 
@@ -193,11 +202,6 @@ class ParametricSynergyModelND(SynergyModelND):
         """Returns model's parameters"""
         return {param: self.__getattribute__(param) for param in self._parameter_names}
 
-    def _set_init_parameters(self, **kwargs):
-        """-"""
-        for param in self._parameter_names:
-            self.__setattr__(param, kwargs.get(param, None))
-
     @abstractmethod
     def _set_parameters(self, parameters):
         """-"""
@@ -212,25 +216,7 @@ class ParametricSynergyModelND(SynergyModelND):
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
         """-"""
 
-    def _get_bounds(self, **kwargs):
-        """Find all {X}_bounds kwargs and format them into self._bounds as expected by curve_fit()."""
-        lower_bounds = []
-        upper_bounds = []
-        default_bounds = self._default_fit_bounds
-        for param in self._parameter_names:
-            lb, ub = kwargs.pop(f"{param}_bounds", default_bounds.get(param, (-np.inf, np.inf)))
-            lower_bounds.append(lb)
-            upper_bounds.append(ub)
-        lower_bounds = list(self._transform_params_to_fit(lower_bounds))
-        upper_bounds = list(self._transform_params_to_fit(upper_bounds))
-
-        # Log warnings for any other "bounds" passed in
-        for key in kwargs:
-            if "_bounds" in key:
-                _LOGGER.warning(f"Ignoring unexpected bounds for {type(self).__name__}: {key}={kwargs[key]}")
-        return lower_bounds, upper_bounds
-
-    def fit(self, d1, d2, E, **kwargs):
+    def fit(self, d, E, **kwargs):
         """Fit the model to data.
 
         Parameters
@@ -251,25 +237,25 @@ class ParametricSynergyModelND(SynergyModelND):
             kwargs to pass to scipy.optimize.curve_fit()
         """
         self._is_fit = True
-        d1 = np.asarray(d1)
-        d2 = np.asarray(d2)
+        d = np.asarray(d)
         E = np.asarray(E)
 
         # Parse optional kwargs
         use_jacobian = kwargs.pop("use_jacobian", True)
         bootstrap_iterations = kwargs.pop("bootstrap_iterations", 0)
+        max_iterations = kwargs.pop("max_iterations", 10000)
         p0 = kwargs.pop("p0", None)
         if p0 is not None:
             p0 = list(p0)
 
         # Sanitize initial guesses
-        p0 = self._get_initial_guess(d1, d2, E, p0)
+        p0 = self._get_initial_guess(d, E, p0)
 
         # Pass bounds and p0 to kwargs for curve_fit()
         kwargs["p0"] = p0
 
         with np.errstate(divide="ignore", invalid="ignore"):
-            popt = self._fit(d1, d2, E, use_jacobian, **kwargs)
+            popt = self._fit(d, E, use_jacobian, **kwargs)
 
         if popt is None:  # curve_fit() failed to fit parameters
             self._converged = False
@@ -280,11 +266,13 @@ class ParametricSynergyModelND(SynergyModelND):
         self._set_parameters(popt)
 
         n_parameters = len(popt)
-        n_samples = len(d1)
+        n_samples = d.shape[0]
         if n_samples - n_parameters - 1 > 0:  # TODO: What is this watching out for?
-            self._score(d1, d2, E)
+            self._score(d, E)
             kwargs["p0"] = self._transform_params_to_fit(popt)
-            self._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs)
+            ParametricModelMixins.bootstrap_parameter_ranges(
+                self, E, use_jacobian, bootstrap_iterations, max_iterations, d, **kwargs
+            )
 
     def get_confidence_intervals(self, confidence_interval: float = 95):
         """Returns the lower bound and upper bound estimate for each parameter.
@@ -310,7 +298,7 @@ class ParametricSynergyModelND(SynergyModelND):
         intervals = np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
         return dict(zip(self._parameter_names, intervals))
 
-    def _get_initial_guess(self, d1, d2, E, p0):
+    def _get_initial_guess(self, d, E, p0):
         """Transform user supplied initial guess to correct scale, and/or guess p0."""
         if p0:
             p0 = list(self._transform_params_to_fit(p0))
@@ -330,14 +318,14 @@ class ParametricSynergyModelND(SynergyModelND):
         """
         return params
 
-    def _fit(self, d1, d2, E, use_jacobian: bool, **kwargs):
+    def _fit(self, d, E, use_jacobian: bool, **kwargs):
         """Fit the model to data (d, E)"""
         jac = self.jacobian_function if use_jacobian else None
         if use_jacobian and jac is None:
             _LOGGER.warning(f"No jacobian function is specified for {type(self).__name__}, ignoring `use_jacobian`.")
         popt = curve_fit(
             self.fit_function,
-            (d1, d2),
+            d,
             E,
             bounds=self._bounds,
             jac=jac,
@@ -348,7 +336,7 @@ class ParametricSynergyModelND(SynergyModelND):
             return None
         return self._transform_params_from_fit(popt)
 
-    def _score(self, d1, d2, E):
+    def _score(self, d, E):
         """Calculate goodness of fit and model quality scores
 
         This calculations
@@ -368,85 +356,10 @@ class ParametricSynergyModelND(SynergyModelND):
         n_parameters = len(self.get_parameters())
         n_datapoints = len(E)
 
-        self.sum_of_squares_residuals = utils.residual_ss(d1, d2, E, self.E)
+        self.sum_of_squares_residuals = utils.residual_ss_1d(d, E, self.E)
         self.r_squared = utils.r_squared(E, self.sum_of_squares_residuals)
         self.aic = utils.AIC(self.sum_of_squares_residuals, n_parameters, n_datapoints)
         self.bic = utils.BIC(self.sum_of_squares_residuals, n_parameters, n_datapoints)
-
-    def _bootstrap_resample(self, d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs):
-        """Identify confidence intervals for parameters using bootstrap resampling.
-
-        Residuals are randomly sampled from a normal distribution with :math:`\sigma = \sqrt{\frac{RSS}{n - N}}`
-        where :math:`RSS` is the residual sum of square, :math:`n` is the number of data points, and :math:`N` is the
-        number of parameters.
-        """
-        if not self.is_specified:
-            raise ModelNotParameterizedError()
-        if not self.is_converged:
-            raise ModelNotFitToDataError()
-
-        n_data_points = len(E)
-        n_parameters = len(self.get_parameters())
-
-        sigma_residuals = np.sqrt(self.sum_of_squares_residuals / (n_data_points - n_parameters))  # type: ignore
-
-        E_model = self.E(d1, d2)
-        bootstrap_parameters = []
-
-        for _ in range(bootstrap_iterations):
-            residuals_step = norm.rvs(loc=0, scale=sigma_residuals, size=n_data_points)
-
-            # Add random noise to model prediction
-            E_iteration = E_model + residuals_step
-
-            # Fit noisy data
-            with np.errstate(divide="ignore", invalid="ignore"):
-                popt1 = self._fit(d1, d2, E_iteration, use_jacobian=use_jacobian, **kwargs)
-
-            if popt1 is not None:
-                bootstrap_parameters.append(popt1)
-
-        if len(bootstrap_parameters) > 0:
-            self.bootstrap_parameters = np.vstack(bootstrap_parameters)
-        else:
-            self.bootstrap_parameters = None
-
-    def _make_summary_row(
-        self,
-        key: str,
-        comp_val: int,
-        val: float,
-        ci: dict[str, tuple[float, float]],
-        tol: float,
-        log: bool,
-        gt_outcome: str,
-        lt_outcome: str,
-        default_outcome: str = "additive",
-    ):
-        if ci:
-            lb, ub = ci[key]
-            if lb > comp_val:
-                comparison = f"> {comp_val}"
-                outcome = gt_outcome
-            elif ub < comp_val:
-                comparison = f"< {comp_val}"
-                outcome = lt_outcome
-            else:
-                comparison = f"~= {comp_val}"
-                outcome = default_outcome
-            return [key, f"{val:0.3g}", f"({lb:0.3g}, {ub:0.3g})", comparison, outcome]
-        val_scaled = np.log(val) if log else val
-        comp_val_scaled = np.log(comp_val) if log else comp_val
-        if val_scaled > comp_val_scaled + tol:
-            comparison = f"> {comp_val}"
-            outcome = gt_outcome
-        elif val_scaled < comp_val_scaled - tol:
-            comparison = f"< {comp_val}"
-            outcome = lt_outcome
-        else:
-            comparison = f"~= {comp_val}"
-            outcome = default_outcome
-        return [key, f"{val:0.3g}", comparison, outcome]
 
     @property
     def is_specified(self) -> bool:

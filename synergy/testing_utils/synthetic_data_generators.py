@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-from typing import Optional
+from typing import Optional, Sequence
 
 import numpy as np
 from scipy.stats import norm
@@ -190,7 +190,7 @@ class DoseDependentReferenceDataGenerator:
     @classmethod
     def get_ND_combination(
         cls,
-        drug_models: list[DoseResponseModel1D],
+        drug_models: Sequence[DoseResponseModel1D],
         dmin: list[float],
         dmax: list[float],
         n_points: list[int],

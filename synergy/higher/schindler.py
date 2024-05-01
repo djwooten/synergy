@@ -15,13 +15,16 @@
 
 import numpy as np
 
-from ..single import Hill
-from .nonparametric_base import DoseDependentHigher
+from synergy.exceptions import InvalidDrugModelError
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
+from synergy.single.hill import Hill
+from synergy.higher.synergy_model_Nd import DoseDependentSynergyModelND
 
-class Schindler(DoseDependentHigher):
+
+class Schindler(DoseDependentSynergyModelND):
     """Schindler's multidimensional Hill equation model.
-    
-    From "Theory of synergistic effects: Hill-type response surfaces as 'null-interaction' models for mixtures" - Michael Schindler. This model is built to satisfy the Loewe additivity criterion, 
+
+    From "Theory of synergistic effects: Hill-type response surfaces as 'null-interaction' models for mixtures" - Michael Schindler. This model is built to satisfy the Loewe additivity criterion,
 
     Schindler assumes each drug has a Hill dose response, and defines a multidimensional Hill equation that satisfies Loewe additivity. Unlike Loewe, Schindler can be defined for combinations whose effect exceeds Emax of either drug (Loewe is limited by Emax of the *weaker* drug).
 
@@ -30,57 +33,54 @@ class Schindler(DoseDependentHigher):
     synergy : array_like, float
         (-inf,0)=antagonism, (0,inf)=synergism
     """
-    
-    def fit(self, d, E, single_models=None, **kwargs):
-        d = np.asarray(d)
-        E = np.asarray(E)
-        n = d.shape[1]
-        super().fit(d, E, single_models=single_models, **kwargs)
-        single_models=self.single_models
+
+    def E_Reference(self, d):
+        """-"""
+        if not self.is_specified:
+            raise InvalidDrugModelError("Model is not specified.")
+
         E0 = 0
-        
-        # Fit single drugs
-        for single in single_models:
-            E0 += single.E0 / n
+        for single in self.single_drug_models:
+            E0 += single.E0 / self.N
 
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             # Schindler assumes drugs start at 0 and go up to Emax
-            uE = E0 - E
-            uE_schindler = self._model(d, E0)
-            self.synergy = uE - uE_schindler
+            self.reference = self._model(d, E0)
 
-        # Ensure all single-drug Schindler scores are 0
-        for i in range(n):
-                # Mask where all other drugs are minimum (ideally 0)
-                mask = d[:,i]>=0 # This should always be true
-                for j in range(n):
-                    if i==j: continue
-                    mask = mask & (d[:,j]==np.min(d[:,j]))
-                mask = np.where(mask)
-                self.synergy[mask] = 0
-
-        return self.synergy
-
+    def _get_synergy(self, d, E):
+        """-"""
+        E0 = 0
+        for single in self.single_drug_models:
+            E0 += single.E0 / self.N
+        uE = E0 - E
+        return self._sanitize_synergy(d, uE - self.reference, 0)
 
     def _model(self, d, E0):
         """
         From "Theory of synergistic effects: Hill-type response surfaces as 'null-interaction' models for mixtures" - Michael Schindler
-        
+
         E - u_hill = 0 : Additive
         E - u_hill > 0 : Synergistic
         E - u_hill < 0 : Antagonistic
         """
-        h = np.asarray([model.h for model in self.single_models])
-        C = np.asarray([model.C for model in self.single_models])
-        Emax = E0 - np.asarray([model.Emax for model in self.single_models])
+        h = np.asarray([model.h for model in self.single_drug_models])
+        C = np.asarray([model.C for model in self.single_drug_models])
+        Emax = E0 - np.asarray([model.Emax for model in self.single_drug_models])
 
-        m = d/C
-        
-        y = (h*m).sum(axis=1) / m.sum(axis=1)
-        u_max = (Emax*m).sum(axis=1) / m.sum(axis=1)
+        m = d / C
+
+        y = (h * m).sum(axis=1) / m.sum(axis=1)
+        u_max = (Emax * m).sum(axis=1) / m.sum(axis=1)
         power = np.power(m.sum(axis=1), y)
-        
-        return u_max * power / (1. + power)
 
-    def _get_single_drug_classes(self):
-        return Hill, Hill
+        return u_max * power / (1.0 + power)
+
+    @property
+    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return Hill
+
+    @property
+    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+        """-"""
+        return Hill
