@@ -32,7 +32,7 @@ class HSA(DoseDependentSynergyModelND):
         if not self.is_specified:
             raise InvalidDrugModelError("Model is not specified.")
         E = d * np.nan  # Initialize to NaN
-        for i, model in enumerate(self.single_models):
+        for i, model in enumerate(self.single_drug_models):
             E[:, i] = model.E(d[:, i])
         return np.nanmin(E, axis=1)
 

@@ -14,13 +14,22 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
+from typing import Optional
 
 import numpy as np
 from scipy.stats import norm
 
+from synergy.combination.bliss import Bliss as Bliss2D
+from synergy.higher.bliss import Bliss as BlissND
+from synergy.combination.hsa import HSA as Hsa2D
+from synergy.higher.hsa import HSA as HsaND
 from synergy.combination import MuSyC
+from synergy.combination.schindler import Schindler as Schindler2D
+from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
 from synergy.combination.braid import BRAID
 from synergy.combination.zimmer import Zimmer
+from synergy.higher.synergy_model_Nd import DoseDependentSynergyModelND
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.utils import dose_utils
 from synergy.single import Hill
 
@@ -143,14 +152,17 @@ class ShamDataGenerator:
         return doses, E
 
 
-class MultiplicativeSurvivalDataGenerator:
-    """Tools to simulate noisy data following the multiplicative survival principal.
+class DoseDependentReferenceDataGenerator:
+    """-"""
 
-    Also known as Bliss Independence.
-    """
+    MODEL: Optional[type[DoseDependentSynergyModel2D]] = None
+    MODEL_ND: Optional[type[DoseDependentSynergyModelND]] = None
+    MIN_E: float = np.nan
+    MAX_E: float = np.nan
 
-    @staticmethod
-    def get_2drug_combination(
+    @classmethod
+    def get_combination(
+        cls,
         drug1_model,
         drug2_model,
         d1min: float,
@@ -164,17 +176,21 @@ class MultiplicativeSurvivalDataGenerator:
         d_noise: float = 0.05,
     ):
         """-"""
+        if cls.MODEL is None:
+            raise ValueError("No 2-drug model defined for this reference data generator")
         d1, d2 = dose_utils.make_dose_grid(d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates)
         d1_noisy = _noisify(d1, d_noise, min_val=0)
         d2_noisy = _noisify(d2, d_noise, min_val=0)
-        E1_alone = drug1_model.E(d1_noisy)
-        E2_alone = drug2_model.E(d2_noisy)
-        E = _noisify(E1_alone * E2_alone, E_noise, min_val=0, max_val=1)
+
+        model = cls.MODEL(drug1_model, drug2_model)
+        E = model.E_reference(d1_noisy, d2_noisy)
+        E = _noisify(E, E_noise, min_val=cls.MIN_E, max_val=cls.MAX_E)
         return d1, d2, E
 
-    @staticmethod
-    def get_Ndrug_combination(
-        drug_models: list,
+    @classmethod
+    def get_ND_combination(
+        cls,
+        drug_models: list[DoseResponseModel1D],
         dmin: list[float],
         dmax: list[float],
         n_points: list[int],
@@ -183,45 +199,38 @@ class MultiplicativeSurvivalDataGenerator:
         d_noise: float = 0.05,
     ):
         """-"""
+        if cls.MODEL_ND is None:
+            raise ValueError("No N-drug model defined for this reference data generator")
         d = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, replicates=replicates, include_zero=True)
-        E = d * 0
-        for i, model in enumerate(drug_models):
-            d_noisy = _noisify(d[:, i], d_noise, min_val=0)
-            E[:, i] = model.E(d_noisy)
-        E = np.prod(E, axis=1)
-        E = _noisify(E, E_noise, min_val=0, max_val=1)
+        d = _noisify(d, d_noise, min_val=0)
+
+        model = cls.MODEL_ND(single_drug_models=drug_models)
+        E = model.E_reference(d)
+        E = _noisify(E, E_noise, min_val=cls.MIN_E, max_val=cls.MAX_E)
         return d, E
 
 
-class HSADataGenerator:
-    """Tools to simulate noisy data following HSA."""
+class MultiplicativeSurvivalReferenceDataGenerator(DoseDependentReferenceDataGenerator):
+    """-"""
 
-    @staticmethod
-    def get_2drug_combination(
-        drug1_model,
-        drug2_model,
-        d1min: float,
-        d1max: float,
-        d2min: float,
-        d2max: float,
-        stronger_orientation=np.minimum,
-        n_points1: int = 6,
-        n_points2: int = 6,
-        replicates: int = 1,
-        include_zero: bool = True,
-        E_noise: float = 0.05,
-        d_noise: float = 0.05,
-    ):
-        """-"""
-        d1, d2 = dose_utils.make_dose_grid(
-            d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates, include_zero=include_zero
-        )
-        d1_noisy = _noisify(d1, d_noise, min_val=0)
-        d2_noisy = _noisify(d2, d_noise, min_val=0)
-        E1_alone = drug1_model.E(d1_noisy)
-        E2_alone = drug2_model.E(d2_noisy)
-        E = _noisify(stronger_orientation(E1_alone, E2_alone), E_noise, min_val=0, max_val=1)
-        return d1, d2, E
+    MODEL: type[DoseDependentSynergyModel2D] = Bliss2D
+    MODEL_ND: type[DoseDependentSynergyModelND] = BlissND
+    MIN_E = 0
+    MAX_E = 1
+
+
+class HSAReferenceDataGenerator(DoseDependentReferenceDataGenerator):
+    """-"""
+
+    MODEL: type[DoseDependentSynergyModel2D] = Hsa2D
+    MODEL_ND: type[DoseDependentSynergyModelND] = HsaND
+
+
+class SchindlerReferenceDataGenerator(DoseDependentReferenceDataGenerator):
+    """-"""
+
+    MODEL: type[DoseDependentSynergyModel2D] = Schindler2D
+    MODEL_ND: type[DoseDependentSynergyModelND] = None
 
 
 class MuSyCDataGenerator:

@@ -25,20 +25,21 @@ class SynergyModelND(ABC):
         """-"""
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
+
+        self.N: int = -1
+        self.single_drug_models: Optional[list[DoseResponseModel1D]] = None
+
         if single_drug_models:
             if len(single_drug_models) < 2:
                 raise ValueError(f"Cannot fit a model with fewer than two drugs (N={len(single_drug_models)})")
 
-            self.N = len(self.single_drug_models)
             self.single_drug_models = [
                 utils.sanitize_single_drug_model(
                     deepcopy(model), default_type, required_type, **self._default_single_drug_kwargs
                 )
                 for model in single_drug_models
             ]
-        else:
-            self.N = -1
-            self.single_drug_models = None
+            self.N = len(self.single_drug_models)
 
     @abstractmethod
     def fit(self, d, E, **kwargs):
