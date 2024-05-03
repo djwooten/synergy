@@ -252,7 +252,6 @@ class ParametricSynergyModel2D(SynergyModel2D):
             ParametricModelMixins.bootstrap_parameter_ranges(
                 self, E, use_jacobian, bootstrap_iterations, max_iterations, d1, d2, **kwargs
             )
-            # self._bootstrap_resample(d1, d2, E, use_jacobian, bootstrap_iterations, **kwargs)
 
     def get_confidence_intervals(self, confidence_interval: float = 95):
         """Returns the lower bound and upper bound estimate for each parameter.

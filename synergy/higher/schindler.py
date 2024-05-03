@@ -34,7 +34,7 @@ class Schindler(DoseDependentSynergyModelND):
         (-inf,0)=antagonism, (0,inf)=synergism
     """
 
-    def E_Reference(self, d):
+    def E_reference(self, d):
         """-"""
         if not self.is_specified:
             raise InvalidDrugModelError("Model is not specified.")
@@ -45,7 +45,7 @@ class Schindler(DoseDependentSynergyModelND):
 
         with np.errstate(divide="ignore", invalid="ignore"):
             # Schindler assumes drugs start at 0 and go up to Emax
-            self.reference = self._model(d, E0)
+            return self._model(d, E0)
 
     def _get_synergy(self, d, E):
         """-"""
@@ -71,7 +71,7 @@ class Schindler(DoseDependentSynergyModelND):
 
         y = (h * m).sum(axis=1) / m.sum(axis=1)
         u_max = (Emax * m).sum(axis=1) / m.sum(axis=1)
-        power = np.power(m.sum(axis=1), y)
+        power = np.float_power(m.sum(axis=1), y)
 
         return u_max * power / (1.0 + power)
 

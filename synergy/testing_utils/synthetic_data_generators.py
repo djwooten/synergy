@@ -25,6 +25,7 @@ from synergy.combination.hsa import HSA as Hsa2D
 from synergy.higher.hsa import HSA as HsaND
 from synergy.combination import MuSyC
 from synergy.combination.schindler import Schindler as Schindler2D
+from synergy.higher.schindler import Schindler as SchindlerND
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
 from synergy.combination.braid import BRAID
 from synergy.combination.zimmer import Zimmer
@@ -38,8 +39,8 @@ FLOAT_MAX = sys.float_info.max
 
 
 def _noisify(vals: np.ndarray, noise: float, min_val: float = np.nan, max_val: float = np.nan) -> np.ndarray:
-    """Add relative noise."""
-    vals = vals + norm.rvs(scale=vals * noise)
+    """Add relative noise sampled from a normal distribution with scale=`noise`."""
+    vals = vals + norm.rvs(scale=np.abs(vals) * noise)
     if not np.isnan(min_val):
         vals[vals < min_val] = min_val
     if not np.isnan(max_val):
@@ -230,7 +231,7 @@ class SchindlerReferenceDataGenerator(DoseDependentReferenceDataGenerator):
     """-"""
 
     MODEL: type[DoseDependentSynergyModel2D] = Schindler2D
-    MODEL_ND: type[DoseDependentSynergyModelND] = None
+    MODEL_ND: type[DoseDependentSynergyModelND] = SchindlerND
 
 
 class MuSyCDataGenerator:
