@@ -78,36 +78,24 @@ class MuSyC(ParametricSynergyModelND):
         return self._model(d, *params)
 
     def _transform_params_to_fit(self, params):
-        params = np.array(params, copy=True)
-        n = self._get_n_drugs_from_params(params)
-        if n < 2:
-            return None
+        """Transform linear parameters to log-scale for fitting.
 
-        h_param_offset = 2**n
+        Params come in order E, h, C, alpha, gamma. So everything past E should be log-scaled.
+        """
+        params = np.array(params, copy=True)
+        h_param_offset = self._num_E_params
         params[h_param_offset:] = np.log(params[h_param_offset:])
         return params
 
-    def _transform_params_from_fit(self, popt):
-        params = np.array(popt, copy=True)
-        n = self._get_n_drugs_from_params(params)
-        if n < 2:
-            return None
+    def _transform_params_from_fit(self, params):
+        """Transform logscaled parameters to linear scale.
 
-        h_param_offset = 2**n
+        Params come in order E, h, C, alpha, gamma. So everything past E should be exponentiated.
+        """
+        params = np.array(params, copy=True)
+        h_param_offset = self._num_E_params
         params[h_param_offset:] = np.exp(params[h_param_offset:])
         return params
-
-    def _get_n_drugs_from_params(self, params):
-        n = 2
-        if self.variant == "no_gamma":
-            threshold = lambda n: 2**n + n + 2 ** (n - 1) * n
-        else:
-            threshold = lambda n: 2**n + n * 2**n
-        while len(params) > threshold(n):
-            n += 1
-        if len(params) == threshold(n):
-            return n
-        return 0
 
     def _get_initial_guess(self, d, E, single_models=None, p0=None):
         n = d.shape[1]
@@ -332,10 +320,12 @@ class MuSyC(ParametricSynergyModelND):
 
     @property
     def _num_alpha_params(self):
+        """-"""
         return 2 ** (self.N - 1) * self.N - self.N
 
     @property
     def _num_gamma_params(self):
+        """-"""
         return 2 ** (self.N - 1) * self.N - self.N
 
     def _model_no_gamma(self, doses, *args):
@@ -380,9 +370,7 @@ class MuSyC(ParametricSynergyModelND):
 
         # Loop over all other states/rows (except the last one)
         for idx in range(1, 2**n - 1):
-            row = [
-                0,
-            ] * (2**n)
+
             add_drugs, remove_drugs = MuSyC._get_neighbors(idx, n)
             for drugnum, jidx in add_drugs:
                 gamma = 1
@@ -422,7 +410,7 @@ class MuSyC(ParametricSynergyModelND):
                 # This state gaines from transitions from jidx
                 matrix[:, idx, jidx] += np.power(self.r * np.power(alpha * d, h), gamma)
 
-        # The final constraint is that U+A1+A2+... = 1
+        # The final constraint is that U + A1 + A2 + ... = 1
         matrix[:, -1, :] = 1
         matrix_inv = np.linalg.inv(matrix)
 
@@ -438,18 +426,18 @@ class MuSyC(ParametricSynergyModelND):
         if s.count(1) == 0:
             return 0
         n = len(s)
-        snums = []
+        state_nums = []
         for i in range(n):
             if s[n - i - 1] == 1:
-                snums.append(str(i + 1))
+                state_nums.append(str(i + 1))
         if sb is None:
-            return ",".join(snums)
+            return ",".join(state_nums)
         sbnums = []
         for i in range(n):
             if sb[n - i - 1] == 1:
                 sbnums.append(str(i + 1))
-        sbnums = [i for i in sbnums if not i in snums]
-        return ",".join(snums), ",".join(sbnums)
+        sbnums = [i for i in sbnums if i not in state_nums]
+        return ",".join(state_nums), ",".join(sbnums)
 
     @staticmethod
     def _get_beta(state, parameters):
@@ -487,11 +475,10 @@ class MuSyC(ParametricSynergyModelND):
         if not self._is_parameterized():
             return None
 
-        n = self._get_n_drugs_from_params(self.parameters)
-        h_param_offset = 2**n
-        C_param_offset = h_param_offset + n
-        alpha_param_offset = C_param_offset + n
-        gamma_param_offset = alpha_param_offset + 2 ** (n - 1) * n - n
+        h_param_offset = self._num_E_params
+        C_param_offset = h_param_offset + self._num_h_params
+        alpha_param_offset = C_param_offset + self._num_C_params
+        gamma_param_offset = alpha_param_offset + self._num_alpha_params
 
         if self.converged and self.bootstrap_parameters is not None:
             parameter_ranges = self.get_parameter_range(confidence_interval=confidence_interval)
@@ -501,9 +488,8 @@ class MuSyC(ParametricSynergyModelND):
         params = dict()
 
         # Add E parameters
-        for idx in range(2**n):
-            state = MuSyC._idx_to_state(idx, n)
-            # state = "".join([str(s) for s in state])
+        for idx in range(self._num_E_params):
+            state = MuSyC._idx_to_state(idx, self.N)
             statestr = MuSyC._state_to_drugstr(state)
             l = []
             l.append(self.parameters[idx])
@@ -527,7 +513,7 @@ class MuSyC(ParametricSynergyModelND):
                 params["beta_%s" % statestr] = l
 
         # h and C
-        for i in range(n):
+        for i in range(self.N):
             lh = []
             lC = []
             lh.append(self.parameters[h_param_offset + i])
@@ -541,10 +527,10 @@ class MuSyC(ParametricSynergyModelND):
         # alpha and gamma
 
         for idx_a in self._edge_index.keys():
-            state_a = MuSyC._idx_to_state(idx_a, n)
+            state_a = MuSyC._idx_to_state(idx_a, self.N)
 
             for idx_b in self._edge_index[idx_a].keys():
-                state_b = MuSyC._idx_to_state(idx_b, n)
+                state_b = MuSyC._idx_to_state(idx_b, self.N)
                 state_a_str, state_b_str = MuSyC._state_to_drugstr(state_a, state_b)
 
                 lalpha = []
