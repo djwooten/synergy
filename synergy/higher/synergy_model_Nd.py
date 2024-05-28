@@ -6,7 +6,6 @@ from typing import Any, Callable, Optional, Sequence
 import logging
 
 from scipy.optimize import curve_fit
-from scipy.stats import norm
 import numpy as np
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
@@ -27,7 +26,8 @@ class SynergyModelND(ABC):
         required_type = self._required_single_drug_class
 
         self.single_drug_models: Sequence[DoseResponseModel1D] = None
-        self.N = -1
+        if not hasattr(self, "N"):
+            self.N = -1
 
         if single_drug_models:
             if len(single_drug_models) < 2:
@@ -71,6 +71,7 @@ class SynergyModelND(ABC):
             single_kwargs = deepcopy(kwargs)
             single_kwargs.pop("bootstrap_iterations", None)
             # TODO: Get single drug p0
+            # TODO: Get bounds
             model.fit(d[mask, single_idx].flatten(), E[mask], **single_kwargs)
 
     @abstractmethod
