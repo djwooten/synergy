@@ -156,5 +156,90 @@ class MuSyCNDUnitTests(TestCase):
         self.assertEqual(MuSyC._get_drug_difference_string([1, 0, 0], [0, 0, 0]), "")  # removing is ignored
 
 
+class MuSyCNDTests(TestCase):
+    """Tests for the n-dimensional MuSyC model"""
+
+    def test_asymptotic_limits(self):
+        """Ensure the asymptotic dose limits work correctly"""
+        params = {
+            "E_0": 1.0,
+            "E_1": 0.6,
+            "E_2": 0.5,
+            "E_1,2": 0.7,
+            "E_3": 0.2,
+            "E_1,3": 0.2,
+            "E_2,3": 0.15,
+            "E_1,2,3": 0.0,
+            "h_0": 1.0,
+            "h_1": 2.0,
+            "h_2": 0.5,
+            "C_0": 1.0,
+            "C_1": 1.0,
+            "C_2": 1.0,
+            "alpha_1_3": 1.0,
+            "alpha_1_2": 1.0,
+            "alpha_2_3": 1.0,
+            "alpha_2_1": 1.0,
+            "alpha_1,2_3": 1.0,
+            "alpha_3_2": 1.0,
+            "alpha_3_1": 1.0,
+            "alpha_1,3_2": 1.0,
+            "alpha_2,3_1": 1.0,
+        }
+        model = MuSyC(num_drugs=3, **params)
+        M = 1e9  # "maximum" dose
+        d = np.asarray(
+            [
+                [0, 0, 0],  # 0, 0, 0
+                [1, 0, 0],  # 0, 0, 0 -> 1, 0, 0
+                [0, 1, 0],  # 0, 0, 0 -> 0, 1, 0
+                [0, 0, 1],  # 0, 0, 0 -> 0, 0, 1
+                [M, 0, 0],  # 1, 0, 0
+                [0, M, 0],  # 0, 1, 0
+                [0, 0, M],  # 0, 0, 1
+                [M, 1, 0],  # 1, 0, 0 -> 1, 1, 0
+                [M, 0, 1],  # 1, 0, 0 -> 1, 0, 1
+                [1, M, 0],  # 0, 1, 0 -> 1, 1, 0
+                [0, M, 1],  # 0, 1, 0 -> 0, 1, 1
+                [1, 0, M],  # 0, 0, 1 -> 1, 0, 1
+                [0, 1, M],  # 0, 0, 1 -> 0, 1, 1
+                [M, M, 0],  # 1, 1, 0
+                [M, 0, M],  # 1, 0, 1
+                [0, M, M],  # 0, 1, 1
+                [M, M, 1],  # 1, 1, 0 -> 1, 1, 1
+                [M, 1, M],  # 1, 0, 1 -> 1, 1, 1
+                [1, M, M],  # 0, 1, 1 -> 1, 1, 1
+                [M, M, M],  # 1, 1, 1
+            ],
+            dtype=np.float64,
+        )
+        E = model.E(d)
+        expected = np.asarray(
+            [
+                params["E_0"],
+                (params["E_0"] + params["E_1"]) / 2.0,
+                (params["E_0"] + params["E_2"]) / 2.0,
+                (params["E_0"] + params["E_3"]) / 2.0,
+                params["E_1"],
+                params["E_2"],
+                params["E_3"],
+                (params["E_1"] + params["E_1,2"]) / 2.0,
+                (params["E_1"] + params["E_1,3"]) / 2.0,
+                (params["E_2"] + params["E_1,2"]) / 2.0,
+                (params["E_2"] + params["E_2,3"]) / 2.0,
+                (params["E_3"] + params["E_1,3"]) / 2.0,
+                (params["E_3"] + params["E_2,3"]) / 2.0,
+                params["E_1,2"],
+                params["E_1,3"],
+                params["E_2,3"],
+                (params["E_1,2"] + params["E_1,2,3"]) / 2.0,
+                (params["E_1,3"] + params["E_1,2,3"]) / 2.0,
+                (params["E_2,3"] + params["E_1,2,3"]) / 2.0,
+                params["E_1,2,3"],
+            ]
+        )
+        np.testing.assert_allclose(E, expected, atol=1e-4)
+
+
 if __name__ == "__main__":
     unittest.main()

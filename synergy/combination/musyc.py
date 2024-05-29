@@ -572,7 +572,6 @@ class MuSyC(ParametricSynergyModel2D):
         rows = [header]
 
         # beta
-
         rows.append(
             ParametricModelMixins.make_summary_row("beta", 0, self.beta, ci, tol, False, "synergistic", "antagonistic")
         )
