@@ -18,6 +18,15 @@ class ParametricModelMixins:
             model.__setattr__(param, kwargs.get(param, None))
 
     @staticmethod
+    def set_parameters(model, parameter_names: list[str], *args):
+        """-"""
+        # TODO use this for synergy_model_2d just like with synergy_model_Nd
+        if len(parameter_names) != len(args):
+            raise ValueError("Number of parameters must match number of parameter names.")
+        for param, value in zip(parameter_names, args):
+            model.__setattr__(param, value)
+
+    @staticmethod
     def set_bounds(model, transform, default_bounds: dict[str, tuple[float]], parameter_names: list[str], **kwargs):
         """-"""
         lower_bounds = []

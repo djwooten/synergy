@@ -55,20 +55,6 @@ class MuSyC(ParametricSynergyModelND):
         else:
             self.fit_function = self._model
 
-    def E(self, d):
-        if len(d.shape) != 2:
-            raise ValueError("d must be a 2D array")
-
-        n = d.shape[1]
-        if n < 2:
-            raise ValueError("synergy.higher.MuSyC requires at least two drugs")
-
-        if not self._is_parameterized():
-            return ModelNotParameterizedError()
-
-        params = self._transform_params_to_fit(self.parameters)
-        return self.fit_function(d, *params)
-
     def _transform_params_to_fit(self, params):
         """Transform linear parameters to log-scale for fitting.
 
@@ -244,8 +230,19 @@ class MuSyC(ParametricSynergyModelND):
         return add_drugs, remove_drugs
 
     @staticmethod
-    def _get_edge_indices(n) -> dict[dict[int, int]]:
-        edge_index: dict[dict[int, int]] = dict()
+    def _get_edge_indices(n: int) -> dict[int, dict[int, int]]:
+        """Return a map of start state, end state, to index of associated alpha (gamma) parameter
+
+        When evaluating the model, we need to know which alpha (gamma) parameter to use for a given edge. This method
+        calculates those indices.
+
+        For example, with 3 drugs, there are 9 synergy edges. So alpha_params will have 9 elements. The edge_index from
+        this map will indicate which parameter to use.
+
+        :param int n: Number of drugs
+        :return dict[int, dict[int, int]]: Map of start state, end state, to index of associated alpha (gamma) parameter
+        """
+        edge_index: dict[int, dict[int, int]] = dict()
         count = 0
         for i in range(1, 2**n):
             add_d, _rem_d = MuSyC._get_neighbors(i, n)  # only map edges corresponding to adding drugs, so ignore rem_d.
@@ -270,11 +267,11 @@ class MuSyC(ParametricSynergyModelND):
             param_names.append(f"C_{i}")
         for start_state in self._edge_index:
             for end_state in self._edge_index[start_state]:
-                drug_string = MuSyC._get_drug_string_from_edge(
+                edge_string = MuSyC._get_drug_string_from_edge(
                     MuSyC._idx_to_state(start_state, self.N), MuSyC._idx_to_state(end_state, self.N)
                 )
-                param_names.append(f"alpha_{drug_string}")
-                gamma_names.append(f"gamma_{drug_string}")
+                param_names.append(f"alpha_{edge_string}")
+                gamma_names.append(f"gamma_{edge_string}")
 
         if self.fit_gamma:
             return param_names + gamma_names
@@ -314,18 +311,20 @@ class MuSyC(ParametricSynergyModelND):
         """-"""
         return 2 ** (self.N - 1) * self.N - self.N
 
-    def _model_no_gamma(self, doses, *args):
+    def _model_no_gamma(self, d, *args):
         """-"""
         loggammas = [0] * self._num_gamma_params
-        return self._model(doses, *args, *loggammas)
+        return self._model(d, *args, *loggammas)
 
-    def _model(self, doses, *args):
+    def _model(self, d, *args):
         """-"""
         # `matrix` is the state transition matrix for the MuSyC model
         # matrix[i, :, :] is the state transition matrix at d[i]
         # That is to say, the matrix is handled completely numerically, rather than symbolically solving and then
         # plugging in doses.
-        matrix = np.zeros((doses.shape[0], 2**self.N, 2**self.N))
+        if len(d.shape) == 1:
+            d = np.reshape(d, (-1, len(d)))
+        matrix = np.zeros((d.shape[0], 2**self.N, 2**self.N))
 
         E_param_offset = 0
         h_param_offset = E_param_offset + self._num_E_params
@@ -348,18 +347,21 @@ class MuSyC(ParametricSynergyModelND):
         # All edges are non-synergistic
 
         add_drugs, remove_drugs = MuSyC._get_neighbors(0, self.N)
+        # drugnum indicates which drug is added (like drug 0, drug 1, or drug 2 (0-based indexing))
+        # jidx is the matrix column index of the state reached by adding that drug
         for drugnum, jidx in add_drugs:
-            d = doses[:, drugnum]
+            d_row = d[:, drugnum]
             h = h_params[drugnum]
             C = C_params[drugnum]
             r1r = self.r * np.power(C, h)
 
-            matrix[:, 0, 0] -= self.r * np.power(d, h)
+            # Transitions away from U due to dose d
+            matrix[:, 0, 0] -= self.r * np.power(d_row, h)
+            # Transitions into U from neighboring states
             matrix[:, 0, jidx] = r1r
 
-        # Loop over all other states/rows (except the last one)
-        for idx in range(1, self._numn_E_params - 1):
-
+        # Loop over all other states/rows (except the last one, since we know An = 1 - (U + A1 + A2 + ...))
+        for idx in range(1, self._num_E_params - 1):
             add_drugs, remove_drugs = MuSyC._get_neighbors(idx, self.N)
             for drugnum, jidx in add_drugs:
                 gamma = 1
@@ -369,7 +371,7 @@ class MuSyC(ParametricSynergyModelND):
                     edge_idx = self._edge_index[idx][jidx]
                     gamma = gamma_params[edge_idx]
                     alpha = alpha_params[edge_idx]
-                d = doses[:, drugnum]
+                d_row = d[:, drugnum]
                 h = h_params[drugnum]
                 C = C_params[drugnum]
                 r1r = self.r * np.power(C, h)
@@ -378,7 +380,7 @@ class MuSyC(ParametricSynergyModelND):
                 matrix[:, idx, jidx] += r1r**gamma
 
                 # This state loses from transitions toward jidx
-                matrix[:, idx, idx] -= np.power(self.r * np.power(alpha * d, h), gamma)
+                matrix[:, idx, idx] -= np.power(self.r * np.power(alpha * d_row, h), gamma)
 
             for drugnum, jidx in remove_drugs:
                 gamma = 1
@@ -388,7 +390,7 @@ class MuSyC(ParametricSynergyModelND):
                     edge_idx = self._edge_index[jidx][idx]
                     gamma = gamma_params[edge_idx]
                     alpha = alpha_params[edge_idx]
-                d = doses[:, drugnum]
+                d_row = d[:, drugnum]
                 h = h_params[drugnum]
                 C = C_params[drugnum]
                 r1r = self.r * np.power(C, h)
@@ -397,7 +399,7 @@ class MuSyC(ParametricSynergyModelND):
                 matrix[:, idx, idx] -= r1r**gamma
 
                 # This state gaines from transitions from jidx
-                matrix[:, idx, jidx] += np.power(self.r * np.power(alpha * d, h), gamma)
+                matrix[:, idx, jidx] += np.power(self.r * np.power(alpha * d_row, h), gamma)
 
         # The final constraint is that U + A1 + A2 + ... = 1
         matrix[:, -1, :] = 1
@@ -412,8 +414,8 @@ class MuSyC(ParametricSynergyModelND):
         return np.dot(np.dot(matrix_inv, b), np.asarray(E_params))
 
     @staticmethod
-    def _get_drug_string_from_state(state):
-        """Converts state (e.g., [1,1,0]) to drug-string (e.g., "2,3")
+    def _get_drug_string_from_state(state: list[int]) -> str:
+        """Converts state (e.g., [1, 1, 0]) to drug-string (e.g., "2,3")
 
         State in this context indicates which drugs are present (1) vs absent (0). The 0th state index corresponds to
         the Nth drug. (e.g., [1, 0] -> "2", while [0, 1] -> "1")
@@ -422,17 +424,40 @@ class MuSyC(ParametricSynergyModelND):
         """
         # If state is undrugged, return 0
         if 1 not in state:
-            return 0
+            return "0"
         n = len(state)
 
         return ",".join(sorted([str(n - i) for i, val in enumerate(state) if val == 1]))
 
     @staticmethod
-    def _get_drug_string_from_edge(state_a, state_b):
-        """-"""
+    def _get_drug_string_from_edge(state_a: list[int], state_b: list[int]) -> str:
+        """Return a string representing the edge between two states
+
+        The string is {start_state}_{added_drugs}. So for example, if drugs 2 and 3 are present in state_a, and
+        drug 1 is added to get to state_b, the edge string would be "2,3_1".
+
+        :param list[int] state_a: List of drugs in state_a (0 for absent, 1 for present)
+        :param list[int] state_b: List of drugs in state_b
+        :return str: String representing the edge between state_a and state_b
+        """
         drugstr_a = MuSyC._get_drug_string_from_state(state_a)
-        drugstr_b = MuSyC._get_drug_string_from_state(state_b)
+        drugstr_b = MuSyC._get_drug_difference_string(state_a, state_b)
         return "_".join([drugstr_a, drugstr_b])
+
+    @staticmethod
+    def _get_drug_difference_string(state_a: list[int], state_b: list[int]) -> str:
+        """Return the difference in drugs between two states.
+
+        The drug difference string is a comma-separated list of drugs that are added. Removed drugs are ignored
+
+        :param list[int] state_a: List of drugs in state_a (0 for absent, 1 for present)
+        :param list[int] state_b: List of drugs in state_b
+        :return str: Comma-separated list of drugs that are added
+        """
+        n = len(state_a)
+        return ",".join(
+            sorted([str(n - i) for i, drugab in enumerate(zip(state_a, state_b)) if drugab[1] == drugab[0] + 1])
+        )
 
     @staticmethod
     def _get_beta(state, parameters):
@@ -471,169 +496,11 @@ class MuSyC(ParametricSynergyModelND):
         """-"""
         return Hill
 
-    # TODO
-    def _set_parameters(self, parameters):
-        """-"""
-
     def E_reference(self, d):
         """-"""
-        return self._model(
-            d,
-            self.E0,
-            self.E1,
-            self.E2,
-            min(self.E1, self.E2),
-            self.h1,
-            self.h2,
-            self.C1,
-            self.C2,
-            self.r1r,
-            self.r2r,
-            1.0,
-            1.0,
-            1.0,
-            1.0,
-        )
-
-    def get_parameters(self, confidence_interval=95):
-        if not self._is_parameterized():
-            return None
-
-        h_param_offset = self._num_E_params
-        C_param_offset = h_param_offset + self._num_h_params
-        alpha_param_offset = C_param_offset + self._num_C_params
-        gamma_param_offset = alpha_param_offset + self._num_alpha_params
-
-        if self.converged and self.bootstrap_parameters is not None:
-            parameter_ranges = self.get_parameter_range(confidence_interval=confidence_interval)
-        else:
-            parameter_ranges = None
-
-        params = dict()
-
-        # Add E parameters
-        for idx in range(self._num_E_params):
-            state = MuSyC._idx_to_state(idx, self.N)
-            statestr = MuSyC._get_drug_string_from_state(state)
-            l = []
-            l.append(self.parameters[idx])
-            if parameter_ranges is not None:
-                l.append(parameter_ranges[:, idx])
-            params["E_%s" % statestr] = l
-
-            # Add beta parameters
-            if state.count(1) > 1:
-                beta = MuSyC._get_beta(state, self.parameters)
-                l = []
-                l.append(beta)
-
-                if parameter_ranges is not None:
-                    beta_bootstrap = MuSyC._get_beta(state, self.bootstrap_parameters.T)
-
-                    beta_bootstrap = np.percentile(
-                        beta_bootstrap, [(100 - confidence_interval) / 2, 50 + confidence_interval / 2]
-                    )
-                    l.append(beta_bootstrap)
-                params["beta_%s" % statestr] = l
-
-        # h and C
-        for i in range(self.N):
-            lh = []
-            lC = []
-            lh.append(self.parameters[h_param_offset + i])
-            lC.append(self.parameters[C_param_offset + i])
-            if parameter_ranges is not None:
-                lh.append(parameter_ranges[:, h_param_offset + i])
-                lC.append(parameter_ranges[:, C_param_offset + i])
-            params["h%d" % i] = lh
-            params["C%d" % i] = lC
-
-        # alpha and gamma
-
-        for idx_a in self._edge_index.keys():
-            state_a = MuSyC._idx_to_state(idx_a, self.N)
-
-            for idx_b in self._edge_index[idx_a].keys():
-                state_b = MuSyC._idx_to_state(idx_b, self.N)
-                edge_str = MuSyC._get_drug_string_from_edge(state_a, state_b)
-
-                lalpha = []
-                lgamma = []
-
-                i = self._edge_index[idx_a][idx_b]
-                lalpha.append(self.parameters[alpha_param_offset + i])
-                if self.fit_gamma:
-                    lgamma.append(self.parameters[gamma_param_offset + i])
-
-                if parameter_ranges is not None:
-                    lalpha.append(parameter_ranges[:, alpha_param_offset + i])
-                    if self.fit_gamma:
-                        lgamma.append(parameter_ranges[:, gamma_param_offset + i])
-
-                params[f"alpha_{edge_str}"] = lalpha
-                if self.fit_gamma:
-                    params[f"gamma_{edge_str}"] = lgamma
-
-        return params
-
-    def summary(self, confidence_interval=95, tol=0.01):
-        pars = self.get_parameters(confidence_interval=confidence_interval)
-        if pars is None:
-            return None
-
-        ret = []
-        keys = pars.keys()
-        # beta
-        for key in keys:
-            if "beta" in key:
-                l = pars[key]
-                if len(l) == 1:
-                    if l[0] < -tol:
-                        ret.append("%s\t%0.2f\t(<0) antagonistic" % (key, l[0]))
-                    elif l[0] > tol:
-                        ret.append("%s\t%0.2f\t(>0) synergistic" % (key, l[0]))
-                else:
-                    v = l[0]
-                    lb, ub = l[1]
-                    if v < -tol and lb < -tol and ub < -tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<0) antagonistic" % (key, v, lb, ub))
-                    elif v > tol and lb > tol and ub > tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>0) synergistic" % (key, v, lb, ub))
-        # alpha
-        for key in keys:
-            if "alpha" in key:
-                l = pars[key]
-                if len(l) == 1:
-                    if np.log10(l[0]) < -tol:
-                        ret.append("%s\t%0.2f\t(<1) antagonistic" % (key, l[0]))
-                    elif np.log10(l[0]) > tol:
-                        ret.append("%s\t%0.2f\t(>1) synergistic" % (key, l[0]))
-                else:
-                    v = l[0]
-                    lb, ub = l[1]
-                    if np.log10(v) < -tol and np.log10(lb) < -tol and np.log10(ub) < -tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<1) antagonistic" % (key, v, lb, ub))
-                    elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>1) synergistic" % (key, v, lb, ub))
-
-        # gamma
-        for key in keys:
-            if "gamma" in key:
-                l = pars[key]
-                if len(l) == 1:
-                    if np.log10(l[0]) < -tol:
-                        ret.append("%s\t%0.2f\t(<1) antagonistic" % (key, l[0]))
-                    elif np.log10(l[0]) > tol:
-                        ret.append("%s\t%0.2f\t(>1) synergistic" % (key, l[0]))
-                else:
-                    v = l[0]
-                    lb, ub = l[1]
-                    if np.log10(v) < -tol and np.log10(lb) < -tol and np.log10(ub) < -tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(<1) antagonistic" % (key, v, lb, ub))
-                    elif np.log10(v) > tol and np.log10(lb) > tol and np.log10(ub) > tol:
-                        ret.append("%s\t%0.2f\t(%0.2f,%0.2f)\t(>1) synergistic" % (key, v, lb, ub))
-
-        if len(ret) > 0:
-            return "\n".join(ret)
-        else:
-            return "No synergy or antagonism detected with %d percent confidence interval" % (int(confidence_interval))
+        if not self.is_specified:
+            return ModelNotParameterizedError()
+        parameters = self._transform_params_to_fit(self._get_parameters())
+        alpha_offset = self._num_E_params + self._num_C_params + self._num_h_params
+        parameters[alpha_offset:] = 1.0
+        return self._model(d, *parameters)

@@ -47,7 +47,7 @@ class SynergyModelND(ABC):
 
     def _fit_single_drugs(self, d, E, **kwargs):
         """-"""
-        N = d.shape[1]
+        N = d.shape[-1]
 
         if self.N > 1 and N != self.N:
             raise ValueError(f"This is an {self.N} drug model, which cannot be used with {N}-dimensional dose data")
@@ -195,17 +195,24 @@ class ParametricSynergyModelND(SynergyModelND):
         self.bic: Optional[float]
         self.bootstrap_parameters = None
 
-    @abstractmethod
     def E(self, d):
         """-"""
+        if len(d.shape) == 0 or len(d.shape) > 2:
+            raise ValueError("d must be an array with columns representing each drug and rows each dose")
+
+        n = d.shape[-1]
+        if n != self.N:
+            raise ValueError(f"Expected d to have {self.N} columns, but got {n}")
+
+        if not self.is_specified:
+            return ModelNotParameterizedError()
+
+        params = self._transform_params_to_fit(self._get_parameters())
+        return self.fit_function(d, *params)
 
     def get_parameters(self) -> dict[str, Any]:
         """Returns model's parameters"""
         return {param: self.__getattribute__(param) for param in self._parameter_names}
-
-    @abstractmethod
-    def _set_parameters(self, parameters):
-        """-"""
 
     @property
     @abstractmethod
@@ -264,10 +271,13 @@ class ParametricSynergyModelND(SynergyModelND):
 
         # otherwise curve_fit() succeeded
         self._converged = True
-        self._set_parameters(popt)
+        ParametricModelMixins.set_parameters(self, *popt)
 
         n_parameters = len(popt)
-        n_samples = d.shape[0]
+        if len(d.shape) == 1:
+            n_samples = 1
+        else:
+            n_samples = d.shape[0]
         if n_samples - n_parameters - 1 > 0:  # TODO: What is this watching out for?
             self._score(d, E)
             kwargs["p0"] = self._transform_params_to_fit(popt)
@@ -318,6 +328,10 @@ class ParametricSynergyModelND(SynergyModelND):
         For instance, models that fit logh and logC must transform from h and C
         """
         return params
+
+    def _get_parameters(self):
+        """-"""
+        return [self.__getattribute__(param) for param in self._parameter_names]
 
     def _fit(self, d, E, use_jacobian: bool, **kwargs):
         """Fit the model to data (d, E)"""

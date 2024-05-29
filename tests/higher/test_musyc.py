@@ -53,6 +53,7 @@ class MuSyCNDUnitTests(TestCase):
         for p in model._parameter_names:
             print(p)
         # TODO
+        self.assertAlmostEqual(0, 100)
 
     def test_idx_to_state(self):
         """Ensure state is computed correctly.
@@ -125,15 +126,34 @@ class MuSyCNDUnitTests(TestCase):
         import json
 
         print(json.dumps(edge_indices, indent=4))
-        self.assertAlmostEqual(0, 100)
+        # TODO make test
 
     def test_get_drug_string_from_state(self):
-        """Ensure drug strings are calculated correctly"""
+        """Ensure drug strings are calculated correctly
+
+        The drug string is a comma-separated list of drugs that are present in the state.
+        """
         self.assertEqual(MuSyC._get_drug_string_from_state([1, 1, 0]), "2,3")
+        self.assertEqual(MuSyC._get_drug_string_from_state([1, 0, 1, 1, 0]), "2,3,5")
 
     def test_get_drug_string_from_edge(self):
-        """Ensure edge string is correct"""
-        self.assertEqual(MuSyC._get_drug_string_from_edge([1, 0, 0], [1, 0, 1]), "3_1,3")
+        """Ensure edge string is correct
+
+        The edge string is an underscore-separated list of the starting and ending drug strings.
+        """
+        self.assertEqual(MuSyC._get_drug_string_from_edge([1, 0, 0], [1, 0, 1]), "3_1")
+
+    def test_get_drug_difference_string(self):
+        """Ensure drug difference string is correct
+
+        The drug difference string is a comma-separated list of drugs that are added.
+        """
+        #                                            drug   3  2  1    3  2  1
+        self.assertEqual(MuSyC._get_drug_difference_string([1, 0, 0], [1, 0, 1]), "1")
+        self.assertEqual(MuSyC._get_drug_difference_string([1, 0, 0], [1, 1, 0]), "2")
+        self.assertEqual(MuSyC._get_drug_difference_string([1, 0, 0], [1, 1, 1]), "1,2")
+        self.assertEqual(MuSyC._get_drug_difference_string([1, 0, 0], [1, 0, 0]), "")  # no difference
+        self.assertEqual(MuSyC._get_drug_difference_string([1, 0, 0], [0, 0, 0]), "")  # removing is ignored
 
 
 if __name__ == "__main__":
