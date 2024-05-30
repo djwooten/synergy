@@ -24,6 +24,7 @@ from synergy.higher.bliss import Bliss as BlissND
 from synergy.combination.hsa import HSA as Hsa2D
 from synergy.higher.hsa import HSA as HsaND
 from synergy.combination import MuSyC
+from synergy.higher.musyc import MuSyC as MuSyCND
 from synergy.combination.schindler import Schindler as Schindler2D
 from synergy.higher.schindler import Schindler as SchindlerND
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
@@ -374,6 +375,54 @@ class MuSyCDataGenerator:
             E_noise=E_noise,
             d_noise=d_noise,
         )
+
+    @staticmethod
+    def get_ND_combination(
+        dmin: list[float] = None,
+        dmax: list[float] = None,
+        n_points: list[int] = None,
+        replicates: int = 1,
+        include_zero=True,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
+        num_drugs: int = 3,
+        **kwargs,
+    ):
+        """Get n-dimensional synthetic synergy data using the MuSyC model."""
+        # Figure out the number of drugs
+        if dmin:
+            num_drugs = len(dmin)
+        if num_drugs < 2:
+            raise ValueError("Must have at least 2 drugs for an N-drug combination.")
+
+        # Get default paramaters
+        parameters = kwargs or {}
+        model = MuSyCND(num_drugs=num_drugs)
+        C_params = [1.0] * num_drugs  # record C params to help set default dmin and dmax
+        for parameter in model._parameter_names:  # TODO: Stop accessing private property
+            if parameter not in parameters:
+                if parameter.startswith("E"):
+                    num_present_drugs = 0 if parameter == "E_0" else len(parameter.split(","))
+                    parameters[parameter] = 1.0 - num_present_drugs / num_drugs
+                else:  # h, C, alpha, gamma
+                    parameters[parameter] = 1.0
+            model.__setattr__(parameter, parameters[parameter])
+            if parameter.startswith("C"):
+                idx = int(parameter.split("_")[1]) - 1  # Get index from C_1, C_2, etc...
+                C_params[idx] = parameters[parameter]
+
+        if not dmin:
+            dmin = [C / 20.0 for C in C_params]
+        if not dmax:
+            dmax = [C * 20.0 for C in C_params]
+        if not n_points:
+            n_points = [6] * num_drugs
+
+        d = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, replicates=replicates, include_zero=include_zero)
+        d = _noisify(d, d_noise, min_val=0)
+        E = model.E(d)
+        E = _noisify(E, E_noise)
+        return d, E
 
 
 class EffectiveDoseModelDataGenerator:

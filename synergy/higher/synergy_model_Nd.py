@@ -256,6 +256,8 @@ class ParametricSynergyModelND(SynergyModelND):
         if p0 is not None:
             p0 = list(p0)
 
+        self._fit_single_drugs(d, E)
+
         # Sanitize initial guesses
         p0 = self._get_initial_guess(d, E, p0)
 
