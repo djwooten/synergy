@@ -61,7 +61,7 @@ class SynergyModelND(ABC):
         for single_idx in range(N):
             if single_idx >= len(self.single_drug_models):
                 model = utils.sanitize_single_drug_model(
-                    default_type, default_type, required_type, **self._default_single_drug_kwargs
+                    None, default_type, required_type, **self._default_single_drug_kwargs
                 )
                 self.single_drug_models.append(model)
             model = self.single_drug_models[single_idx]
@@ -184,7 +184,7 @@ class ParametricSynergyModelND(SynergyModelND):
         super().__init__(single_drug_models=single_drug_models)
 
         self.fit_function: Callable
-        self.jacobian_function: Callable  # Currently no jacobian for any N-drug models
+        self.jacobian_function: Optional[Callable] = None  # Currently no jacobian for any N-drug models
 
         self._converged: bool = False
         self._is_fit: bool = False
@@ -273,7 +273,7 @@ class ParametricSynergyModelND(SynergyModelND):
 
         # otherwise curve_fit() succeeded
         self._converged = True
-        ParametricModelMixins.set_parameters(self, *popt)
+        ParametricModelMixins.set_parameters(self, self._parameter_names, *popt)
 
         n_parameters = len(popt)
         if len(d.shape) == 1:

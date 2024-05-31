@@ -257,7 +257,7 @@ class MuSyCFitTests(TestCase):
             ]
         )
     )
-    def test_hill_fit_no_bootstrap(self, fname):
+    def test_fit_musyc_no_bootstrap(self, fname):
         """Ensure the model fits correctly."""
         if "cooperativity" in fname:
             return
@@ -317,15 +317,15 @@ class MuSyCFitTests(TestCase):
 
         confidence_intervals_95 = model.get_confidence_intervals()
 
-        # Ensure true values are within confidence intervals
-        expected_parameters["beta"] = (
-            MuSyC._get_beta(  # We must add beta, because it is reported in CIs, but not parameters
-                expected_parameters["E0"],
-                expected_parameters["E1"],
-                expected_parameters["E2"],
-                expected_parameters["E3"],
-            )
+        # We must add beta, because it is reported in CIs, but not parameters
+        expected_parameters["beta"] = MuSyC._get_beta(
+            expected_parameters["E0"],
+            expected_parameters["E1"],
+            expected_parameters["E2"],
+            expected_parameters["E3"],
         )
+
+        # Ensure true values are within confidence intervals
         synergy_assertions.assert_dict_values_in_intervals(expected_parameters, confidence_intervals_95)
 
         # Ensure that less stringent CI is narrower

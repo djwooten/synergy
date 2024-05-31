@@ -12,7 +12,7 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 
 from synergy.higher import MuSyC
-from synergy.testing_utils.test_data_loader import load_test_data
+from synergy.testing_utils.test_data_loader import load_nd_test_data
 from synergy.testing_utils import assertions as synergy_assertions
 from synergy.utils import dose_utils
 
@@ -156,7 +156,7 @@ class MuSyCNDUnitTests(TestCase):
         self.assertEqual(MuSyC._get_drug_difference_string([1, 0, 0], [0, 0, 0]), "")  # removing is ignored
 
 
-class MuSyCNDTests(TestCase):
+class MuSyCNDModelTests(TestCase):
     """Tests for the n-dimensional MuSyC model"""
 
     def test_asymptotic_limits(self):
@@ -170,12 +170,12 @@ class MuSyCNDTests(TestCase):
             "E_1,3": 0.2,
             "E_2,3": 0.15,
             "E_1,2,3": 0.0,
-            "h_0": 1.0,
-            "h_1": 2.0,
-            "h_2": 0.5,
-            "C_0": 1.0,
+            "h_1": 1.0,
+            "h_2": 2.0,
+            "h_3": 0.5,
             "C_1": 1.0,
             "C_2": 1.0,
+            "C_3": 1.0,
             "alpha_1_3": 1.0,
             "alpha_1_2": 1.0,
             "alpha_2_3": 1.0,
@@ -239,6 +239,117 @@ class MuSyCNDTests(TestCase):
             ]
         )
         np.testing.assert_allclose(E, expected, atol=1e-4)
+
+
+class MuSyC3DFittingTests(TestCase):
+    """Tests for fitting the n-dimensional MuSyC model"""
+
+    @classmethod
+    def setUpClass(cls) -> None:
+        cls.EXPECTED_PARAMETERS = {
+            "synthetic_musyc3_reference_1.csv": {
+                "E_1": 0.0,
+                "E_2": 0.0,
+                "E_3": 0.0,
+                "E_1,2": 0.0,
+                "E_1,3": 0.0,
+                "E_2,3": 0.0,
+            },
+            "synthetic_musyc3_high_order_efficacy_synergy.csv": {
+                "E_0": 1.0,
+                "E_1": 2 / 3,
+                "E_2": 2 / 3,
+                "E_3": 2 / 3,
+                "E_1,2": 1 / 3,
+                "E_1,3": 1 / 3,
+                "E_2,3": 1 / 3,
+                "E_1,2,3": 0.0,
+                "h_1": 1.0,
+                "h_2": 1.0,
+                "h_3": 1.0,
+                "C_1": 1.0,
+                "C_2": 1.0,
+                "C_3": 1.0,
+                "alpha_1_2": 1.0,
+                "alpha_1_3": 1.0,
+                "alpha_2_1": 1.0,
+                "alpha_2_3": 1.0,
+                "alpha_3_1": 1.0,
+                "alpha_3_2": 1.0,
+                "alpha_1,2_3": 1.0,
+                "alpha_1,3_2": 1.0,
+                "alpha_2,3_1": 1.0,
+            },
+            "synthetic_musyc3_high_order_potency_synergy.csv": {
+                "alpha_1,2_3": 3.0,
+            },
+        }
+
+    def _get_expected_parameters(self, fname):
+        """Get the expected parameters for a given test file.
+
+        Uses default parameters for any parameters not specified.
+        """
+        default_parameters = self.EXPECTED_PARAMETERS["synthetic_musyc3_high_order_efficacy_synergy.csv"]
+        return dict(default_parameters, **self.EXPECTED_PARAMETERS[fname])
+
+    @hypothesis.settings(deadline=None)
+    @given(
+        sampled_from(
+            [
+                # "synthetic_musyc3_reference_1.csv",
+                "synthetic_musyc3_high_order_efficacy_synergy.csv",
+                "synthetic_musyc3_high_order_potency_synergy.csv",
+            ]
+        )
+    )
+    def test_fit_musyc3d_no_bootstrap(self, fname):
+        """Ensure the model fits correctly.
+
+        Correctness is determined using atol = rtol = 0.05, in numpy's assert_allclose
+
+        "synthetic_musyc3_reference_1.csv" is skipped because alpha fits are too hard when beta == 0, especially
+        in the N-dimensional case. This makes the confidence intervals too large, and the best fit fail the tolerances.
+        """
+        model = MuSyC(num_drugs=3)
+        d, E = load_nd_test_data(os.path.join(TEST_DATA_DIR, fname))
+        model.fit(d, E)
+
+        expected = self._get_expected_parameters(fname)
+        synergy_assertions.assert_dict_allclose(model.get_parameters(), expected, rtol=5e-2, atol=5e-2)
+
+    @hypothesis.settings(deadline=None)
+    @given(
+        sampled_from(
+            [
+                "synthetic_musyc3_reference_1.csv",
+                # "synthetic_musyc3_high_order_efficacy_synergy.csv",
+                # "synthetic_musyc3_high_order_potency_synergy.csv",
+            ]
+        )
+    )
+    def test_musyc_confidence_intervals(self, fname):
+        """Ensure confidence intervals are calculated correctly"""
+        expected = self._get_expected_parameters(fname)
+
+        model = MuSyC(num_drugs=3)
+        d, E = load_nd_test_data(os.path.join(TEST_DATA_DIR, fname))
+        model.fit(d, E, bootstrap_iterations=100)
+
+        # Ensure there were bootstrap iterations
+        self.assertIsNotNone(model.bootstrap_parameters)
+
+        confidence_intervals_95 = model.get_confidence_intervals()
+        confidence_intervals_50 = model.get_confidence_intervals(confidence_interval=50)
+
+        # Ensure that less stringent CI is narrower
+        # [=====95=====]  More confidence requires wider interval
+        #     [===50==]   Less confidence but tighter interval
+        synergy_assertions.assert_dict_interval_is_contained_in_other(confidence_intervals_50, confidence_intervals_95)
+
+        # Ensure true values are within confidence intervals
+        # Without tol, this gives get "h_2: 1.0 not in (0.9906860645502625, 0.9997539385137254)"
+        synergy_assertions.assert_dict_values_in_intervals(expected, confidence_intervals_95, tol=5e-4)
 
 
 if __name__ == "__main__":

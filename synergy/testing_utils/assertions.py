@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 
 
@@ -12,7 +13,15 @@ Present in second only: {d2_only}"""
         )
 
 
-def assert_dict_allclose(actual: dict, desired: dict, rtol=1e-07, atol=0, equal_nan=True, err_msg="", verbose=True):
+def assert_dict_allclose(
+    actual: dict[Any, float],
+    desired: dict[Any, float],
+    rtol: float = 1e-07,
+    atol: float = 0.0,
+    equal_nan: bool = True,
+    err_msg: str = "",
+    verbose: bool = True,
+):
     _assert_keys_equal(actual, desired)
 
     actual_vals = []

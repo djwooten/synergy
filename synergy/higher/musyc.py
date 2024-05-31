@@ -16,7 +16,7 @@
 from typing import Sequence
 import numpy as np
 
-from synergy import utils
+from synergy.utils import base as utils
 from synergy.exceptions import ModelNotParameterizedError
 from synergy.higher.synergy_model_Nd import ParametricSynergyModelND
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
@@ -155,7 +155,7 @@ class MuSyC(ParametricSynergyModelND):
                 p0 = E_params + h_params + C_params + alpha_params + gamma_params
 
         p0 = list(self._transform_params_to_fit(p0))
-        utils.sanitize_initial_guess(p0, self.bounds)
+        utils.sanitize_initial_guess(p0, self._bounds)
         return p0
 
     @staticmethod
@@ -262,9 +262,9 @@ class MuSyC(ParametricSynergyModelND):
             drug_string = MuSyC._get_drug_string_from_state(MuSyC._idx_to_state(i, self.N))
             param_names.append(f"E_{drug_string}")
         for i in range(self._num_h_params):
-            param_names.append(f"h_{i}")
+            param_names.append(f"h_{i + 1}")
         for i in range(self._num_C_params):
-            param_names.append(f"C_{i}")
+            param_names.append(f"C_{i + 1}")
         for start_state in self._edge_index:
             for end_state in self._edge_index[start_state]:
                 edge_string = MuSyC._get_drug_string_from_edge(
@@ -461,7 +461,22 @@ class MuSyC(ParametricSynergyModelND):
 
     @staticmethod
     def _get_beta(state, parameters):
-        """Calculates synergistic efficacy, a synergy parameter derived from E parameters."""
+        """Calculates synergistic efficacy, a synergy parameter derived from E parameters.
+
+        beta is defined for states associated with 2 or more present drugs.
+        The state's parents are states with one fewer drug active (e.g., parents of 011 are 001 and 010).
+        Examples:
+            The parents of [0, 1, 1] are [0, 0, 1] and [0, 1, 0].
+            The parents of [1, 1, 1] are [0, 1, 1], [1, 0, 1], and [1, 1, 0]
+        beta is calculated by comparing E, the strongest of E_parents, and E0.
+
+        `beta = (E_best_parent - E) / (E0 - E_best_parent)`
+
+        If beta > 0, it indicates the combination of all of the drugs together is more efficacious than the
+        than any of the parent combinations.
+
+        If beta < 0, it indicates the combination is less efficatious than the parent combinations.
+        """
 
         # beta is only defined for states associated with 2 or more drugs
         if state.count(1) < 2:
@@ -472,7 +487,6 @@ class MuSyC(ParametricSynergyModelND):
         idx = MuSyC._state_to_idx(state)
         E = parameters[idx]
 
-        # parents are states with one fewer drug active (e.g., parents of 011 are 001 and 010). beta is calculated by comparing E, the strongest of E_parents, and E0.
         E_parents = []
         for i in range(n):
             if state[i] == 1:
@@ -488,19 +502,55 @@ class MuSyC(ParametricSynergyModelND):
         beta = (E_best_parent - E) / (E0 - E_best_parent)
         return beta
 
+    @property
     def _default_single_drug_class(self):
         """-"""
         return Hill
 
+    @property
     def _required_single_drug_class(self):
         """-"""
         return Hill
 
     def E_reference(self, d):
         """-"""
-        if not self.is_specified:
+        if not self.is_specified and (
+            not self.single_drug_models or not all([model.is_specified for model in self.single_drug_models])
+        ):
             return ModelNotParameterizedError()
-        parameters = self._transform_params_to_fit(self._get_parameters())
-        alpha_offset = self._num_E_params + self._num_C_params + self._num_h_params
-        parameters[alpha_offset:] = 1.0
-        return self._model(d, *parameters)
+
+        parameters: dict[str, float] = {}
+        strongest_E = np.inf
+        E0 = 0
+
+        # If the model is not specified yet, get single-drug parameters from single-drug models
+        if not self.is_specified:
+            for i, model in enumerate(self.single_drug_models):
+                E0 += model.E0 / self.N
+                Emax = model.Emax
+                strongest_E = min(strongest_E, Emax)  # TODO: Add support for positive E orientation
+                parameters[f"E_{i + 1}"] = Emax
+                parameters[f"h_{i + 1}"] = model.h
+                parameters[f"C_{i + 1}"] = model.C
+        # Otherwise get single-drug parameters directly from the model
+        else:
+            for i in range(self.N):
+                E0 += self.E_0 / self.N
+                Emax = self.__getattribute__(f"E_{i + 1}")
+                strongest_E = min(strongest_E, Emax)
+                parameters[f"E_{i + 1}"] = Emax
+                parameters[f"h_{i + 1}"] = self.__getattribute__(f"h_{i + 1}")
+                parameters[f"C_{i + 1}"] = self.__getattribute__(f"C_{i + 1}")
+        parameters["E_0"] = E0
+
+        # Default all other parameters to no-synergy values
+        parameters_list = []
+        for param_key in self._parameter_names:
+            if param_key in parameters:  # single-drug parameters
+                parameters_list.append(parameters[param_key])
+            elif param_key.startswith("E"):  # E_{i,j,...} combinations
+                parameters_list.append(strongest_E)
+            else:  # alpha or gamma
+                parameters_list.append(1.0)
+
+        return self._model(d, *self._transform_params_to_fit(parameters_list))

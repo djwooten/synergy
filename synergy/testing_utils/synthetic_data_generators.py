@@ -204,10 +204,9 @@ class DoseDependentReferenceDataGenerator:
         if cls.MODEL_ND is None:
             raise ValueError("No N-drug model defined for this reference data generator")
         d = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, replicates=replicates, include_zero=True)
-        d = _noisify(d, d_noise, min_val=0)
 
         model = cls.MODEL_ND(single_drug_models=drug_models)
-        E = model.E_reference(d)
+        E = model.E_reference(_noisify(d, d_noise, min_val=0))
         E = _noisify(E, E_noise, min_val=cls.MIN_E, max_val=cls.MAX_E)
         return d, E
 
@@ -419,8 +418,7 @@ class MuSyCDataGenerator:
             n_points = [6] * num_drugs
 
         d = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, replicates=replicates, include_zero=include_zero)
-        d = _noisify(d, d_noise, min_val=0)
-        E = model.E(d)
+        E = model.E(_noisify(d, d_noise, min_val=0))
         E = _noisify(E, E_noise)
         return d, E
 
