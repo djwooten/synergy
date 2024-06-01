@@ -11,10 +11,10 @@ from synergy.testing_utils.synthetic_data_generators import ShamDataGenerator
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
-class DeltaLoeweTests(TestCase):
+class SchindlerTests(TestCase):
     """Tests for the Schindler synergy model."""
 
-    def test_fit_loewe(self):
+    def test_fit_sham(self):
         """-"""
         np.random.seed(49)
         single_drug = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)

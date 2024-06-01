@@ -175,7 +175,7 @@ class LogLinear(DoseResponseModel1D):
 
         return d * self._dose_scale
 
-    def create_fit(d, E, aggregation_function=np.mean):
+    def create_fit(d, E, aggregation_function=np.median):
         """Courtesy function to build a marginal linear model directly from
         data. Initializes a model using the provided aggregation function, then
         fits.

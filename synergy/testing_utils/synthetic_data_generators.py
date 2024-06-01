@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-from typing import Optional, Sequence
+from typing import Optional, Sequence, Union
 
 import numpy as np
 from scipy.stats import norm
@@ -41,7 +41,13 @@ FLOAT_MAX = sys.float_info.max
 
 def _noisify(vals: np.ndarray, noise: float, min_val: float = np.nan, max_val: float = np.nan) -> np.ndarray:
     """Add relative noise sampled from a normal distribution with scale=`noise`."""
-    vals = vals + norm.rvs(scale=np.abs(vals) * noise)
+    if noise == 0.0:
+        return vals
+    # scale=0 or scale=nan causes errors in rvs, so we must manually exclude these from noisification
+    nonzero_mask = np.where((vals != 0) & (~np.isnan(vals)))
+    noise_array = vals * 0
+    noise_array[nonzero_mask] = norm.rvs(scale=np.abs(vals[nonzero_mask]) * noise)
+    vals = vals + noise_array
     if not np.isnan(min_val):
         vals[vals < min_val] = min_val
     if not np.isnan(max_val):
@@ -128,30 +134,31 @@ class ShamDataGenerator:
         return d1, d2, E
 
     @staticmethod
-    def get_sham_higher(
+    def get_ND_combination(
         drug_model,
-        dmin: float,
-        dmax: float,
-        n_points: int,
         n_drugs: int,
+        dmin: Union[float, list[float]],
+        dmax: Union[float, list[float]],
+        n_points: Union[int, list[int]] = 6,
+        logscale: bool = False,
+        include_zero: bool = True,
         replicates: int = 1,
-        noise: float = 0.05,
+        E_noise: float = 0.05,
+        d_noise: float = 0.05,
     ):
         """Return dose and effect data corresponding to a 3+ drug sham combination experiment."""
-        doses = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, logscale=False)
-        doses_list = list(np.meshgrid(*doses))
-        for i in range(n_drugs):
-            doses_list[i] = doses_list[i].flatten()
-        doses_array = np.asarray(doses_list).T
-        E = drug_model.E(doses_array.sum(axis=1))
-
-        if noise > 0:
-            E0 = drug_model.E(0)
-            Emax = drug_model.E(FLOAT_MAX / 1e50)  # For most cases, this is probably safe to get Emax without overflows
-            noise = noise * (E0 - Emax)
-            E = E + noise * (2 * np.random.rand(len(E)) - 1)
-
-        return doses, E
+        # Convert dmin, dmax, and n_points to lists, if necessary
+        if not hasattr(dmin, "__iter__"):
+            dmin = [dmin] * n_drugs
+        if not hasattr(dmax, "__iter__"):
+            dmax = [dmax] * n_drugs
+        if not hasattr(n_points, "__iter__"):
+            n_points = [n_points] * n_drugs
+        doses = dose_utils.make_dose_grid_multi(
+            dmin, dmax, n_points, logscale=logscale, replicates=replicates, include_zero=include_zero
+        )
+        E = drug_model.E(_noisify(doses.sum(axis=1), d_noise, 0))
+        return doses, _noisify(E, E_noise)
 
 
 class DoseDependentReferenceDataGenerator:
@@ -196,17 +203,30 @@ class DoseDependentReferenceDataGenerator:
     def get_ND_combination(
         cls,
         drug_models: Sequence[DoseResponseModel1D],
-        dmin: list[float],
-        dmax: list[float],
-        n_points: list[int],
+        dmin: Optional[Union[float, list[float]]] = None,
+        dmax: Optional[Union[float, list[float]]] = None,
+        n_points: Union[int, list[int]] = 6,
         replicates: int = 1,
+        include_zero: bool = True,
         E_noise: float = 0.05,
         d_noise: float = 0.05,
     ):
         """-"""
         if cls.MODEL_ND is None:
             raise ValueError("No N-drug model defined for this reference data generator")
-        d = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, replicates=replicates, include_zero=True)
+        # default dose range to to 1/20 to 20
+        if dmin is None:
+            dmin = 1 / 20.0
+        if not dmax:
+            dmax = 20.0
+        # Convert dmin, dmax, and n_points to lists, if necessary
+        if not hasattr(dmin, "__iter__"):
+            dmin = [dmin] * len(drug_models)
+        if not hasattr(dmax, "__iter__"):
+            dmax = [dmax] * len(drug_models)
+        if not hasattr(n_points, "__iter__"):
+            n_points = [n_points] * len(drug_models)
+        d = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, replicates=replicates, include_zero=include_zero)
 
         model = cls.MODEL_ND(single_drug_models=drug_models)
         E = model.E_reference(_noisify(d, d_noise, min_val=0))

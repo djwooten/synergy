@@ -43,8 +43,6 @@ def make_dose_grid(
     :return: (d1, d2)
     :rtype: tuple
     """
-    replicates = int(replicates)
-
     if d1max <= d1min or d2max <= d2min:
         raise ValueError("The maximum dose must be higher than the minimum dose")
     if d1min < 0 or d2min < 0:
@@ -83,7 +81,15 @@ def make_dose_grid_multi(dmin, dmax, npoints, logscale=True, include_zero=False,
         raise ValueError("Cannot generate Nd drug grid with unequal N.")
     doses = []
     for Dmin, Dmax, n in zip(dmin, dmax, npoints):
+        if include_zero and Dmin > 0:
+            n -= 1
+        if Dmax <= Dmin:
+            raise ValueError(f"The maximum dose {Dmax} must be higher than the minimum dose {Dmin}")
         if logscale:
+            if Dmin == 0:
+                raise ValueError(
+                    "Cannot generate doses on logscale with minimum dose of 0. Use `include_zero=True` instead."
+                )
             logDmin = np.log10(Dmin)
             logDmax = np.log10(Dmax)
             d = np.logspace(logDmin, logDmax, num=n)
@@ -94,17 +100,12 @@ def make_dose_grid_multi(dmin, dmax, npoints, logscale=True, include_zero=False,
         doses.append(d)
     dosegrid = np.meshgrid(*doses)
 
-    if include_zero:
-        total_length = np.prod([n + 1 for n in npoints])
-    else:
-        total_length = np.prod(npoints)
-
+    total_length = np.prod(npoints)
     return_d = np.zeros((total_length, len(dmin)))
-
     for i in range(return_d.shape[1]):
         return_d[:, i] = dosegrid[i].flatten()
 
-    return np.vstack([return_d] * replicates)
+    return np.hstack([return_d] * replicates)
 
 
 def is_monotherapy_ND(d):

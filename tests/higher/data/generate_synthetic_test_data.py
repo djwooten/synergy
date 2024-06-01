@@ -3,6 +3,8 @@ import os
 
 import numpy as np
 
+from synergy.single.hill import Hill
+from synergy.single.log_linear import LogLinear
 import synergy.testing_utils.synthetic_data_generators as generators
 
 TEST_DATA_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
@@ -96,6 +98,28 @@ def main():
         ["d1", "d2", "d3", "E"],
         *generators.MuSyCDataGenerator.get_ND_combination(
             num_drugs=3, replicates=3, d_noise=0.01, E_noise=0.01, **parameters
+        ),
+    )
+
+    np.random.seed(492148)
+    hill0 = Hill(E0=1.0, Emax=0.0, h=1.2, C=1.0)
+    hill01 = Hill(E0=1.0, Emax=0.1, h=1.0, C=1.0)
+    hill02 = Hill(E0=1.0, Emax=0.2, h=0.9, C=1.0)
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_schindler3_reference.csv"),
+        ["d1", "d2", "d3", "E"],
+        *generators.SchindlerReferenceDataGenerator.get_ND_combination([hill0, hill01, hill02], replicates=3),
+    )
+
+    np.random.seed(34892)
+    loglinear0 = LogLinear.create_fit([1 / 20.0, 20.0], [1.0, 0.0])
+    loglinear01 = LogLinear.create_fit([1 / 20.0, 20.0], [1.0, 0.1])
+    loglinear02 = LogLinear.create_fit([1 / 20.0, 20.0], [1.0, 0.2])
+    write_data(
+        os.path.join(TEST_DATA_DIR, "synthetic_bliss3_linear_reference.csv"),
+        ["d1", "d2", "d3", "E"],
+        *generators.MultiplicativeSurvivalReferenceDataGenerator.get_ND_combination(
+            [loglinear0, loglinear01, loglinear02], replicates=3
         ),
     )
 

@@ -45,15 +45,20 @@ class Schindler(DoseDependentSynergyModelND):
 
         with np.errstate(divide="ignore", invalid="ignore"):
             # Schindler assumes drugs start at 0 and go up to Emax
-            return self._model(d, E0)
+            uE_model = self._model(d, E0)
+
+        uE_model[np.where(d.sum(axis=1) == 0)] = 0  # shindler(d=0) is nan, but we know is really 0
+        return E0 - uE_model
 
     def _get_synergy(self, d, E):
         """-"""
-        E0 = 0
-        for single in self.single_drug_models:
-            E0 += single.E0 / self.N
-        uE = E0 - E
-        return self._sanitize_synergy(d, uE - self.reference, 0)
+        # E0 = 0
+        # for single in self.single_drug_models:
+        #    E0 += single.E0 / self.N
+        # uE = E0 - E
+        # return self._sanitize_synergy(d, uE - self.reference, 0)
+        synergy = self.reference - E
+        return self._sanitize_synergy(d, synergy, 0)
 
     def _model(self, d, E0):
         """
