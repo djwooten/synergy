@@ -155,6 +155,35 @@ class MuSyCNDUnitTests(TestCase):
         self.assertEqual(MuSyC._get_drug_difference_string([1, 0, 0], [1, 0, 0]), "")  # no difference
         self.assertEqual(MuSyC._get_drug_difference_string([1, 0, 0], [0, 0, 0]), "")  # removing is ignored
 
+    def test_get_beta(self):
+        """Ensure beta is calculated correctly."""
+        # We only need E params to calculate beta, so ignore everything else
+        # NOTE these parameters must be in the correct order as what model._parameter_names generates
+        params = [
+            1.0,  # E_0
+            0.6,  # E_1
+            0.5,  # E_2
+            0.7,  # E_1,2
+            0.2,  # E_3
+            0.2,  # E_1,3
+            0.15,  # E_2,3
+            0.0,  # E_1,2,3
+        ]
+        expected_betas = {
+            "1,2": -0.4,  # (0.5 - 0.7) / (1.0 - 0.5)
+            "1,3": 0.0,  # (0.2 - 0.2) / (1.0 - 0.2)
+            "2,3": 0.0625,  # (0.2 - 0.15) / (1.0 - 0.2)
+            "1,2,3": 0.17647058823529413,  # (0.15 - 0.0) / (1.0 - 0.15)
+        }
+        for state_idx in range(8):
+            drug_state = MuSyC._idx_to_state(state_idx, 3)
+            drug_string = MuSyC._get_drug_string_from_state(drug_state)
+            beta = MuSyC._get_beta(params, drug_state)
+            if drug_string in expected_betas:
+                self.assertAlmostEqual(beta, expected_betas[drug_string], msg=f"Expected beta for {drug_string}")
+            else:
+                self.assertTrue(np.isnan(beta), msg=f"Expected beta == NaN for {drug_string}")
+
 
 class MuSyCNDModelTests(TestCase):
     """Tests for the n-dimensional MuSyC model"""
@@ -318,21 +347,40 @@ class MuSyC3DFittingTests(TestCase):
         expected = self._get_expected_parameters(fname)
         synergy_assertions.assert_dict_allclose(model.get_parameters(), expected, rtol=5e-2, atol=5e-2)
 
-    @hypothesis.settings(deadline=None)
-    @given(
-        sampled_from(
-            [
-                "synthetic_musyc3_reference_1.csv",
-                # "synthetic_musyc3_high_order_efficacy_synergy.csv",
-                # "synthetic_musyc3_high_order_potency_synergy.csv",
-            ]
-        )
-    )
-    def test_musyc_confidence_intervals(self, fname):
-        """Ensure confidence intervals are calculated correctly"""
-        expected = self._get_expected_parameters(fname)
+    #    @hypothesis.settings(deadline=None)
+    #    @given(
+    #        sampled_from(
+    #            [
+    #                "synthetic_musyc3_reference_1.csv",
+    #                # "synthetic_musyc3_high_order_efficacy_synergy.csv",
+    #                # "synthetic_musyc3_high_order_potency_synergy.csv",
+    #            ]
+    #        )
+    #    )
+    def test_musyc_confidence_intervals(self):  # , fname):
+        """Ensure confidence intervals are calculated correctly.
 
+        This test must add in the beta parameters to the expected values, since they are not fit in the reference data,
+        but are calculted in get_confidence_intervals().
+        """
+        np.random.seed(987214)
+        fname = "synthetic_musyc3_reference_1.csv"
+        expected = self._get_expected_parameters(fname)
         model = MuSyC(num_drugs=3)
+
+        # Pre-compute beta parameters, which are returned in the confidence intervals
+        E_parameters = []
+        for key in model._parameter_names:
+            if key.startswith("E"):
+                E_parameters.append(expected[key])
+        for idx in range(8):
+            drug_state = MuSyC._idx_to_state(idx, 3)
+            if drug_state.count(1) < 2:
+                continue
+            drug_string = MuSyC._get_drug_string_from_state(drug_state)
+            expected[f"beta_{drug_string}"] = MuSyC._get_beta(E_parameters, drug_state)
+
+        # Load and fit the data
         d, E = load_nd_test_data(os.path.join(TEST_DATA_DIR, fname))
         model.fit(d, E, bootstrap_iterations=100)
 

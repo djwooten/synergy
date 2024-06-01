@@ -21,6 +21,7 @@ from synergy.exceptions import ModelNotParameterizedError
 from synergy.higher.synergy_model_Nd import ParametricSynergyModelND
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.single.hill import Hill
+from synergy.utils.model_mixins import ParametricModelMixins
 
 
 class MuSyC(ParametricSynergyModelND):
@@ -280,11 +281,11 @@ class MuSyC(ParametricSynergyModelND):
     @property
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
         """-"""
-        bounds: dict[str, tuple[float, float]] = dict()
-        for param in self._parameter_names:
-            if param.startswith("h") or param.startswith("C") or param.startswith("alpha") or param.startswith("gamma"):
-                bounds[param] = (0, np.inf)
-        return bounds
+        return {
+            param: (0, np.inf)
+            for param in self._parameter_names
+            if param.startswith("h") or param.startswith("C") or param.startswith("alpha") or param.startswith("gamma")
+        }
 
     @property
     def _num_E_params(self):
@@ -460,7 +461,7 @@ class MuSyC(ParametricSynergyModelND):
         )
 
     @staticmethod
-    def _get_beta(state, parameters):
+    def _get_beta(parameters, state):
         """Calculates synergistic efficacy, a synergy parameter derived from E parameters.
 
         beta is defined for states associated with 2 or more present drugs.
@@ -477,10 +478,8 @@ class MuSyC(ParametricSynergyModelND):
 
         If beta < 0, it indicates the combination is less efficatious than the parent combinations.
         """
-
-        # beta is only defined for states associated with 2 or more drugs
-        if state.count(1) < 2:
-            return 0
+        if state.count(1) < 2:  # beta is only defined for states associated with 2 or more drugs
+            return np.nan
 
         n = len(state)
 
@@ -554,3 +553,75 @@ class MuSyC(ParametricSynergyModelND):
                 parameters_list.append(1.0)
 
         return self._model(d, *self._transform_params_to_fit(parameters_list))
+
+    def get_confidence_intervals(self, confidence_interval: float = 95):
+        """Returns the lower bound and upper bound estimate for each parameter.
+
+        This also calculates confidence intervals for beta, which is derived from the E parameters.
+
+        Parameters:
+        -----------
+        confidence_interval : float, default=95
+            % confidence interval to return. Must be between 0 and 100.
+        """
+        ci = super().get_confidence_intervals(confidence_interval=confidence_interval)
+
+        if self.bootstrap_parameters is None:
+            return ci
+
+        lb = (100 - confidence_interval) / 2.0
+        ub = 100 - lb
+
+        for i in range(self._num_E_params):
+            state = MuSyC._idx_to_state(i, self.N)
+            if state.count(1) < 2:  # beta is only defined for states associated with 2 or more drugs
+                continue
+            bootstrap_beta = MuSyC._get_beta(self.bootstrap_parameters.transpose(), state)
+            drug_string = MuSyC._get_drug_string_from_state(state)
+            ci[f"beta_{drug_string}"] = np.percentile(bootstrap_beta, [lb, ub])
+        return ci
+
+    def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
+        """-"""
+        pars = self.get_parameters()
+
+        header = ["Parameter", "Value", "Comparison", "Synergy"]
+        ci: dict[str, tuple[float, float]] = {}
+        if self.bootstrap_parameters is not None:
+            ci = self.get_confidence_intervals(confidence_interval=confidence_interval)
+            header.insert(2, f"{confidence_interval:0.3g}% CI")
+
+        rows = [header]
+
+        # beta
+        for idx in range(self._num_E_params):
+            state = MuSyC._idx_to_state(idx, self.N)
+            if state.count(1) < 2:
+                continue
+            drug_string = MuSyC._get_drug_string_from_state(state)
+            beta = MuSyC._get_beta(list(pars.values()), state)
+            rows.append(
+                ParametricModelMixins.make_summary_row(
+                    f"beta_{drug_string}", 0, beta, ci, tol, False, "synergistic", "antagonistic"
+                )
+            )
+
+        # alpha and gamma
+        for key in pars.keys():
+            if "alpha" in key or "gamma" in key:
+                rows.append(
+                    ParametricModelMixins.make_summary_row(
+                        key, 1, pars[key], ci, tol, True, "synergistic", "antagonistic"
+                    )
+                )
+
+        print(utils.format_table(rows))
+
+    def __repr__(self):
+        if self.is_specified:
+            parameters = self.get_parameters()
+            parameters["beta"] = self.beta
+            param_vals = ", ".join([f"{param}={val:0.3g}" for param, val in parameters.items()])  # typing: ignore
+        else:
+            param_vals = ""
+        return f"MuSyC({param_vals})"

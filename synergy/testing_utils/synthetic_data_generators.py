@@ -155,7 +155,10 @@ class ShamDataGenerator:
 
 
 class DoseDependentReferenceDataGenerator:
-    """-"""
+    """Class to generate synthetic non-synergistic (reference) response curves for dose-dependent synergy models.
+
+    Subclasses should define the MODEL and MODEL_ND class attributes, and may define MIN_E and MAX_E when appropriate.
+    """
 
     MODEL: Optional[type[DoseDependentSynergyModel2D]] = None
     MODEL_ND: Optional[type[DoseDependentSynergyModelND]] = None

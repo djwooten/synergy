@@ -1,4 +1,5 @@
 import logging
+from typing import Sequence
 
 import numpy as np
 from scipy.stats import norm
@@ -29,6 +30,32 @@ class ParametricModelMixins:
     @staticmethod
     def set_bounds(model, transform, default_bounds: dict[str, tuple[float]], parameter_names: list[str], **kwargs):
         """-"""
+        # TODO allow kwargs to include things like "E_bounds" or "alpha_bounds" to set bounds for ALL "E" or "alpha"
+        # parameters. So the lookup would be like:
+        # E0:
+        #   E0_bounds
+        #   E_bounds
+        #   default_bounds["E0"]
+        # use something like (lots of details to work out):
+        # generic_bounds = {}
+        # for kwarg in kwargs:
+        #     if kwarg.endswith("_bounds") and kwarg not in parameter_names:  # generic bounds, not for a specific parameter
+        #         generic_bounds[kwarg.split("_")[0]] = kwargs.pop(kwarg)
+        # then later
+        # for param in parameter_names:
+        #     base_param = ""
+        #     for key in generic_bounds:
+        #         if param.startswith(key):  # this could be a bug - use _find_matching_parameter()
+        #             base_param = key
+        #             break
+        #     lb, ub = kwargs.pop(
+        #         f"{param}_bounds",
+        #         generic_bounds.get(
+        #             base_param,
+        #             default_bounds.get(param, (-np.inf, np.inf))
+        #         )
+        #     )
+
         lower_bounds = []
         upper_bounds = []
 
@@ -93,7 +120,7 @@ class ParametricModelMixins:
         if len(bootstrap_parameters) > 0:
             model.bootstrap_parameters = np.vstack(bootstrap_parameters)
         else:
-            _LOGGER.warning("No bootstrap iterations successully converged.")
+            _LOGGER.warning("No bootstrap iterations successfully converged.")
             model.bootstrap_parameters = None
 
     @staticmethod
@@ -132,3 +159,29 @@ class ParametricModelMixins:
             comparison = f"~= {comp_val}"
             outcome = default_outcome
         return [key, f"{val:0.3g}", comparison, outcome]
+
+    @staticmethod
+    def _find_matching_parameter(parameters: Sequence[str], prefix: str) -> str:
+        """Find a parameter in a list that starts with a given prefix.
+
+        If multiple parameters start with the prefix, the shortest one is returned.
+        If no parameters start with the prefix, a warning is logged and an empty string is returned.
+
+        ```python
+        parameters = ["ele", "elephant", "gooses", "gopher"]
+        prefix = "ele"
+        matching_parameter = "ele"
+
+        prefix = "go"
+        matching_parameter = "???"
+        ```
+        """
+        shortest_match = ""
+        for param in parameters:
+            if shortest_match and len(param) > len(shortest_match):
+                continue
+            if param.startswith(prefix):
+                shortest_match = param
+        if not shortest_match:
+            _LOGGER.warning(f"No parameter starting with {prefix} found in {parameters}")
+        return shortest_match

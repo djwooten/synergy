@@ -63,15 +63,16 @@ class Schindler(DoseDependentSynergyModelND):
         E - u_hill > 0 : Synergistic
         E - u_hill < 0 : Antagonistic
         """
-        h = np.asarray([model.h for model in self.single_drug_models])
-        C = np.asarray([model.C for model in self.single_drug_models])
-        Emax = E0 - np.asarray([model.Emax for model in self.single_drug_models])
+        h = np.asarray([model.h for model in self.single_drug_models])  # len == N
+        C = np.asarray([model.C for model in self.single_drug_models])  # len == N
+        Emax = E0 - np.asarray([model.Emax for model in self.single_drug_models])  # len == N
 
-        m = d / C
+        m = d / C  # shape == (n_points, N)
+        msum = m.sum(axis=1)  # len == n_points
 
-        y = (h * m).sum(axis=1) / m.sum(axis=1)
-        u_max = (Emax * m).sum(axis=1) / m.sum(axis=1)
-        power = np.float_power(m.sum(axis=1), y)
+        y = (h * m).sum(axis=1) / msum  # len == n_points
+        u_max = (Emax * m).sum(axis=1) / msum  # len == n_points
+        power = np.float_power(msum, y)  # len == n_points
 
         return u_max * power / (1.0 + power)
 
