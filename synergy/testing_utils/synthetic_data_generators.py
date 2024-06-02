@@ -186,15 +186,18 @@ class DoseDependentReferenceDataGenerator:
         replicates: int = 1,
         E_noise: float = 0.05,
         d_noise: float = 0.05,
+        include_zero: bool = False,
     ):
         """-"""
         if cls.MODEL is None:
             raise ValueError("No 2-drug model defined for this reference data generator")
-        d1, d2 = dose_utils.make_dose_grid(d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates)
+        d1, d2 = dose_utils.make_dose_grid(
+            d1min, d1max, d2min, d2max, n_points1, n_points2, replicates=replicates, include_zero=include_zero
+        )
         d1_noisy = _noisify(d1, d_noise, min_val=0)
         d2_noisy = _noisify(d2, d_noise, min_val=0)
 
-        model = cls.MODEL(drug1_model, drug2_model)
+        model = cls.MODEL(drug1_model=drug1_model, drug2_model=drug2_model)
         E = model.E_reference(d1_noisy, d2_noisy)
         E = _noisify(E, E_noise, min_val=cls.MIN_E, max_val=cls.MAX_E)
         return d1, d2, E
