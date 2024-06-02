@@ -28,48 +28,43 @@ class ParametricModelMixins:
             model.__setattr__(param, value)
 
     @staticmethod
-    def set_bounds(model, transform, default_bounds: dict[str, tuple[float]], parameter_names: list[str], **kwargs):
-        """-"""
-        # TODO allow kwargs to include things like "E_bounds" or "alpha_bounds" to set bounds for ALL "E" or "alpha"
-        # parameters. So the lookup would be like:
-        # E0:
-        #   E0_bounds
-        #   E_bounds
-        #   default_bounds["E0"]
-        # use something like (lots of details to work out):
-        # generic_bounds = {}
-        # for kwarg in kwargs:
-        #     if kwarg.endswith("_bounds") and kwarg not in parameter_names:  # generic bounds, not for a specific parameter
-        #         generic_bounds[kwarg.split("_")[0]] = kwargs.pop(kwarg)
-        # then later
-        # for param in parameter_names:
-        #     base_param = ""
-        #     for key in generic_bounds:
-        #         if param.startswith(key):  # this could be a bug - use _find_matching_parameter()
-        #             base_param = key
-        #             break
-        #     lb, ub = kwargs.pop(
-        #         f"{param}_bounds",
-        #         generic_bounds.get(
-        #             base_param,
-        #             default_bounds.get(param, (-np.inf, np.inf))
-        #         )
-        #     )
+    def set_bounds(
+        model, transform: callable, default_bounds: dict[str, tuple[float]], parameter_names: list[str], **kwargs
+    ):
+        """Set model._bounds for a model, which will be used when fitting the model.
 
+        Bounds will be set using the following priorities
+        1. Explicit bounds passed in kwargs, e.g., E0_bounds=(0, 1)
+        2. Generic bounds for a class of parameters, e.g., E_bounds=(0, 1) applies for E0, E1, E2, ...
+        3. Default bounds for a specific parameter, e.g., E0_bounds=(0, 1)
+        4. (-inf, inf) if unspecified
+
+        Bounds are then transformed using the provided transform function. For example, if "EC50" is a parameter with
+        bounds (0.1, 10), and the transform function transforms EC50 to log10 space, then its bounds will be (-1, 1).
+
+        :param model: The model to set bounds for.
+        :param callable transform: A function to transform the bounds into the space used for fitting.
+        :param dict default_bounds: Default bounds for each parameter.
+        :param list[str] parameter_names: Names of the parameters to set bounds for.
+        :param kwargs: Bounds for specific (e.g., E0_bounds=(-1, 1)) or generic parameters (e.g., E_bounds=(-1, 1)).
+        """
         lower_bounds = []
         upper_bounds = []
 
+        # Get generic bounds (not for a specific parameter, but a whole class, e.g., "E_bounds" covers E0, E1, E2, ...)
+        generic_bounds = {}
+        for kwarg in list(kwargs.keys()):  # list() to avoid dict.pop() errors during iteration
+            if kwarg.endswith("_bounds") and kwarg not in parameter_names:
+                generic_bounds[kwarg.replace("_bounds", "")] = kwargs.pop(kwarg)
+
+        # Loop over all parameters and get bounds, in order of (1) kwargs, (2) generic_bounds, (3) default_bounds,
+        # (4) (-inf, inf)
         for param in parameter_names:
-            lb, ub = kwargs.pop(f"{param}_bounds", default_bounds.get(param, (-np.inf, np.inf)))
+            lb, ub = ParametricModelMixins._get_bound(param, generic_bounds, default_bounds, **kwargs)
             lower_bounds.append(lb)
             upper_bounds.append(ub)
         lower_bounds = list(transform(lower_bounds))
         upper_bounds = list(transform(upper_bounds))
-
-        # Log warnings for any other "bounds" passed in
-        for key in kwargs:
-            if "_bounds" in key:
-                _LOGGER.warning(f"Ignoring unexpected bounds for {type(model).__name__}: {key}={kwargs[key]}")
 
         model._bounds = lower_bounds, upper_bounds
         return lower_bounds, upper_bounds
@@ -185,3 +180,26 @@ class ParametricModelMixins:
         if not shortest_match:
             _LOGGER.warning(f"No parameter starting with {prefix} found in {parameters}")
         return shortest_match
+
+    @staticmethod
+    def _get_bound(
+        parameter: str,
+        generic_bounds: dict[str, tuple[float, float]],
+        default_bounds: dict[str, tuple[float, float]],
+        **kwargs,
+    ) -> tuple[float, float]:
+        """Get the default bounds for a parameter if it is not explicitly set."""
+        generic_parameter = ParametricModelMixins._get_generic_parameter(generic_bounds, parameter)
+        if generic_parameter:
+            defaults = generic_bounds[generic_parameter]
+        else:
+            defaults = default_bounds.get(parameter, (-np.inf, np.inf))
+        return kwargs.pop(f"{parameter}_bounds", defaults)
+
+    @staticmethod
+    def _get_generic_parameter(generic_bounds: dict[str, tuple[float, float]], parameter: str) -> str:
+        """Match a parameter to the longest matching key in generic_bounds"""
+        candidates = [key for key in generic_bounds if parameter.startswith(key)]
+        if not candidates:
+            return ""
+        return max(candidates, key=len)

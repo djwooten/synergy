@@ -32,7 +32,7 @@ class MuSyC(ParametricSynergyModelND):
         self,
         single_drug_models: Sequence[DoseResponseModel1D] = None,
         num_drugs: int = -1,
-        r=1.0,
+        r_r=1.0,
         fit_gamma=False,
         **kwargs,
     ):
@@ -49,7 +49,7 @@ class MuSyC(ParametricSynergyModelND):
 
         super().__init__(single_drug_models=single_drug_models, num_drugs=num_drugs, **kwargs)
 
-        self.r = r
+        self.r_r = r_r
 
         if not self.fit_gamma:
             self.fit_function = self._model_no_gamma
@@ -76,43 +76,19 @@ class MuSyC(ParametricSynergyModelND):
         params[h_param_offset:] = np.exp(params[h_param_offset:])
         return params
 
-    def _todo_do_bounds(self):
-        """TODO: I'm not sure if I can use this method to get bounds?
-
-        Currently I use ParametricModelMixins.set_bounds()
-        Which relies on names
-        """
-        n = self.N
-
-        n_E = 2**n
-        n_h = n
-        n_C = n
-        n_alpha = 2 ** (n - 1) * n - n
-        n_gamma = 2 ** (n - 1) * n - n
-
-        # TODO can I use this for main bounds?
-        E_bounds = [
-            self.E_bounds,
-        ] * n_E
-        logh_bounds = [
-            self.logh_bounds,
-        ] * n_h
-        logC_bounds = [
-            self.logC_bounds,
-        ] * n_C
-        logalpha_bounds = [
-            self.logalpha_bounds,
-        ] * n_alpha
-
-        if not self.fit_gamma:
-            bounds = E_bounds + logh_bounds + logC_bounds + logalpha_bounds
-        else:
-            loggamma_bounds = [
-                self.loggamma_bounds,
-            ] * n_gamma
-            bounds = E_bounds + logh_bounds + logC_bounds + logalpha_bounds + loggamma_bounds
-
-        self.bounds = tuple(zip(*bounds))
+    def _get_single_drug_bounds(self, drug_idx: int) -> dict[str, tuple[float, float]]:
+        """-"""
+        linear_lower_bounds = self._transform_params_from_fit(self._bounds[0])
+        linear_upper_bounds = self._transform_params_from_fit(self._bounds[1])
+        parameter_bounds = list(
+            zip(linear_lower_bounds, linear_upper_bounds)
+        )  # convert [(lb, lb, ...), (ub, ub, ...)] to [(lb, ub), (lb, ub), ...]
+        return {
+            "E0_bounds": parameter_bounds[0],
+            "Emax_bounds": parameter_bounds[self._parameter_names.index(f"E_{drug_idx + 1}")],
+            "h_bounds": parameter_bounds[self._parameter_names.index(f"h_{drug_idx + 1}")],
+            "C_bounds": parameter_bounds[self._parameter_names.index(f"C_{drug_idx + 1}")],
+        }
 
     def _get_initial_guess(self, d, E, p0):
         """-"""
@@ -354,12 +330,13 @@ class MuSyC(ParametricSynergyModelND):
             d_row = d[:, drugnum]
             h = h_params[drugnum]
             C = C_params[drugnum]
-            r1r = self.r * np.power(C, h)
+            # r1r = self.r * np.float_power(C, h)
+            r = self.r_r / np.float_power(C, h)
 
             # Transitions away from U due to dose d
-            matrix[:, 0, 0] -= self.r * np.power(d_row, h)
+            matrix[:, 0, 0] -= r * np.float_power(d_row, h)
             # Transitions into U from neighboring states
-            matrix[:, 0, jidx] = r1r
+            matrix[:, 0, jidx] = self.r_r
 
         # Loop over all other states/rows (except the last one, since we know An = 1 - (U + A1 + A2 + ...))
         for idx in range(1, self._num_E_params - 1):
@@ -375,13 +352,13 @@ class MuSyC(ParametricSynergyModelND):
                 d_row = d[:, drugnum]
                 h = h_params[drugnum]
                 C = C_params[drugnum]
-                r1r = self.r * np.power(C, h)
+                r = self.r_r / np.float_power(C, h)
 
                 # This state gains from reverse transitions out of jidx
-                matrix[:, idx, jidx] += r1r**gamma
+                matrix[:, idx, jidx] += self.r_r**gamma
 
                 # This state loses from transitions toward jidx
-                matrix[:, idx, idx] -= np.power(self.r * np.power(alpha * d_row, h), gamma)
+                matrix[:, idx, idx] -= np.float_power(r * np.float_power(alpha * d_row, h), gamma)
 
             for drugnum, jidx in remove_drugs:
                 gamma = 1
@@ -394,13 +371,13 @@ class MuSyC(ParametricSynergyModelND):
                 d_row = d[:, drugnum]
                 h = h_params[drugnum]
                 C = C_params[drugnum]
-                r1r = self.r * np.power(C, h)
+                r = self.r_r / np.float_power(C, h)
 
                 # This state loses from reverse transitions toward jidx
-                matrix[:, idx, idx] -= r1r**gamma
+                matrix[:, idx, idx] -= self.r_r**gamma
 
                 # This state gaines from transitions from jidx
-                matrix[:, idx, jidx] += np.power(self.r * np.power(alpha * d_row, h), gamma)
+                matrix[:, idx, jidx] += np.float_power(r * np.float_power(alpha * d_row, h), gamma)
 
         # The final constraint is that U + A1 + A2 + ... = 1
         matrix[:, -1, :] = 1

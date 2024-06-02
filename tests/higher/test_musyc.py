@@ -184,6 +184,89 @@ class MuSyCNDUnitTests(TestCase):
             else:
                 self.assertTrue(np.isnan(beta), msg=f"Expected beta == NaN for {drug_string}")
 
+    def test_initialize_with_bounds(self):
+        """Ensure MuSyC model can be instantiated with proper fitting bounds"""
+        params = {
+            "E_0_bounds": (0.95, 1.05),
+            "E_1,2,3_bounds": (0.0, 0.1),
+            "E_bounds": (0.0, 1.0),
+            "h_1_bounds": (np.exp(-1), np.exp(1)),
+            "alpha_bounds": (np.exp(-3), np.exp(3)),
+        }
+        expected_bounds = {
+            "E_0": (0.95, 1.05),  # explicitly passed
+            "E_1": (0.0, 1.0),  # E_bound
+            "E_2": (0.0, 1.0),  # E_bound
+            "E_3": (0.0, 1.0),  # E_bound
+            "E_1,2": (0.0, 1.0),  # E_bound
+            "E_1,3": (0.0, 1.0),  # E_bound
+            "E_2,3": (0.0, 1.0),  # E_bound
+            "E_1,2,3": (0.0, 0.1),  # explicitly passed
+            "h_1": (-1.0, 1.0),  # log scaled
+            "h_2": (-np.inf, np.inf),  # default
+            "h_3": (-np.inf, np.inf),  # default
+            "C_1": (-np.inf, np.inf),  # default
+            "C_2": (-np.inf, np.inf),  # default
+            "C_3": (-np.inf, np.inf),  # default
+            "alpha_1_2": (-3.0, 3.0),  # alpha_bounds
+            "alpha_1_3": (-3.0, 3.0),  # alpha_bounds
+            "alpha_2_1": (-3.0, 3.0),  # alpha_bounds
+            "alpha_2_3": (-3.0, 3.0),  # alpha_bounds
+            "alpha_3_1": (-3.0, 3.0),  # alpha_bounds
+            "alpha_3_2": (-3.0, 3.0),  # alpha_bounds
+            "alpha_1,2_3": (-3.0, 3.0),  # alpha_bounds
+            "alpha_1,3_2": (-3.0, 3.0),  # alpha_bounds
+            "alpha_2,3_1": (-3.0, 3.0),  # alpha_bounds
+        }
+        model = MuSyC(num_drugs=3, **params)
+        expected = [expected_bounds[param] for param in model._parameter_names]
+        expected = list(zip(*expected))  # convert [(lb, ub), (lb, ub), ...] to [(lb, lb, ...), (ub, ub, ...)]
+        np.testing.assert_allclose(np.asarray(model._bounds), np.asarray(expected))
+
+    def test_infer_single_drug_bounds(self):
+        """Ensure the model can infer single drug bounds"""
+        params = {
+            "E_0_bounds": (0.95, 1.05),
+            "E_1_bounds": (0.45, 0.55),
+            "E_2_bounds": (0.6, 0.7),
+            "E_1,2,3_bounds": (0.0, 0.1),
+            "E_bounds": (0.0, 1.0),
+            "h_1_bounds": (np.exp(-1), np.exp(1)),
+            "C_3_bounds": (0.5, 2.0),
+            "alpha_bounds": (np.exp(-3), np.exp(3)),
+        }
+        model = MuSyC(num_drugs=3, **params)
+        self.assertDictEqual(
+            model._get_single_drug_bounds(0),
+            {
+                "E0_bounds": (0.95, 1.05),  # from E_0_bounds
+                "Emax_bounds": (0.45, 0.55),  # from E_1_bounds
+                "h_bounds": (np.exp(-1), np.exp(1)),  # from h_1_bounds
+                "C_bounds": (0, np.inf),  # default
+            },
+            msg="Expected correct drug 1 bounds",
+        )
+        self.assertDictEqual(
+            model._get_single_drug_bounds(1),
+            {
+                "E0_bounds": (0.95, 1.05),  # from E_0_bounds
+                "Emax_bounds": (0.6, 0.7),  # from E_2_bounds
+                "h_bounds": (0, np.inf),  # default
+                "C_bounds": (0, np.inf),  # default
+            },
+            msg="Expected correct drug 2 bounds",
+        )
+        self.assertDictEqual(
+            model._get_single_drug_bounds(2),
+            {
+                "E0_bounds": (0.95, 1.05),  # from E_0_bounds
+                "Emax_bounds": (0.0, 1.0),  # from E_bounds
+                "h_bounds": (0, np.inf),  # default
+                "C_bounds": (0.5, 2.0),  # from C_3_bounds
+            },
+            msg="Expected correct drug 3 bounds",
+        )
+
 
 class MuSyCNDModelTests(TestCase):
     """Tests for the n-dimensional MuSyC model"""
