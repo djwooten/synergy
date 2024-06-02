@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Sequence
+from typing import Any, Sequence
 import numpy as np
 
 from synergy.utils import base as utils
@@ -76,8 +76,13 @@ class MuSyC(ParametricSynergyModelND):
         params[h_param_offset:] = np.exp(params[h_param_offset:])
         return params
 
-    def _get_single_drug_bounds(self, drug_idx: int) -> dict[str, tuple[float, float]]:
-        """-"""
+    def _get_default_single_drug_kwargs(self, drug_idx: int) -> dict[str, Any]:
+        """Default keyword arguments for single drug models.
+
+        This is used for each single drug unless an already instantiated version is provided in __init__().
+
+        1) Translate bounds for the entire model into bounds for the specified single-drug model
+        """
         linear_lower_bounds = self._transform_params_from_fit(self._bounds[0])
         linear_upper_bounds = self._transform_params_from_fit(self._bounds[1])
         parameter_bounds = list(

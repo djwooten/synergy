@@ -423,24 +423,21 @@ class MuSyC3DFittingTests(TestCase):
         "synthetic_musyc3_reference_1.csv" is skipped because alpha fits are too hard when beta == 0, especially
         in the N-dimensional case. This makes the confidence intervals too large, and the best fit fail the tolerances.
         """
-        model = MuSyC(num_drugs=3)
+        np.random.seed(218902184)
+        model = MuSyC(num_drugs=3, E_bounds=(0, 1))
         d, E = load_nd_test_data(os.path.join(TEST_DATA_DIR, fname))
         model.fit(d, E)
+
+        # Ensure E_bounds were used for single-drug models
+        for drug_idx in range(3):
+            observed_bounds = list(zip(*model.single_drug_models[drug_idx]._bounds))
+            # We only specified E0 and Emax bounds, so just look at the first 2 elements
+            self.assertListEqual(observed_bounds[:2], [(0, 1), (0, 1)])
 
         expected = self._get_expected_parameters(fname)
         synergy_assertions.assert_dict_allclose(model.get_parameters(), expected, rtol=5e-2, atol=5e-2)
 
-    #    @hypothesis.settings(deadline=None)
-    #    @given(
-    #        sampled_from(
-    #            [
-    #                "synthetic_musyc3_reference_1.csv",
-    #                # "synthetic_musyc3_high_order_efficacy_synergy.csv",
-    #                # "synthetic_musyc3_high_order_potency_synergy.csv",
-    #            ]
-    #        )
-    #    )
-    def test_musyc_confidence_intervals(self):  # , fname):
+    def test_musyc_confidence_intervals(self):
         """Ensure confidence intervals are calculated correctly.
 
         This test must add in the beta parameters to the expected values, since they are not fit in the reference data,

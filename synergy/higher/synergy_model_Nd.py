@@ -35,9 +35,9 @@ class SynergyModelND(ABC):
 
             self.single_drug_models = [
                 utils.sanitize_single_drug_model(
-                    deepcopy(model), default_type, required_type, **self._default_single_drug_kwargs
+                    deepcopy(model), default_type, required_type, **self._get_default_single_drug_kwargs(idx)
                 )
-                for model in single_drug_models
+                for idx, model in enumerate(single_drug_models)
             ]
             self.N = len(self.single_drug_models)
 
@@ -51,6 +51,7 @@ class SynergyModelND(ABC):
 
         if self.N > 1 and N != self.N:
             raise ValueError(f"This is an {self.N} drug model, which cannot be used with {N}-dimensional dose data")
+
         if self.single_drug_models is None:
             self.single_drug_models = []
             self.N = N
@@ -60,18 +61,19 @@ class SynergyModelND(ABC):
         required_type = self._required_single_drug_class
         for single_idx in range(N):
             if single_idx >= len(self.single_drug_models):
-                model = utils.sanitize_single_drug_model(
-                    None, default_type, required_type, **self._default_single_drug_kwargs
-                )
-                self.single_drug_models.append(model)
-            model = self.single_drug_models[single_idx]
+                model = None
+            else:
+                model = self.single_drug_models[single_idx]
+            model = utils.sanitize_single_drug_model(
+                model, default_type, required_type, **self._get_default_single_drug_kwargs(single_idx)
+            )
+            self.single_drug_models.append(model)
             if model.is_specified:
                 continue
             mask = dose_utils.get_drug_alone_mask_ND(d, single_idx)
             single_kwargs = deepcopy(kwargs)
             single_kwargs.pop("bootstrap_iterations", None)
             # TODO: Get single drug p0
-            # TODO: Get bounds
             model.fit(d[mask, single_idx].flatten(), E[mask], **single_kwargs)
 
     @abstractmethod
@@ -98,11 +100,10 @@ class SynergyModelND(ABC):
     def is_fit(self):
         """-"""
 
-    @property
-    def _default_single_drug_kwargs(self) -> dict:
-        """Default keyword arguments for all single drug models.
+    def _get_default_single_drug_kwargs(self, drug_idx: int) -> dict[str, Any]:
+        """Default keyword arguments for single drug models.
 
-        Used if the user does not specify any single drug models.
+        This is used for each single drug unless an already instantiated version is provided in __init__().
         """
         return {}
 

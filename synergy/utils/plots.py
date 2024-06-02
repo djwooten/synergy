@@ -13,9 +13,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+
 import numpy as np
-from . import base as utils
+
+from synergy.utils import base as utils
 from synergy.utils.dose_utils import get_num_replicates
+
+_LOGGER = logging.Logger(__name__)
 
 matplotlib_import = False
 try:
@@ -25,8 +30,8 @@ try:
 
     matplotlib_import = True
 
-except ImportError as e:
-    pass
+except ImportError:
+    _LOGGER.warning("Some plotting functions will not work unless matplotlib is installed.")
 
 plotly_import = False
 try:
@@ -34,12 +39,22 @@ try:
     from plotly import offline
 
     plotly_import = True
-except ImportError as e:
-    pass
+
+except ImportError:
+    _LOGGER.warning("Some plotting functions will not work unless plotly is installed.")
+
+pandas_import = False
+try:
+    import pandas as pd
+
+    pandas_import = True
+
+except ImportError:
+    _LOGGER.warning("Some plotting functions will not work unless pandas is installed.")
 
 
 def get_extension(fname):
-    if not "." in fname:
+    if "." not in fname:
         return ""
     return fname.split(".")[-1]
 
