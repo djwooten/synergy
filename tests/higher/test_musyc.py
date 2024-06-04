@@ -1,9 +1,6 @@
-# TODO: Ensure proper behavior of bounds when fitting
-
 import os
 import sys
 import unittest
-from copy import deepcopy
 from unittest import TestCase
 
 import hypothesis
@@ -14,17 +11,11 @@ from hypothesis.strategies import sampled_from
 from synergy.higher import MuSyC
 from synergy.testing_utils.test_data_loader import load_nd_test_data
 from synergy.testing_utils import assertions as synergy_assertions
-from synergy.utils import dose_utils
 
 
 MAX_FLOAT = sys.float_info.max
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
-
-
-def _get_E3(E0, E1, E2, beta):
-    strongest_E = np.amin(np.asarray([E1, E2]), axis=0)
-    return strongest_E - beta * (E0 - strongest_E)
 
 
 class MuSyCNDUnitTests(TestCase):
@@ -43,9 +34,6 @@ class MuSyCNDUnitTests(TestCase):
             attr = f"_num_{param}_params"
             observed = model.__getattribute__(attr)
             self.assertEqual(observed, expected, msg=f"Expected {expected} {param} parameteres")
-
-        # alpha_{1}_{1,2}, #alpha_{1}_{1,3}, alpha_{2}_{1,2}, alpha_{2}_{2,3}, alpha_{3}_{1,3}, alpha_{3}_{2,3}
-        # alpha_{1,2}_{1,2,3}, alpha_{1,3}_{1,2,3}, alpha_{2,3}_{1,2,3},
 
     def test_parameter_names(self):
         """Ensure parameter names are correct"""
@@ -221,7 +209,10 @@ class MuSyCNDUnitTests(TestCase):
         model = MuSyC(num_drugs=3, **params)
         expected = [expected_bounds[param] for param in model._parameter_names]
         expected = list(zip(*expected))  # convert [(lb, ub), (lb, ub), ...] to [(lb, lb, ...), (ub, ub, ...)]
-        np.testing.assert_allclose(np.asarray(model._bounds), np.asarray(expected))
+        if hasattr(model, "_bounds"):
+            np.testing.assert_allclose(np.asarray(model._bounds), np.asarray(expected))
+        else:
+            raise AttributeError(f"Model {model} has not attribute '_bounds'")
 
     def test_infer_single_drug_bounds(self):
         """Ensure the model can infer single drug bounds"""
@@ -237,7 +228,7 @@ class MuSyCNDUnitTests(TestCase):
         }
         model = MuSyC(num_drugs=3, **params)
         self.assertDictEqual(
-            model._get_single_drug_bounds(0),
+            model._get_default_single_drug_kwargs(0),
             {
                 "E0_bounds": (0.95, 1.05),  # from E_0_bounds
                 "Emax_bounds": (0.45, 0.55),  # from E_1_bounds
@@ -247,7 +238,7 @@ class MuSyCNDUnitTests(TestCase):
             msg="Expected correct drug 1 bounds",
         )
         self.assertDictEqual(
-            model._get_single_drug_bounds(1),
+            model._get_default_single_drug_kwargs(1),
             {
                 "E0_bounds": (0.95, 1.05),  # from E_0_bounds
                 "Emax_bounds": (0.6, 0.7),  # from E_2_bounds
@@ -257,7 +248,7 @@ class MuSyCNDUnitTests(TestCase):
             msg="Expected correct drug 2 bounds",
         )
         self.assertDictEqual(
-            model._get_single_drug_bounds(2),
+            model._get_default_single_drug_kwargs(2),
             {
                 "E0_bounds": (0.95, 1.05),  # from E_0_bounds
                 "Emax_bounds": (0.0, 1.0),  # from E_bounds
@@ -356,6 +347,8 @@ class MuSyCNDModelTests(TestCase):
 class MuSyC3DFittingTests(TestCase):
     """Tests for fitting the n-dimensional MuSyC model"""
 
+    EXPECTED_PARAMETERS: dict[str, dict[str, float]]
+
     @classmethod
     def setUpClass(cls) -> None:
         cls.EXPECTED_PARAMETERS = {
@@ -415,7 +408,7 @@ class MuSyC3DFittingTests(TestCase):
             ]
         )
     )
-    def test_fit_musyc3d_no_bootstrap(self, fname):
+    def test_fit_no_bootstrap(self, fname):
         """Ensure the model fits correctly.
 
         Correctness is determined using atol = rtol = 0.05, in numpy's assert_allclose
@@ -437,7 +430,7 @@ class MuSyC3DFittingTests(TestCase):
         expected = self._get_expected_parameters(fname)
         synergy_assertions.assert_dict_allclose(model.get_parameters(), expected, rtol=5e-2, atol=5e-2)
 
-    def test_musyc_confidence_intervals(self):
+    def test_fit_bootstrap(self):
         """Ensure confidence intervals are calculated correctly.
 
         This test must add in the beta parameters to the expected values, since they are not fit in the reference data,

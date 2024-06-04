@@ -26,7 +26,6 @@ matplotlib_import = False
 try:
     from matplotlib import pyplot as plt
     from mpl_toolkits.axes_grid1 import make_axes_locatable
-    from matplotlib.cm import get_cmap
 
     matplotlib_import = True
 
@@ -134,7 +133,7 @@ def plot_heatmap(
             vmin = -zmax
             vmax = zmax
 
-    current_cmap = get_cmap(name=cmap)
+    current_cmap = plt.get_cmap(name=cmap)
     current_cmap.set_bad(color=nancolor)
 
     if not logscale:

@@ -1,0 +1,3 @@
+CMAP_E = "YlGnBu"
+CMAP_RESIDUAL = "RdBu"
+CMAP_SYNERGY = "PRGn"

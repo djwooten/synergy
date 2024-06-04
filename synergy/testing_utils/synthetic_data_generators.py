@@ -403,9 +403,9 @@ class MuSyCDataGenerator:
 
     @staticmethod
     def get_ND_combination(
-        dmin: list[float] = None,
-        dmax: list[float] = None,
-        n_points: list[int] = None,
+        dmin: Optional[Sequence[float]] = None,
+        dmax: Optional[Sequence[float]] = None,
+        n_points: Optional[list[int]] = None,
         replicates: int = 1,
         include_zero=True,
         E_noise: float = 0.05,

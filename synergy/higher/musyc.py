@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Any, Sequence
+from typing import Any, Optional, Sequence
 import numpy as np
 
 from synergy.utils import base as utils
@@ -30,7 +30,7 @@ class MuSyC(ParametricSynergyModelND):
     # Bounds will depened on the number of dimensions, so will be filled out in _get_initial_guess()
     def __init__(
         self,
-        single_drug_models: Sequence[DoseResponseModel1D] = None,
+        single_drug_models: Optional[Sequence[DoseResponseModel1D]] = None,
         num_drugs: int = -1,
         r_r=1.0,
         fit_gamma=False,

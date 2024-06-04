@@ -1,15 +1,19 @@
 """Base classes for N-drug synergy models (N > 2)."""
 
+import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Optional, Sequence
-import logging
+from typing import Any, Callable, Optional, Sequence, Union
 
-from scipy.optimize import curve_fit
+
 import numpy as np
+from numpy import typing as npt
+from scipy.optimize import curve_fit
+
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
+from synergy.typing import Model1D
 from synergy.utils import base as utils
 from synergy.utils import dose_utils
 from synergy.utils.model_mixins import ParametricModelMixins
@@ -20,12 +24,12 @@ _LOGGER = logging.Logger(__name__)
 class SynergyModelND(ABC):
     """Base class for all N-drug synergy models (N > 2)."""
 
-    def __init__(self, single_drug_models: Sequence[DoseResponseModel1D] = None):
+    def __init__(self, single_drug_models: Optional[Sequence[Model1D]] = None):
         """-"""
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
 
-        self.single_drug_models: Sequence[DoseResponseModel1D] = None
+        self.single_drug_models: Optional[list[DoseResponseModel1D]] = None
         if not hasattr(self, "N"):
             self.N = -1
 
@@ -42,10 +46,10 @@ class SynergyModelND(ABC):
             self.N = len(self.single_drug_models)
 
     @abstractmethod
-    def fit(self, d, E, **kwargs):
+    def fit(self, d: npt.ArrayLike, E: npt.ArrayLike, **kwargs):
         """-"""
 
-    def _fit_single_drugs(self, d, E, **kwargs):
+    def _fit_single_drugs(self, d: npt.ArrayLike, E: npt.ArrayLike, **kwargs):
         """-"""
         N = d.shape[-1]
 
@@ -59,9 +63,10 @@ class SynergyModelND(ABC):
         # Fit all non-specified single drug models
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
+        model: Union[DoseResponseModel1D, type[DoseResponseModel1D]]
         for single_idx in range(N):
             if single_idx >= len(self.single_drug_models):
-                model = None
+                model = self._required_single_drug_class
             else:
                 model = self.single_drug_models[single_idx]
             model = utils.sanitize_single_drug_model(
@@ -77,7 +82,7 @@ class SynergyModelND(ABC):
             model.fit(d[mask, single_idx].flatten(), E[mask], **single_kwargs)
 
     @abstractmethod
-    def E_reference(self, d):
+    def E_reference(self, d: npt.ArrayLike):
         """-"""
 
     @property
@@ -169,7 +174,7 @@ class ParametricSynergyModelND(SynergyModelND):
 
     def __init__(
         self,
-        single_drug_models: Sequence[DoseResponseModel1D] = None,
+        single_drug_models: Optional[Sequence[DoseResponseModel1D]] = None,
         num_drugs: int = -1,
         **kwargs,
     ):
