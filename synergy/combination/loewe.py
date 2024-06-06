@@ -22,6 +22,8 @@ from synergy.single.dose_response_model_1d import DoseResponseModel1D
 # Used for delta mode of Loewe
 from scipy.optimize import minimize_scalar
 
+from synergy.synergy_exceptions import ModelNotParameterizedError
+
 
 class Loewe(DoseDependentSynergyModel2D):
     """The Loewe additivity non-parametric synergy model for combinations of two drugs.
@@ -203,6 +205,24 @@ class Loewe(DoseDependentSynergyModel2D):
                     else:
                         E_ref[i] = min(E2_alone, E1_alone)
         return E_ref
+
+    @property
+    def synergy_threshold(self) -> float:
+        """TODO"""
+        if self.mode == "ci":
+            return 1.0
+        return 0.0
+
+    def get_synergy_status(self, tol: float = 0):
+        """TODO"""
+        if self.synergy is None:
+            raise ModelNotParameterizedError("Model has not been fit to data. Call model.fit(d1, d2, E) first.")
+        if self.mode == "ci":
+            status = np.asarray(["Additive"] * len(self.synergy), dtype=object)
+            status[self.synergy < self.synergy_threshold - tol] = "Synergistic"
+            status[self.synergy > self.synergy_threshold + tol] = "Antagonistic"
+            status[np.where(np.isnan(self.synergy))] = ""
+        return status
 
     def plot_heatmap(self, cmap="PRGn", neglog=None, center_on_zero=True, **kwargs):
         if neglog is None:

@@ -15,6 +15,7 @@
 
 import numpy as np
 
+from synergy.exceptions import ModelNotParameterizedError
 from synergy.single import Hill_CI
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
@@ -43,6 +44,21 @@ class CombinationIndex(DoseDependentSynergyModel2D):
         """Use the Schindler model to calculate a reference response."""
         reference_model = Schindler(drug1_model=self.drug1_model, drug2_model=self.drug2_model)
         return reference_model.E_reference(d1, d2)
+
+    @property
+    def synergy_threshold(self) -> float:
+        """TODO"""
+        return 1.0
+
+    def get_synergy_status(self, tol: float = 0):
+        """TODO"""
+        if self.synergy is None:
+            raise ModelNotParameterizedError("Model has not been fit to data. Call model.fit(d1, d2, E) first.")
+        status = np.asarray(["Additive"] * len(self.synergy), dtype=object)
+        status[self.synergy < self.synergy_threshold - tol] = "Synergistic"
+        status[self.synergy > self.synergy_threshold + tol] = "Antagonistic"
+        status[np.where(np.isnan(self.synergy))] = ""
+        return status
 
     def _get_synergy(self, d1, d2, E):
         """Calculate CI.

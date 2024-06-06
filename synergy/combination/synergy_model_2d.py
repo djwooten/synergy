@@ -47,6 +47,10 @@ class SynergyModel2D(ABC):
     def E_reference(self, d1, d2):
         """Return the expected effect of the combination of drugs at doses d1 and d2."""
 
+    @abstractmethod
+    def get_synergy_status(self, tol: float = 0):
+        """-"""
+
     @property
     @abstractmethod
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
@@ -132,6 +136,11 @@ class DoseDependentSynergyModel2D(SynergyModel2D):
         """-"""
         return self._is_fit
 
+    @property
+    @abstractmethod
+    def synergy_threshold(self) -> float:
+        """The threshold at which synergy quantification is considered synergistic VS antagonistic"""
+
     @abstractmethod
     def _get_synergy(self, d1, d2, E):
         """-"""
@@ -171,6 +180,9 @@ class ParametricSynergyModel2D(SynergyModel2D):
         self.aic: Optional[float]
         self.bic: Optional[float]
         self.bootstrap_parameters = None
+
+    def get_synergy_status(self, tol: float = 0):
+        """TODO - define it per synergy model"""
 
     @abstractmethod
     def E(self, d1, d2):
