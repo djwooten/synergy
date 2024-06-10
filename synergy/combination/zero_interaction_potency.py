@@ -15,7 +15,6 @@
 
 import numpy as np
 
-from synergy.exceptions import ModelNotParameterizedError
 from synergy.single import Hill
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
@@ -138,21 +137,6 @@ class ZIP(DoseDependentSynergyModel2D):
     def E_reference(self, d1, d2):
         E1_alone, E2_alone = self._get_single_drug_Es(d1, d2)
         return E1_alone * E2_alone
-
-    @property
-    def synergy_threshold(self) -> float:
-        """TODO"""
-        return 0.0
-
-    def get_synergy_status(self, tol: float = 0):
-        """TODO"""
-        if self.synergy is None:
-            raise ModelNotParameterizedError("Model has not been fit to data. Call model.fit(d1, d2, E) first.")
-        status = np.asarray(["Additive"] * len(self.synergy), dtype=object)
-        status[self.synergy < self.synergy_threshold - tol] = "Antagonistic"
-        status[self.synergy > self.synergy_threshold + tol] = "Synergistic"
-        status[np.where(np.isnan(self.synergy))] = ""
-        return status
 
     def _delta_score(self, d1, d2):
         """Calculate the difference between the Bliss reference surface and the (averaged) fit 1D slices used by ZIP

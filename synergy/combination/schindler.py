@@ -15,7 +15,6 @@
 
 import numpy as np
 
-from synergy.exceptions import ModelNotParameterizedError
 from synergy.single import Hill
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
@@ -59,21 +58,6 @@ class Schindler(DoseDependentSynergyModel2D):
         uE_model[np.where((d1 == 0) & (d2 == 0))] = 0
 
         return E0 - uE_model
-
-    @property
-    def synergy_threshold(self) -> float:
-        """TODO"""
-        return 0.0
-
-    def get_synergy_status(self, tol: float = 0):
-        """TODO"""
-        if self.synergy is None:
-            raise ModelNotParameterizedError("Model has not been fit to data. Call model.fit(d1, d2, E) first.")
-        status = np.asarray(["Additive"] * len(self.synergy), dtype=object)
-        status[self.synergy < self.synergy_threshold - tol] = "Antagonistic"
-        status[self.synergy > self.synergy_threshold + tol] = "Synergistic"
-        status[np.where(np.isnan(self.synergy))] = ""
-        return status
 
     def _get_synergy(self, d1, d2, E):
         synergy = self.reference - E

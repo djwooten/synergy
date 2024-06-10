@@ -103,33 +103,6 @@ class ShamDataGenerator:
     of the drug.
     """
 
-    @classmethod
-    def get_combination(
-        cls,
-        drug1_model,
-        drug2_model,
-        d1min: float,
-        d1max: float,
-        d2min: float,
-        d2max: float,
-        n_points1: int = 6,
-        n_points2: int = 6,
-        replicates: int = 1,
-        E_noise: float = 0.05,
-        d_noise: float = 0.05,
-        include_zero: bool = False,
-    ):
-        """Return dose and effect data corresponding to a two-drug sham combination experiment."""
-        return ShamDataGenerator.get_sham(
-            drug1_model,
-            d1min,
-            d1max,
-            n_points1,
-            include_zero=include_zero,
-            E_noise=E_noise,
-            d_noise=d_noise,
-        )
-
     @staticmethod
     def get_sham(
         model,
