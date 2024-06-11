@@ -41,16 +41,23 @@ def assert_dict_allclose(
     )
 
 
-def assert_dict_values_in_intervals(values: dict, intervals: dict, tol: float = 0):
+def assert_dict_values_in_intervals(
+    values: dict, intervals: dict, tol: float = 0, err_msg: str = "", log_keys: list[str] = []
+):
     _assert_keys_equal(values, intervals)
     failed_vals = []
     for key in values.keys():
         val = values[key]
         interval = intervals[key]
+        if key in log_keys:
+            val = np.log(val)
+            interval = tuple(np.log(x) for x in interval)
+            key = f"log({key})"
         if not (interval[0] - tol <= val <= interval[1] + tol):
-            failed_vals.append(f"{key}: {val} not in ({interval[0]}, {interval[1]})")
+            failed_vals.append(f"{key}={val} not in ({interval[0]}, {interval[1]})")
     if failed_vals:
-        raise AssertionError("\n".join(failed_vals))
+        err_msg = err_msg + "\n\t"
+        raise AssertionError(err_msg + "\n\t".join(failed_vals))
 
 
 def assert_dict_interval_is_contained_in_other(inner_intervals: dict, outer_intervals: dict, err_msg=""):

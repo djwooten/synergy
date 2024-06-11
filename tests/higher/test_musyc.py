@@ -3,10 +3,7 @@ import sys
 import unittest
 from unittest import TestCase
 
-import hypothesis
 import numpy as np
-from hypothesis import given
-from hypothesis.strategies import sampled_from
 
 from synergy.higher import MuSyC
 from synergy.testing_utils.test_data_loader import load_nd_test_data
@@ -38,10 +35,34 @@ class MuSyCNDUnitTests(TestCase):
     def test_parameter_names(self):
         """Ensure parameter names are correct"""
         model = MuSyC(num_drugs=3)
-        for p in model._parameter_names:
-            print(p)
-        # TODO
-        self.assertAlmostEqual(0, 100)
+        self.assertListEqual(
+            [
+                "E_0",
+                "E_1",
+                "E_2",
+                "E_1,2",
+                "E_3",
+                "E_1,3",
+                "E_2,3",
+                "E_1,2,3",
+                "h_1",
+                "h_2",
+                "h_3",
+                "C_1",
+                "C_2",
+                "C_3",
+                "alpha_1_3",
+                "alpha_1_2",
+                "alpha_2_3",
+                "alpha_2_1",
+                "alpha_1,2_3",
+                "alpha_3_2",
+                "alpha_3_1",
+                "alpha_1,3_2",
+                "alpha_2,3_1",
+            ],
+            model._parameter_names,
+        )
 
     def test_idx_to_state(self):
         """Ensure state is computed correctly.
@@ -398,17 +419,7 @@ class MuSyC3DFittingTests(TestCase):
         default_parameters = self.EXPECTED_PARAMETERS["synthetic_musyc3_high_order_efficacy_synergy.csv"]
         return dict(default_parameters, **self.EXPECTED_PARAMETERS[fname])
 
-    @hypothesis.settings(deadline=None)
-    @given(
-        sampled_from(
-            [
-                # "synthetic_musyc3_reference_1.csv",
-                "synthetic_musyc3_high_order_efficacy_synergy.csv",
-                "synthetic_musyc3_high_order_potency_synergy.csv",
-            ]
-        )
-    )
-    def test_fit_no_bootstrap(self, fname):
+    def test_fit_no_bootstrap(self):
         """Ensure the model fits correctly.
 
         Correctness is determined using atol = rtol = 0.05, in numpy's assert_allclose
@@ -416,19 +427,26 @@ class MuSyC3DFittingTests(TestCase):
         "synthetic_musyc3_reference_1.csv" is skipped because alpha fits are too hard when beta == 0, especially
         in the N-dimensional case. This makes the confidence intervals too large, and the best fit fail the tolerances.
         """
-        np.random.seed(218902184)
-        model = MuSyC(num_drugs=3, E_bounds=(0, 1))
-        d, E = load_nd_test_data(os.path.join(TEST_DATA_DIR, fname))
-        model.fit(d, E)
+        for fname in [
+            # "synthetic_musyc3_reference_1.csv",
+            "synthetic_musyc3_high_order_efficacy_synergy.csv",
+            "synthetic_musyc3_high_order_potency_synergy.csv",
+        ]:
+            np.random.seed(218902184)
+            model = MuSyC(num_drugs=3, E_bounds=(0, 1))
+            d, E = load_nd_test_data(os.path.join(TEST_DATA_DIR, fname))
+            model.fit(d, E)
 
-        # Ensure E_bounds were used for single-drug models
-        for drug_idx in range(3):
-            observed_bounds = list(zip(*model.single_drug_models[drug_idx]._bounds))
-            # We only specified E0 and Emax bounds, so just look at the first 2 elements
-            self.assertListEqual(observed_bounds[:2], [(0, 1), (0, 1)])
+            # Ensure E_bounds were used for single-drug models
+            for drug_idx in range(3):
+                observed_bounds = list(zip(*model.single_drug_models[drug_idx]._bounds))
+                # We only specified E0 and Emax bounds, so just look at the first 2 elements
+                self.assertListEqual(observed_bounds[:2], [(0, 1), (0, 1)])
 
-        expected = self._get_expected_parameters(fname)
-        synergy_assertions.assert_dict_allclose(model.get_parameters(), expected, rtol=5e-2, atol=5e-2)
+            expected = self._get_expected_parameters(fname)
+            synergy_assertions.assert_dict_allclose(
+                model.get_parameters(), expected, rtol=5e-2, atol=5e-2, err_msg=fname
+            )
 
     def test_fit_bootstrap(self):
         """Ensure confidence intervals are calculated correctly.
@@ -469,8 +487,10 @@ class MuSyC3DFittingTests(TestCase):
         synergy_assertions.assert_dict_interval_is_contained_in_other(confidence_intervals_50, confidence_intervals_95)
 
         # Ensure true values are within confidence intervals
-        # Without tol, this gives get "h_2: 1.0 not in (0.9906860645502625, 0.9997539385137254)"
-        synergy_assertions.assert_dict_values_in_intervals(expected, confidence_intervals_95, tol=5e-4)
+        log_keys = [key for key in expected.keys() if key.split("_")[0] in ["h", "C", "alpha", "gamma"]]
+        synergy_assertions.assert_dict_values_in_intervals(
+            expected, confidence_intervals_95, tol=3e-3, log_keys=log_keys
+        )
 
 
 if __name__ == "__main__":

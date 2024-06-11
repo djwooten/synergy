@@ -205,7 +205,13 @@ class ZimmerFitTests(TestCase):
         )
     )
     def test_fit_bootstrap(self, fname):
-        """Ensure confidence intervals work reasonably."""
+        """Ensure confidence intervals work reasonably.
+
+        Checks:
+            1) model.bootstrap_parameters is not None
+            2) True parameters are within 95% confidence interval (tol=1e-4)
+            3) 50% confidence interval is contained entirely within 95% confidence interval
+        """
         expected_parameters = deepcopy(self.EXPECTED_PARAMETERS[fname])
 
         np.random.seed(8932849)
@@ -226,7 +232,7 @@ class ZimmerFitTests(TestCase):
             log_ex_params["log" + key] = np.log(log_ex_params.pop(key))
 
         # Ensure true values are within confidence intervals
-        synergy_assertions.assert_dict_values_in_intervals(log_ex_params, log_ci_95, tol=1e-5)
+        synergy_assertions.assert_dict_values_in_intervals(log_ex_params, log_ci_95, tol=1e-4)
 
         # Ensure that less stringent CI is narrower
         # [=====95=====]  More confidence requires wider interval

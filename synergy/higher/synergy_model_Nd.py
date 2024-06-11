@@ -13,7 +13,7 @@ from scipy.optimize import curve_fit
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
-from synergy.typing import Model1D
+from synergy.typing import DRModel1D
 from synergy.utils import base as utils
 from synergy.utils import dose_utils
 from synergy.utils.model_mixins import ParametricModelMixins
@@ -24,7 +24,7 @@ _LOGGER = logging.Logger(__name__)
 class SynergyModelND(ABC):
     """Base class for all N-drug synergy models (N > 2)."""
 
-    def __init__(self, single_drug_models: Optional[Sequence[Model1D]] = None):
+    def __init__(self, single_drug_models: Optional[Sequence[DRModel1D]] = None):
         """-"""
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
@@ -56,23 +56,20 @@ class SynergyModelND(ABC):
         if self.N > 1 and N != self.N:
             raise ValueError(f"This is an {self.N} drug model, which cannot be used with {N}-dimensional dose data")
 
+        default_type = self._default_single_drug_class
+        required_type = self._required_single_drug_class
+
         if self.single_drug_models is None:
-            self.single_drug_models = []
+            self.single_drug_models = [default_type] * N
             self.N = N
 
         # Fit all non-specified single drug models
-        default_type = self._default_single_drug_class
-        required_type = self._required_single_drug_class
         model: Union[DoseResponseModel1D, type[DoseResponseModel1D]]
-        for single_idx in range(N):
-            if single_idx >= len(self.single_drug_models):
-                model = self._required_single_drug_class
-            else:
-                model = self.single_drug_models[single_idx]
+        for single_idx, model in enumerate(self.single_drug_models):
             model = utils.sanitize_single_drug_model(
                 model, default_type, required_type, **self._get_default_single_drug_kwargs(single_idx)
             )
-            self.single_drug_models.append(model)
+            self.single_drug_models[single_idx] = model
             if model.is_specified:
                 continue
             mask = dose_utils.get_drug_alone_mask_ND(d, single_idx)

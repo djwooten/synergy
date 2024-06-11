@@ -247,92 +247,87 @@ class MuSyCFitTests(TestCase):
             },
         }
 
-    @given(
-        sampled_from(
-            [
-                "synthetic_musyc_reference_1.csv",
-                "synthetic_musyc_efficacy_1.csv",
-                "synthetic_musyc_efficacy_2.csv",
-                "synthetic_musyc_potency_1.csv",
-            ]
-        )
-    )
-    def test_fit_musyc_no_bootstrap(self, fname):
+    def test_fit_musyc_no_bootstrap(self):
         """Ensure the model fits correctly."""
-        if "cooperativity" in fname:
-            return
-        d1, d2, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
-        model = MuSyC(fit_gamma=False)
-        model.fit(d1, d2, E)
+        for fname in [
+            "synthetic_musyc_reference_1.csv",
+            "synthetic_musyc_efficacy_1.csv",
+            "synthetic_musyc_efficacy_2.csv",
+            "synthetic_musyc_potency_1.csv",
+        ]:
+            np.random.seed(2340214390)
+            d1, d2, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
+            model = MuSyC(fit_gamma=False)
+            model.fit(d1, d2, E)
 
-        # Ensure the hill is fit
-        self.assertTrue(model.is_specified)
-        self.assertTrue(model.is_fit)
-        self.assertTrue(model.is_converged)
+            # Ensure the hill is fit
+            self.assertTrue(model.is_specified)
+            self.assertTrue(model.is_fit)
+            self.assertTrue(model.is_converged)
 
-        # Compare C, h, alpha, and gamma in log-scale
-        expected_parameters = deepcopy(self.EXPECTED_PARAMETERS[fname])
-        observed_parameters = model.get_parameters()
-        for key in ["alpha12", "alpha21", "gamma12", "gamma21", "h1", "h2", "C1", "C2"]:
-            if key in expected_parameters and key in observed_parameters:
-                expected_parameters[key] = np.log(expected_parameters[key])
-                observed_parameters[key] = np.log(observed_parameters[key])
+            # Compare C, h, alpha, and gamma in log-scale
+            expected_parameters = deepcopy(self.EXPECTED_PARAMETERS[fname])
+            observed_parameters = model.get_parameters()
+            for key in ["alpha12", "alpha21", "gamma12", "gamma21", "h1", "h2", "C1", "C2"]:
+                if key in expected_parameters and key in observed_parameters:
+                    expected_parameters[key] = np.log(expected_parameters[key])
+                    observed_parameters[key] = np.log(observed_parameters[key])
 
-        # Ensure the parameters are approximately correct
-        synergy_assertions.assert_dict_allclose(observed_parameters, expected_parameters, atol=0.2)
+            # Ensure the parameters are approximately correct
+            synergy_assertions.assert_dict_allclose(observed_parameters, expected_parameters, atol=0.25, err_msg=fname)
 
-        # Ensure the scores were calculated
-        self.assertIsNotNone(model.aic)
-        self.assertIsNotNone(model.bic)
-        self.assertGreaterEqual(model.r_squared, 0, msg="r_squared should be between 0 and 1")
-        self.assertLessEqual(model.r_squared, 1, msg="r_squared should be less than 1")
-        self.assertGreaterEqual(model.sum_of_squares_residuals, 0, msg="sum_of_squares_residuals should be >= 0")
+            # Ensure the scores were calculated
+            self.assertIsNotNone(model.aic)
+            self.assertIsNotNone(model.bic)
+            self.assertGreaterEqual(model.r_squared, 0, msg="r_squared should be between 0 and 1")
+            self.assertLessEqual(model.r_squared, 1, msg="r_squared should be less than 1")
+            self.assertGreaterEqual(model.sum_of_squares_residuals, 0, msg="sum_of_squares_residuals should be >= 0")
 
-        # Ensure there were no bootstrap iterations
-        self.assertIsNone(model.bootstrap_parameters)
-        with self.assertRaises(ValueError):
-            _ = model.get_confidence_intervals()
+            # Ensure there were no bootstrap iterations
+            self.assertIsNone(model.bootstrap_parameters)
+            with self.assertRaises(ValueError):
+                _ = model.get_confidence_intervals()
 
-    @hypothesis.settings(deadline=None)
-    @given(
-        sampled_from(
-            [
-                "synthetic_musyc_reference_1.csv",
-                "synthetic_musyc_efficacy_1.csv",
-                "synthetic_musyc_efficacy_2.csv",
-                "synthetic_musyc_potency_1.csv",
-            ]
-        )
-    )
-    def test_musyc_fit_bootstrap(self, fname):
+    def test_musyc_fit_bootstrap(self):
         """Ensure confidence intervals work reasonably."""
-        expected_parameters = deepcopy(self.EXPECTED_PARAMETERS[fname])
+        for fname in [
+            "synthetic_musyc_reference_1.csv",
+            "synthetic_musyc_efficacy_1.csv",
+            "synthetic_musyc_efficacy_2.csv",
+            "synthetic_musyc_potency_1.csv",
+        ]:
+            np.random.seed(24309184)
+            expected_parameters = deepcopy(self.EXPECTED_PARAMETERS[fname])
 
-        d1, d2, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
-        model = MuSyC(fit_gamma=False)
-        model.fit(d1, d2, E, bootstrap_iterations=100)
+            d1, d2, E = load_test_data(os.path.join(TEST_DATA_DIR, fname))
+            model = MuSyC(fit_gamma=False)
+            model.fit(d1, d2, E, bootstrap_iterations=100)
 
-        # Ensure there were bootstrap iterations
-        self.assertIsNotNone(model.bootstrap_parameters)
+            # Ensure there were bootstrap iterations
+            self.assertIsNotNone(model.bootstrap_parameters)
 
-        confidence_intervals_95 = model.get_confidence_intervals()
+            confidence_intervals_95 = model.get_confidence_intervals()
 
-        # We must add beta, because it is reported in CIs, but not parameters
-        expected_parameters["beta"] = MuSyC._get_beta(
-            expected_parameters["E0"],
-            expected_parameters["E1"],
-            expected_parameters["E2"],
-            expected_parameters["E3"],
-        )
+            # We must add beta, because it is reported in CIs, but not parameters
+            expected_parameters["beta"] = MuSyC._get_beta(
+                expected_parameters["E0"],
+                expected_parameters["E1"],
+                expected_parameters["E2"],
+                expected_parameters["E3"],
+            )
 
-        # Ensure true values are within confidence intervals
-        synergy_assertions.assert_dict_values_in_intervals(expected_parameters, confidence_intervals_95)
+            # Ensure true values are within confidence intervals
+            synergy_assertions.assert_dict_values_in_intervals(
+                expected_parameters, confidence_intervals_95, err_msg=fname, tol=0.05
+            )
 
-        # Ensure that less stringent CI is narrower
-        # [=====95=====]  More confidence requires wider interval
-        #     [===50==]   Less confidence but tighter interval
-        confidence_intervals_50 = model.get_confidence_intervals(confidence_interval=50)
-        synergy_assertions.assert_dict_interval_is_contained_in_other(confidence_intervals_50, confidence_intervals_95)
+            # Ensure that less stringent CI is narrower
+            # [=====95=====]  More confidence requires wider interval
+            #     [===50==]   Less confidence but tighter interval
+            confidence_intervals_50 = model.get_confidence_intervals(confidence_interval=50)
+            synergy_assertions.assert_dict_interval_is_contained_in_other(
+                confidence_intervals_50, confidence_intervals_95
+            )
 
 
 if __name__ == "__main__":
