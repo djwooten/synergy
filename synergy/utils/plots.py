@@ -18,8 +18,9 @@ import logging
 import numpy as np
 
 from synergy.utils import base as utils
-from synergy.utils.dose_utils import get_num_replicates
+from synergy.utils.dose_utils import get_num_replicates, aggregate_replicates
 
+SUPPORTED_PLOTLY_EXTENSIONS = ["png", "jpeg", "jpg", "webp", "svg", "pdf", "eps"]
 _LOGGER = logging.Logger(__name__)
 
 matplotlib_import = False
@@ -35,6 +36,7 @@ except ImportError:
 plotly_import = False
 try:
     import plotly.graph_objects as go
+    import plotly.io as pio
     from plotly import offline
 
     plotly_import = True
@@ -52,10 +54,22 @@ except ImportError:
     _LOGGER.warning("Some plotting functions will not work unless pandas is installed.")
 
 
-def get_extension(fname):
+_PLOTLY_PLOT_INTERACTIVE = False
+
+
+def set_plotly_interactive(interactive=True):
+    """Configures plotly to use iplot() instead of plot(), such as within a Jupyter notebook."""
+    if not plotly_import:
+        raise ImportError("plotly must be installed to set plotly to interactive mode")
+    global _PLOTLY_PLOT_INTERACTIVE
+    _PLOTLY_PLOT_INTERACTIVE = interactive
+    # offline.init_notebook_mode(connected=interactive)
+
+
+def _get_extension(fname):
     if "." not in fname:
         return ""
-    return fname.split(".")[-1]
+    return fname.split(".")[-1].lower()
 
 
 def plot_heatmap(
@@ -100,7 +114,9 @@ def plot_heatmap(
 
     if n_replicates != 1:
         aggfunc = kwargs.get("aggfunc", np.median)
-        print(f"Number of replicates : {n_replicates}. plot_heatmap() aggregates the data using the {aggfunc.__name__}")
+        _LOGGER.info(
+            f"Number of replicates : {n_replicates}. plot_heatmap() aggregates the data using the {aggfunc.__name__}"
+        )
         E_agg = []
         for e2 in np.unique(D2):
             for e1 in np.unique(D1):
@@ -109,7 +125,7 @@ def plot_heatmap(
         E = np.array(E_agg)
         D1 = np.unique(D1)
         D2 = np.unique(D2)
-        title += f"({aggfunc.__name__})"
+        title = f"{title} ({aggfunc.__name__})"
 
     n_d1 = len(np.unique(D1))
     n_d2 = len(np.unique(D2))
@@ -139,9 +155,9 @@ def plot_heatmap(
     if not logscale:
         D1, D2 = np.meshgrid(D1, D2)
         # pco = ax.pcolormesh(D1.reshape(n_d2,n_d1), D2.reshape(n_d2, n_d1), E.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=cmap)
-        pco = ax.pcolormesh(D1, D2, E.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=cmap)
+        pco = ax.pcolormesh(D1, D2, E.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=current_cmap)
     else:
-        pco = ax.pcolormesh(E.reshape(n_d2, n_d1), cmap=cmap, vmin=vmin, vmax=vmax)
+        pco = ax.pcolormesh(E.reshape(n_d2, n_d1), cmap=current_cmap, vmin=vmin, vmax=vmax)
         relabel_log_ticks(ax, np.unique(D1), np.unique(D2))
 
     divider = make_axes_locatable(ax)
@@ -260,9 +276,9 @@ def plot_surface_plotly(
     scatter_points=None,
     elev=20,
     azim=19,
-    fname="plot.html",
+    fname=None,
     zlim=None,
-    cmap="viridis",
+    cmap="PRGn",
     logscale=True,
     xlabel="Drug 1",
     ylabel="Drug 2",
@@ -283,8 +299,6 @@ def plot_surface_plotly(
     d1 = np.array(d1, copy=True, dtype=np.float64)
     d2 = np.array(d2, copy=True, dtype=np.float64)
     E = np.asarray(E)
-
-    extension = get_extension(fname)
 
     if logscale:
         d1 = utils.remove_zeros(d1)
@@ -311,7 +325,7 @@ def plot_surface_plotly(
 
     if n_replicates != 1:
         aggfunc = kwargs.get("aggfunc", np.median)
-        print(
+        _LOGGER.info(
             f"Number of replicates : {n_replicates}. plot_surface_plotly() aggregates the data using the {aggfunc.__name__}"
         )
         E_agg = []
@@ -362,21 +376,11 @@ def plot_surface_plotly(
     ]
 
     if scatter_points is not None:
-        # d1scatter = utils.remove_zeros(np.asarray(scatter_points['drug1.conc']))
-        # d2scatter = utils.remove_zeros(np.asarray(scatter_points['drug2.conc']))
         d1scatter = np.array(scatter_points["drug1.conc"], copy=True, dtype=np.float64)
         d2scatter = np.array(scatter_points["drug2.conc"], copy=True, dtype=np.float64)
         if logscale:
-            zero_mask_1 = np.where(d1scatter <= 0)
-            pos_mask_1 = np.where(d1scatter > 0)
-
-            zero_mask_2 = np.where(d2scatter <= 0)
-            pos_mask_2 = np.where(d2scatter > 0)
-
-            d1scatter[zero_mask_1] = np.min(d1)
-            d2scatter[zero_mask_2] = np.min(d2)
-            d1scatter[pos_mask_1] = np.log10(d1scatter[pos_mask_1])
-            d2scatter[pos_mask_2] = np.log10(d2scatter[pos_mask_2])
+            d1scatter = np.log10(utils.remove_zeros(d1scatter))
+            d2scatter = np.log10(utils.remove_zeros(d2scatter))
 
         data_to_plot.append(
             go.Scatter3d(
@@ -391,7 +395,7 @@ def plot_surface_plotly(
                     reversescale=False,
                     cmin=vmin,
                     cmax=vmax,
-                    line=dict(width=0.5, color="DarkSlateGrey"),
+                    line={"width": 0.5, "color": "DarkSlateGrey"},
                 ),
             )
         )
@@ -421,28 +425,31 @@ def plot_surface_plotly(
         )
 
     if fname is not None:
+        extension = _get_extension(fname)
         if extension == "html":
             offline.plot(fig, filename=fname, auto_open=auto_open)
         else:
-            if not extension.lower() in ["png", "jpeg", "jpg", "webp", "svg", "pdf", "eps"]:
-                extension = "png"
-            from plotly.io import write_image
-
-            write_image(fig, fname, format=extension)
+            if extension not in SUPPORTED_PLOTLY_EXTENSIONS:
+                raise ValueError(
+                    f"Extension {extension} is not supported. Supported extensions are {SUPPORTED_PLOTLY_EXTENSIONS}"
+                )
+            pio.write_image(fig, fname, format=extension)
     else:
-        fig.show()
+        if _PLOTLY_PLOT_INTERACTIVE:
+            offline.iplot(fig)
+        else:
+            fig.show()
 
 
 def plotly_isosurfaces(
-    d1,
-    d2,
-    d3,
+    d,
     E,
     fname=None,
     cmap="viridis",
     xlabel="Drug 1",
     ylabel="Drug 2",
     zlabel="Drug 3",
+    label="Value",
     vmin=None,
     vmax=None,
     auto_open=False,
@@ -456,22 +463,10 @@ def plotly_isosurfaces(
     fontsize=18,
     title=None,
 ):
-
-    d1 = np.asarray(d1)
-    d2 = np.asarray(d2)
-    d3 = np.asarray(d3)
-
-    if len(d1.shape) > 1:
-        d1 = d1.flatten()
-        d2 = d2.flatten()
-        d3 = d3.flatten()
-        E = E.flatten()
-
-    sorted_indices = np.lexsort((d1, d2, d3))
-    d1 = d1[sorted_indices]
-    d2 = d2[sorted_indices]
-    d3 = d3[sorted_indices]
-    E = E[sorted_indices]
+    d, E = aggregate_replicates(d, E)
+    d1 = d[:, 0]
+    d2 = d[:, 1]
+    d3 = d[:, 2]
 
     if logscale:
         d1 = utils.remove_zeros(d1)
@@ -507,7 +502,7 @@ def plotly_isosurfaces(
             isomax=isomax,
             cmin=vmin,
             cmax=vmax,
-            opacity=0.6,
+            opacity=opacity,
             colorscale=cmap,
             surface_count=surface_count,  # number of isosurfaces, 2 by default: only min and max
             colorbar_nticks=surface_count,  # colorbar ticks correspond to isosurface values
@@ -533,6 +528,17 @@ def plotly_isosurfaces(
     )
 
     if fname is not None:
-        offline.plot(fig, filename=fname, auto_open=auto_open)
+        extension = _get_extension(fname)
+        if extension == "html":
+            offline.plot(fig, filename=fname, auto_open=auto_open)
+        else:
+            if extension not in SUPPORTED_PLOTLY_EXTENSIONS:
+                raise ValueError(
+                    f"Extension {extension} is not supported. Supported extensions are {SUPPORTED_PLOTLY_EXTENSIONS}"
+                )
+            pio.write_image(fig, fname, format=extension)
     else:
-        fig.show()
+        if _PLOTLY_PLOT_INTERACTIVE:
+            offline.iplot(fig)
+        else:
+            fig.show()

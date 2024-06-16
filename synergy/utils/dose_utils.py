@@ -105,7 +105,7 @@ def make_dose_grid_multi(dmin, dmax, npoints, logscale=True, include_zero=False,
     for i in range(return_d.shape[1]):
         return_d[:, i] = dosegrid[i].flatten()
 
-    return np.hstack([return_d] * replicates)
+    return np.vstack([return_d] * replicates)
 
 
 def is_monotherapy_ND(d):
@@ -182,3 +182,33 @@ def remove_replicates(d1, d2):
     """
     d = np.asarray(list(set(zip(d1, d2))))
     return d[:, 0], d[:, 1]
+
+
+def aggregate_replicates(d, E, aggfunc=np.median):
+    """Aggregate replicates of dose-response data.
+
+    Parameters:
+    -----------
+    d : array_like
+        Doses, shape (n_samples, n_drugs)
+    E : array_like
+        Responses, shape (n_samples,)
+
+    Returns:
+    --------
+    d : array_like
+        Unique doses, shape (n_unique_samples, n_drugs)
+    E : array_like
+        Aggregated responses, shape (n_unique_samples,)
+    """
+
+    def _aggregate_E(dose_indices, E, aggfunc):
+        return aggfunc(E[dose_indices])
+
+    def _find_matching_rows(row, d):
+        return np.where((d == row).all(axis=1))
+
+    d_unique = np.unique(d, axis=0)
+    unique_dose_indices = np.apply_along_axis(_find_matching_rows, 1, d_unique, d)[:, 0, :]
+    E_agg = np.apply_along_axis(_aggregate_E, 1, unique_dose_indices, E, aggfunc)
+    return d_unique, E_agg

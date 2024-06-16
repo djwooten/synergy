@@ -21,26 +21,22 @@ class LoeweNDTests(TestCase):
         np.random.seed(894)
         drug1 = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)
         drug2 = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)
-        drug3 = Hill(E0=1.0, Emax=0.0, h=2.0, C=1.0)
+        drug3 = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)
 
         single_drugs = [drug1, drug2, drug3]
         dmin = [1e-2, 1e-2, 1e-2]
         dmax = [1e2, 1e2, 1e2]
         n_points = [10, 10, 10]
 
+        # TODO implement E_reference for loewe so that we can use it (and h != 1) instead of Schindler
         d, E = generators.SchindlerReferenceDataGenerator.get_ND_combination(
             single_drugs, dmin, dmax, n_points, E_noise=0, d_noise=0
         )
 
         model = Loewe(single_drug_models=[Hill, Hill, Hill])
         synergy = model.fit(d, E)
-        combo_indices = np.where(~np.apply_along_axis(is_monotherapy_ND, 1, d))
         log_synergy = np.log(synergy)  # log-scale synergy so it is centered at 0
-        log_synergy = log_synergy[combo_indices]
-        import pdb
-
-        pdb.set_trace()
-        np.testing.assert_allclose(log_synergy, np.zeros(len(log_synergy)), atol=1e-3)
+        np.testing.assert_allclose(log_synergy, np.zeros(len(log_synergy)), atol=1e-13)
 
     def test_fit_sham(self):
         """Ensure N-drug Loewe model gives 0 synergy for a sham experiment"""
@@ -48,9 +44,11 @@ class LoeweNDTests(TestCase):
         hill = Hill(E0=1.0, Emax=0.0, h=2.0, C=1.0)
         d, E = generators.ShamDataGenerator.get_ND_combination(hill, 3, 0.1, 1, E_noise=0, d_noise=0)
 
-        model = Loewe()
+        # Using log-linear has problems since at the tested dose range, Emax exceeds the single drugs
+        model = Loewe(single_drug_models=[Hill, Hill, Hill])
         synergy = model.fit(d, E)
-        np.testing.assert_allclose(synergy, np.ones(len(synergy)))
+        log_synergy = np.log(synergy)  # log-scale synergy so it is centered at 0
+        np.testing.assert_allclose(log_synergy, np.zeros(len(log_synergy)), atol=1e-13)
 
     def test_msa_synergy(self):
         """Ensure N-drug Loewe model gives synergy > 0 for Bliss data.
@@ -66,9 +64,10 @@ class LoeweNDTests(TestCase):
             drug_models=[drug1, drug2, drug3], E_noise=0, d_noise=0
         )
 
-        model = Loewe()
+        model = Loewe(single_drug_models=[Hill, Hill, Hill])
         synergy = model.fit(d, E)
-        self.assertTrue((synergy < np.ones(len(synergy))).all())
+        combo_indices = np.where(~np.apply_along_axis(is_monotherapy_ND, 1, d))
+        self.assertTrue((synergy[combo_indices] < np.ones(len(synergy[combo_indices]))).all())
 
 
 if __name__ == "__main__":

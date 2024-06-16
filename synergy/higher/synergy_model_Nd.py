@@ -156,6 +156,7 @@ class DoseDependentSynergyModelND(SynergyModelND):
         """Return the synergy for the given dose combination(s)."""
 
     def _sanitize_synergy(self, d, synergy, default_val: float):
+        """Replace non-combinations with default synergy value."""
         if len(d.shape) == 2:
             synergy[dose_utils.get_monotherapy_mask_ND(d)] = default_val
         elif len(d.shape) == 1:

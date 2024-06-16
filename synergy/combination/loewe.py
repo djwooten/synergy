@@ -137,7 +137,7 @@ class Loewe(DoseDependentSynergyModel2D):
         """
         if not (isinstance(self.drug1_model, Hill) and isinstance(self.drug2_model, Hill)):
             # TODO: Log a warning
-            return d1 * np.nan
+            raise ValueError("E_reference() for this model requires individual drugs to be Hill models")
 
         with np.errstate(divide="ignore", invalid="ignore"):
             E_ref = 0 * d1

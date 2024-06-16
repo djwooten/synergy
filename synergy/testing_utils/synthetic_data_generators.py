@@ -70,6 +70,7 @@ class HillDataGenerator:
         replicates: int = 1,
         E_noise: float = 0.05,
         d_noise: float = 0.05,
+        include_zero=True,
     ):
         if replicates < 1:
             raise ValueError(f"Must have at least 1 replicate ({replicates}).")
@@ -85,7 +86,14 @@ class HillDataGenerator:
         if dmin == 0:
             dmin = np.nextafter(0.0)
 
+        if include_zero:
+            n_points -= 1
+
         d = np.logspace(np.log10(dmin), np.log10(dmax), num=n_points)
+
+        if include_zero:
+            d = np.hstack([0, d])
+
         d = np.hstack([d] * replicates)
 
         d_noisy = _noisify(d, d_noise, min_val=0)
@@ -104,7 +112,7 @@ class ShamDataGenerator:
     """
 
     @staticmethod
-    def get_sham(
+    def get_combination(
         model,
         dmin: float,
         dmax: float,
@@ -145,6 +153,8 @@ class ShamDataGenerator:
         replicates: int = 1,
         E_noise: float = 0.05,
         d_noise: float = 0.05,
+        min_E: float = np.nan,
+        max_E: float = np.nan,
     ):
         """Return dose and effect data corresponding to a 3+ drug sham combination experiment."""
         # Convert dmin, dmax, and n_points to lists, if necessary
@@ -158,7 +168,7 @@ class ShamDataGenerator:
             dmin, dmax, n_points, logscale=logscale, replicates=replicates, include_zero=include_zero
         )
         E = drug_model.E(_noisify(doses.sum(axis=1), d_noise, 0))
-        return doses, _noisify(E, E_noise)
+        return doses, _noisify(E, E_noise, min_val=min_E, max_val=max_E)
 
 
 class DoseDependentReferenceDataGenerator:

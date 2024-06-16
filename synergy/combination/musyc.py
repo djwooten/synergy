@@ -41,10 +41,10 @@ class MuSyC(ParametricSynergyModel2D):
        ,              "> 1",    "Synergistic Potency",        "Drug 2 increases the effective dose (potency) of drug 1"
        "``beta``",    "< 0",    "Antagonistic Efficacy",      "The combination is weaker than the stronger of drugs 1 and 2"
        ,              "> 0",    "Synergistic Efficacy",       "The combination is stronger than the stronger of drugs 1 and 2"
-       "``gamma12``", "[0, 1)", "Antagonistic Cooperativity", "Drug 1 decreases the effective dose (potency) of drug 2"
-       ,              "> 1",    "Synergistic Cooperativity",  "Drug 1 increases the effective dose (potency) of drug 2"
-       "``gamma21``", "[0, 1)", "Antagonistic Cooperativity", "Drug 2 decreases the effective dose (potency) of drug 1"
-       ,              "> 1",    "Synergistic Cooperativity",  "Drug 2 increases the effective dose (potency) of drug 1"
+       "``gamma12``", "[0, 1)", "Antagonistic Cooperativity", "Drug 1 decreases the cooperativity of drug 2"
+       ,              "> 1",    "Synergistic Cooperativity",  "Drug 1 increases the cooperativity of drug 2"
+       "``gamma21``", "[0, 1)", "Antagonistic Cooperativity", "Drug 2 decreases the cooperativity of drug 1"
+       ,              "> 1",    "Synergistic Cooperativity",  "Drug 2 increases the cooperativity of drug 1"
     """
 
     def __init__(self, drug1_model=None, drug2_model=None, r1r=1.0, r2r=1.0, fit_gamma=True, **kwargs):
