@@ -303,8 +303,8 @@ class BRAID(ParametricSynergyModel2D):
             + np.float_power(D2, power)
             + kappa * np.sqrt(np.float_power(D1, power) * np.float_power(D2, power))
         )
-
-        return E0 + max_delta_E / (1 + np.float_power(D, -delta * h))
+        with np.errstate(divide="ignore", invalid="ignore"):
+            return E0 + max_delta_E / (1 + np.float_power(D, -delta * h))
 
     def _get_parameters(self):
         if self.mode == "kappa":

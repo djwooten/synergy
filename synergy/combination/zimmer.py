@@ -187,7 +187,7 @@ class Zimmer(ParametricSynergyModel2D):
             if key in ["a12", "a21"]:
                 rows.append(
                     ParametricModelMixins.make_summary_row(
-                        key, 1, pars[key], ci, tol, False, "antagonistic", "synergistic"
+                        key, 0, pars[key], ci, tol, False, "antagonistic", "synergistic"
                     )
                 )
 
