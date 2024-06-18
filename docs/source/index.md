@@ -10,6 +10,11 @@ overview
 ```
 
 ```{toctree}
+:maxdepth: 3
+models/synergy/musyc_notebook.ipynb
+```
+
+```{toctree}
 :hidden:
 :caption: Development
 

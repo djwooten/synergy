@@ -44,6 +44,7 @@ extensions = [
     "sphinx.ext.doctest",
     "sphinx_copybutton",
     "sphinx_autodoc_typehints",
+    "nbsphinx",
 ]
 
 autosummary_generate = True

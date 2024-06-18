@@ -1,0 +1,23 @@
+﻿synergy
+=======
+
+.. automodule:: synergy
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+   
+   
+   
+
+
+
