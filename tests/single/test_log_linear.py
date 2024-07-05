@@ -4,7 +4,7 @@ from unittest import TestCase
 
 import numpy as np
 
-from synergy.single.log_linear import LogLinear
+from synergy.single import LogLinear
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 

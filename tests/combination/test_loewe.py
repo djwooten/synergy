@@ -5,7 +5,7 @@ from unittest import TestCase
 import numpy as np
 from numpy.typing import ArrayLike
 
-from synergy.single.hill import Hill
+from synergy.single import Hill
 from synergy.combination import Loewe
 from synergy.testing_utils.synthetic_data_generators import ShamDataGenerator
 
@@ -23,7 +23,7 @@ class ShamLoeweTests(TestCase):
     def setUpClass(cls) -> None:
         np.random.seed(123)
         single_drug = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)
-        cls.d1, cls.d2, cls.E = ShamDataGenerator.get_sham(
+        cls.d1, cls.d2, cls.E = ShamDataGenerator.get_combination(
             single_drug, 0.01, 100, 5, 1, logscale=True, E_noise=0, d_noise=0
         )
 

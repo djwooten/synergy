@@ -2,7 +2,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 
 from synergy.combination.musyc import MuSyC
-from synergy.combination.synergy_model_2d import ParametricSynergyModel2D, SynergyModel2D
+from synergy.combination import SynergyModel2D
 from synergy.plot import constants
 from synergy.utils import plots
 

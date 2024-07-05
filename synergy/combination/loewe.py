@@ -51,7 +51,7 @@ class Loewe(DoseDependentSynergyModel2D):
     def __init__(self, mode: str = "CI", drug1_model=None, drug2_model=None, **kwargs):
         """Ctor."""
         mode = mode.lower()
-        if mode not in ["ci", "delta", "delta_hsa", "delta_nan", "delta_synergyfinder"]:
+        if mode not in ["ci", "delta", "delta_hsa", "delta_nan"]:
             raise ValueError("Unrecognized mode for Loewe ({mode})")
         self.mode = mode
 
@@ -156,15 +156,12 @@ class Loewe(DoseDependentSynergyModel2D):
             #  1) mode="delta" - this will set E_reference to weakest_E
             #  2) mode="delta_HSA" - this will set E_r to min(E1, E2)
             #  3) mode="delta_nan" - this will set E_r to nan
-            #  4) mode="synergyfinder" - sets E_r to stronger.E(d1+d2)
             if self.mode == "delta":
                 option = 1
             elif self.mode == "delta_hsa":
                 option = 2
             elif self.mode == "delta_nan":
                 option = 3
-            elif self.mode == "delta_synergyfinder":
-                option = 4
             else:
                 option = 1
 
@@ -191,8 +188,6 @@ class Loewe(DoseDependentSynergyModel2D):
                         E_ref[i] = min(E1_alone, E2_alone)
                     elif option == 3:
                         E_ref[i] = np.nan
-                    elif option == 4:
-                        E_ref[i] = stronger_drug.E(D1 + D2)
                     else:
                         E_ref[i] = np.nan
                 else:

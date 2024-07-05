@@ -21,13 +21,7 @@ from synergy.single.log_linear import LogLinear
 
 
 class Loewe(DoseDependentSynergyModelND):
-    """Loewe Additivity Synergy
-
-    Loewe's model of drug combination additivity expects a linear tradeoff, such that withholding X parts of drug 1 can be compensated for by adding Y parts of drug 2. In Loewe's model, X and Y are constant (e.g., withholding 5X parts of drug 1 will be compensated for with 5Y parts of drug 2.)
-
-    synergy : array_like, float
-        [0,1)=synergism, (1,inf)=antagonism
-    """
+    """The Loewe Additivity synergy model."""
 
     def E_reference(self, d):
         """-"""

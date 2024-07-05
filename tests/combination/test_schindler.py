@@ -18,7 +18,7 @@ class SchindlerTests(TestCase):
         """-"""
         np.random.seed(49)
         single_drug = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)
-        d1, d2, E = ShamDataGenerator.get_sham(single_drug, 0.01, 100, 5, 2, E_noise=0, d_noise=0)
+        d1, d2, E = ShamDataGenerator.get_combination(single_drug, 0.01, 100, 5, 2, E_noise=0, d_noise=0)
 
         model = Schindler()
         synergy = model.fit(d1, d2, E)

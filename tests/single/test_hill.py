@@ -11,7 +11,7 @@ import numpy as np
 from hypothesis import given, seed
 from hypothesis.strategies import floats, sampled_from
 
-from synergy.single.hill import Hill, Hill_2P, Hill_CI
+from synergy.single import Hill, Hill_2P, Hill_CI
 from synergy.testing_utils.test_data_loader import load_test_data
 from synergy.testing_utils import assertions as synergy_assertions
 

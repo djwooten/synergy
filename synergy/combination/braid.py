@@ -17,8 +17,8 @@ import numpy as np
 
 from synergy.combination.synergy_model_2d import ParametricSynergyModel2D
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
-from synergy.single import Hill
-from synergy.utils.base import format_table
+from synergy.single.hill import Hill
+from synergy.utils import format_table
 from synergy.exceptions import ModelNotParameterizedError
 from synergy.utils.model_mixins import ParametricModelMixins
 
@@ -35,7 +35,8 @@ class BRAID(ParametricSynergyModel2D):
         Upper and lower bounds for each parameter to constrain fits.
 
     variant : str , default="kappa"
-        Options "kappa", "delta", "both". BRAID has model versions that fit synergy using the parameter "kappa", the parameter "delta", or both. The standard version only fits kappa, but the other variants are available.
+        Options are "kappa", "delta", "both". BRAID has model versions that fit synergy using the parameter "kappa", the
+        parameter "delta", or both. The standard version only fits kappa, but the other variants are available.
 
     """
 
@@ -272,10 +273,18 @@ class BRAID(ParametricSynergyModel2D):
         return self._model(d1, d2, self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, 0, 1)
 
     def _model(self, d1, d2, E0, E1, E2, E3, h1, h2, C1, C2, kappa, delta):
-        """
-        From the braidrm R package (https://rdrr.io/cran/braidrm/man/evalBRAIDrsm.html)
+        """Model for BRAID.
 
-        The parameters of this equation must satisfy h1>0, h2>0, delta>0, kappa>-2, sign(E3-E0)=sign(E1-E0)=sign(E2-E0), |E3-E0|>=|E1-E0|, and |E3-E0|>=|E2-E0|.
+        See the original in the From the braidrm R package (https://rdrr.io/cran/braidrm/man/evalBRAIDrsm.html)
+
+        The parameters of this equation must satisfy
+          h1>0,
+          h2>0,
+          delta>0,
+          kappa>-2,
+          sign(E3-E0)=sign(E1-E0)=sign(E2-E0),
+          |E3-E0|>=|E1-E0|, and
+          |E3-E0|>=|E2-E0|.
         """
         delta_Es = [E1 - E0, E2 - E0, E3 - E0]
         max_delta_E_index = np.argmax(np.abs(delta_Es))
@@ -357,6 +366,7 @@ class BRAID(ParametricSynergyModel2D):
                 % (self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.delta)
             )
         return (
-            "BRAID(E0=%0.3g, E1=%0.3g, E2=%0.3g, E3=%0.3g, h1=%0.3g, h2=%0.3g, C1=%0.3g, C2=%0.3g, kappa=%0.3g, delta=%0.3g)"
+            "BRAID(E0=%0.3g, E1=%0.3g, E2=%0.3g, E3=%0.3g, h1=%0.3g, h2=%0.3g, C1=%0.3g, C2=%0.3g, kappa=%0.3g, "
+            "delta=%0.3g)"
             % (self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.kappa, self.delta)
         )

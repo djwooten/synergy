@@ -17,7 +17,7 @@ import logging
 
 import numpy as np
 
-from synergy.utils import base as utils
+from synergy import utils
 from synergy.utils.dose_utils import get_num_replicates, aggregate_replicates
 
 SUPPORTED_PLOTLY_EXTENSIONS = ["png", "jpeg", "jpg", "webp", "svg", "pdf", "eps"]
@@ -46,7 +46,7 @@ except ImportError:
 
 pandas_import = False
 try:
-    import pandas as pd
+    import pandas as pd  # noqa: F401
 
     pandas_import = True
 
@@ -154,7 +154,6 @@ def plot_heatmap(
 
     if not logscale:
         D1, D2 = np.meshgrid(D1, D2)
-        # pco = ax.pcolormesh(D1.reshape(n_d2,n_d1), D2.reshape(n_d2, n_d1), E.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=cmap)
         pco = ax.pcolormesh(D1, D2, E.reshape(n_d2, n_d1), vmin=vmin, vmax=vmax, cmap=current_cmap)
     else:
         pco = ax.pcolormesh(E.reshape(n_d2, n_d1), cmap=current_cmap, vmin=vmin, vmax=vmax)
@@ -326,7 +325,7 @@ def plot_surface_plotly(
     if n_replicates != 1:
         aggfunc = kwargs.get("aggfunc", np.median)
         _LOGGER.info(
-            f"Number of replicates : {n_replicates}. plot_surface_plotly() aggregates the data using the {aggfunc.__name__}"
+            f"Number of replicates: {n_replicates}. plot_surface_plotly() aggregates the data using {aggfunc.__name__}"
         )
         E_agg = []
         for e2 in np.unique(D2):

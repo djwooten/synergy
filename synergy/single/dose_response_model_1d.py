@@ -1,4 +1,4 @@
-from abc import ABC, abstractproperty, abstractmethod
+from abc import ABC, abstractmethod
 import logging
 from typing import Any, Callable, Optional
 
@@ -7,7 +7,7 @@ from scipy.optimize import curve_fit
 from scipy.stats import norm
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
-from synergy.utils import base as utils
+from synergy import utils
 from synergy.utils.model_mixins import ParametricModelMixins
 
 _LOGGER = logging.Logger(__name__)
@@ -28,11 +28,13 @@ class DoseResponseModel1D(ABC):
     def E_inv(self, E):
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_specified(self) -> bool:
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def is_fit(self) -> bool:
         """-"""
 
@@ -98,11 +100,13 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
             range, or for non-invertable models
         """
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _parameter_names(self) -> list[str]:
         """-"""
 
-    @abstractproperty
+    @property
+    @abstractmethod
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
         """-"""
 

@@ -35,7 +35,8 @@ def _write_data(fname: str, column_names: list[str], *args):
 
 def load_hill_example() -> str:
     """Load example data for a single drug."""
-    return _load_data("hill.csv")
+    data = _load_data("hill.csv")
+    return data[:, 0], data[:, 1]
 
 
 def load_2d_sham_example() -> str:
@@ -68,7 +69,7 @@ def load_4d_example() -> str:
 
 def main():
     """Generate example datasets."""
-    np.random.seed(3490234)
+    np.random.seed(531135)
     _write_data("hill.csv", ["drug.conc", "E"], *HillDataGenerator.get_data(replicates=3))
 
     np.random.seed(89645)

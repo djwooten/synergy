@@ -6,10 +6,7 @@ import unittest
 from copy import deepcopy
 from unittest import TestCase
 
-import hypothesis
 import numpy as np
-from hypothesis import given
-from hypothesis.strategies import sampled_from
 
 from synergy.combination import BRAID
 from synergy.testing_utils.test_data_loader import load_test_data

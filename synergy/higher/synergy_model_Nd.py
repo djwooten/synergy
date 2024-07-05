@@ -14,7 +14,7 @@ from scipy.optimize import curve_fit
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.typing import DRModel1D
-from synergy.utils import base as utils
+from synergy import utils
 from synergy.utils import dose_utils
 from synergy.utils.model_mixins import ParametricModelMixins
 
@@ -263,7 +263,8 @@ class ParametricSynergyModelND(SynergyModelND):
         self._fit_single_drugs(d, E)
 
         # Sanitize initial guesses
-        p0 = self._get_initial_guess(d, E, p0)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            p0 = self._get_initial_guess(d, E, p0)
 
         # Pass bounds and p0 to kwargs for curve_fit()
         kwargs["p0"] = p0

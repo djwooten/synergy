@@ -124,7 +124,7 @@ class LogLinear(DoseResponseModel1D):
         if not self.is_specified:
             raise ModelNotParameterizedError("Must call fit() before calling E().")
 
-        d = np.array(d, copy=True)
+        d = np.array(d, copy=True, dtype=np.float64)
         d[d == 0] = np.nextafter(0, 1)
         logd = np.log(d / self._dose_scale)
 

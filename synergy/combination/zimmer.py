@@ -18,7 +18,7 @@ import numpy as np
 from synergy.combination.synergy_model_2d import ParametricSynergyModel2D
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.single import Hill_2P
-from synergy.utils.base import format_table
+from synergy.utils import format_table
 from synergy.exceptions import ModelNotParameterizedError
 from synergy.utils.model_mixins import ParametricModelMixins
 

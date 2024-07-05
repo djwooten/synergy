@@ -19,19 +19,19 @@ from typing import Optional, Sequence, Union
 import numpy as np
 from scipy.stats import norm
 
-from synergy.combination.bliss import Bliss as Bliss2D
-from synergy.higher.bliss import Bliss as BlissND
-from synergy.combination.hsa import HSA as Hsa2D
-from synergy.higher.hsa import HSA as HsaND
+from synergy.combination import Bliss as Bliss2D
+from synergy.higher import Bliss as BlissND
+from synergy.combination import HSA as Hsa2D
+from synergy.higher import HSA as HsaND
 from synergy.combination import MuSyC
-from synergy.higher.musyc import MuSyC as MuSyCND
-from synergy.combination.schindler import Schindler as Schindler2D
-from synergy.higher.schindler import Schindler as SchindlerND
-from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
-from synergy.combination.braid import BRAID
-from synergy.combination.zimmer import Zimmer
-from synergy.higher.synergy_model_Nd import DoseDependentSynergyModelND
-from synergy.single.dose_response_model_1d import DoseResponseModel1D
+from synergy.higher import MuSyC as MuSyCND
+from synergy.combination import Schindler as Schindler2D
+from synergy.higher import Schindler as SchindlerND
+from synergy.combination import DoseDependentSynergyModel2D
+from synergy.combination import BRAID
+from synergy.combination import Zimmer
+from synergy.higher import DoseDependentSynergyModelND
+from synergy.single import DoseResponseModel1D
 from synergy.utils import dose_utils
 from synergy.single import Hill
 

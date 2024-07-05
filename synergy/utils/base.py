@@ -20,7 +20,7 @@ import warnings
 from synergy.exceptions import InvalidDrugModelError
 
 
-def remove_zeros(d, min_buffer=0.2):
+def remove_zeros(d, min_buffer=0.2, num_dilutions: int = 1):
     """Replace zeros with some semi-intelligently chosen small value
 
     When plotting on a log scale, 0 doses can cause problems. This replaces all 0's using the dilution factor between the smallest non-zero, and second-smallest non-zero doses. If that dilution factor is too close to 1, it will replace 0's doses with a dose that is min_buffer*(max(d)-min(d[d>0])) less than min(d[d>0]) on a log scale.
@@ -48,7 +48,7 @@ def remove_zeros(d, min_buffer=0.2):
         logdmin2_effective = logdmin + min_buffer * (logdmax - logdmin)
         dilution = dmin / np.exp(logdmin2_effective)
 
-    d[d == 0] = dmin * dilution
+    d[d == 0] = dmin * np.float_power(dilution, num_dilutions)
     return d
 
 

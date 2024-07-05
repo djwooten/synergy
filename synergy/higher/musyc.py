@@ -16,7 +16,7 @@
 from typing import Any, Optional, Sequence
 import numpy as np
 
-from synergy.utils import base as utils
+from synergy import utils
 from synergy.exceptions import ModelNotParameterizedError
 from synergy.higher.synergy_model_Nd import ParametricSynergyModelND
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
@@ -25,7 +25,7 @@ from synergy.utils.model_mixins import ParametricModelMixins
 
 
 class MuSyC(ParametricSynergyModelND):
-    """-"""
+    """The MuSyC model for n-dimensional drug combinations."""
 
     # Bounds will depened on the number of dimensions, so will be filled out in _get_initial_guess()
     def __init__(
@@ -61,10 +61,11 @@ class MuSyC(ParametricSynergyModelND):
 
         Params come in order E, h, C, alpha, gamma. So everything past E should be log-scaled.
         """
-        params = np.array(params, copy=True)
-        h_param_offset = self._num_E_params
-        params[h_param_offset:] = np.log(params[h_param_offset:])
-        return params
+        with np.errstate(divide="ignore", invalid="ignore"):
+            params = np.array(params, copy=True)
+            h_param_offset = self._num_E_params
+            params[h_param_offset:] = np.log(params[h_param_offset:])
+            return params
 
     def _transform_params_from_fit(self, params):
         """Transform logscaled parameters to linear scale.
@@ -152,7 +153,9 @@ class MuSyC(ParametricSynergyModelND):
     def _idx_to_state(idx, n):
         """Returns state representing index=idx
 
-        MuSyC models states for cells affected by each drug in all possible combinations. For instance, given three drugs, MuSyC will have states 000, 001, 010, 011, 100, 101, 110, 111. 110 means affected by drugs 3 and 2, but unaffected by drug 1.
+        MuSyC models states for cells affected by each drug in all possible combinations. For instance, given three
+        drugs, MuSyC will have states 000, 001, 010, 011, 100, 101, 110, 111. 110 means affected by drugs 3 and 2,
+        but unaffected by drug 1.
 
         Parameters
         ----------
@@ -165,7 +168,8 @@ class MuSyC(ParametricSynergyModelND):
         Returns
         -------
         state : list of int
-            A list indicating which drugs are "active". [1,1,0] means drug 1 is not active (0), and drugs 2 and 3 are active.
+            A list indicating which drugs are "active". [1,1,0] means drug 1 is not active (0), and drugs 2 and 3 are
+            active.
         """
         return [int(i) for i in bin(idx)[2:].zfill(n)]
 
@@ -442,6 +446,26 @@ class MuSyC(ParametricSynergyModelND):
             sorted([str(n - i) for i, drugab in enumerate(zip(state_a, state_b)) if drugab[1] == drugab[0] + 1])
         )
 
+    @property
+    def beta(self) -> dict[str, float]:
+        """Synergistic efficacy, a synergy parameter derived from E parameters.
+
+        :return dict[str, float]: A map of which drugs are present in each state to the beta value for that state.
+        """
+        if not self.is_specified:
+            return ModelNotParameterizedError()
+
+        parameters = [self.get_parameters()[param] for param in self._parameter_names]
+        state_count = 2**self.N
+        beta = {}
+        for i in range(state_count):
+            state = MuSyC._idx_to_state(i, self.N)
+            drug_string = MuSyC._get_drug_string_from_state(state)
+            value = MuSyC._get_beta(parameters, state)
+            if not np.isnan(value):
+                beta[f"beta_{drug_string}"] = value
+        return beta
+
     @staticmethod
     def _get_beta(parameters, state):
         """Calculates synergistic efficacy, a synergy parameter derived from E parameters.
@@ -602,7 +626,7 @@ class MuSyC(ParametricSynergyModelND):
     def __repr__(self):
         if self.is_specified:
             parameters = self.get_parameters()
-            parameters["beta"] = self.beta
+            parameters.update(self.beta)
             param_vals = ", ".join([f"{param}={val:0.3g}" for param, val in parameters.items()])  # typing: ignore
         else:
             param_vals = ""
