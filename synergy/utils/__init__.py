@@ -95,8 +95,25 @@ def sanitize_initial_guess(p0: ArrayLike, bounds: tuple[ArrayLike, ArrayLike]) -
     index = 0
     for x, lower, upper in zip(p0, *bounds):
         if x is None:
-            if True in np.isinf((lower, upper)):
-                p0[index] = np.min((np.max((0, lower)), upper))
+            # (-inf, inf): use 0
+            if np.isinf(lower) and np.isinf(upper):
+                p0[index] = 0
+
+            # (-inf, u): use 0 or 10 * u
+            elif np.isinf(lower):
+                if upper > 0:  # (-inf, +u): use 0 because it is within the bounds
+                    p0[index] = 0
+                else:  # (-inf, -u): use -u * 10 so that we are not right at the boundary (e.g., (-inf, -1) -> -10)
+                    p0[index] = upper * 10
+
+            # (l, +inf): use 0 or 10 * x
+            elif np.isinf(upper):
+                if lower > 0:  # (+l, +inf): use l * 10 so we are not right at the boundary (e.g., (1, +inf) -> 10)
+                    p0[index] = lower * 10
+                else:  # (-l, +inf): use 0 because it is within the bounds
+                    p0[index] = 0
+
+            # (x, y): use the midpoint
             else:
                 p0[index] = np.mean((lower, upper))
 
