@@ -10,7 +10,7 @@ class MagicMock:
     """Class to serve as a mock model"""
 
 
-class ParametricModelMixinsTests(TestCase):
+class TestParametricModelMixins(TestCase):
     """Test for model mixins"""
 
     def test_set_init_parameters(self):

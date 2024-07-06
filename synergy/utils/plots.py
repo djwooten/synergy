@@ -434,7 +434,6 @@ def plotly_isosurfaces(
     xlabel="Drug 1",
     ylabel="Drug 2",
     zlabel="Drug 3",
-    label="Value",
     vmin=None,
     vmax=None,
     auto_open=False,

@@ -13,8 +13,14 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+import logging
+from itertools import product
+
 import numpy as np
 from numpy.typing import ArrayLike
+
+
+_LOGGER = logging.getLogger(__name__)
 
 
 def remove_zeros(d: ArrayLike, min_buffer: float = 0.2, num_dilutions: int = 1) -> ArrayLike:
@@ -34,7 +40,7 @@ def remove_zeros(d: ArrayLike, min_buffer: float = 0.2, num_dilutions: int = 1) 
         based on the dilution factor may lead to a value too close to the smallest non-zero dose. min_buffer is the
         minimum buffer (in log scale, relative to the full dose range) that 0's will be replaced with.
     """
-    d = np.array(d, copy=True)
+    d = np.array(d, copy=True, dtype=np.float64)
     dmin = np.min(d[d > 0])  # smallest nonzero dose
     dmin2 = np.min(d[d > dmin])  # second smallest nonzero dose
     dilution = dmin / dmin2
@@ -164,6 +170,8 @@ def make_dose_grid_multi(
 def is_monotherapy_ND(d: ArrayLike) -> bool:
     """Return True if no more than 1 drug is present in the given N-drug dose array.
 
+    This should only be applied to a single row (i.e., a single dose combination).
+
     Note, this still returns True if no drugs are present.
 
     :param ArrayLike d: Dose array, shape (n_samples, n_drugs)
@@ -224,33 +232,53 @@ def get_num_replicates(d1: ArrayLike, d2: ArrayLike) -> ArrayLike:
     return np.unique(np.asarray([d1, d2]), axis=1, return_counts=True)[1]
 
 
+def is_on_grid(d) -> bool:
+    """Return True if the doses are on a grid.
+
+    Doses are on a grid if all possible combinations of unique doses are present.
+
+    Parameters:
+    -----------
+    d : ArrayLike
+        Doses, shape (n_samples, n_drugs)
+    """
+    unique_doses = [np.unique(d[:, i]) for i in range(d.shape[1])]
+    for unique_dose in product(*unique_doses):
+        mask = np.where((d == unique_dose).all(axis=1))
+        if len(mask[0]) == 0:  # unique dose not found
+            return False
+    return True
+
+
 def aggregate_replicates(d: ArrayLike, E: ArrayLike, aggfunc=np.median):
     """Aggregate rows of d and E with repeated combination doses.
 
     Parameters:
     -----------
-    d : array_like
+    d : ArrayLike
         Doses, shape (n_samples, n_drugs)
-    E : array_like
+    E : ArrayLike
         Responses, shape (n_samples,)
     aggfunc : Callable, optional
         Function to aggregate replicate values of E, default is np.median
 
     Returns:
     --------
-    d : array_like
+    d : ArrayLike
         Unique doses, shape (n_unique_samples, n_drugs)
-    E : array_like
+    E : ArrayLike
         Aggregated responses, shape (n_unique_samples,)
     """
+    d_unique, num_replicates = np.unique(d, axis=0, return_counts=True)
+    if (num_replicates == 1).all():
+        return d, E
 
-    def _aggregate_E(dose_indices, E, aggfunc):
-        return aggfunc(E[dose_indices])
+    _LOGGER.info(f"Aggregating replicate doses using {aggfunc.__name__}")
 
     def _find_matching_rows(row, d):
         return np.where((d == row).all(axis=1))
 
-    d_unique = np.unique(d, axis=0)
-    unique_dose_indices = np.apply_along_axis(_find_matching_rows, 1, d_unique, d)[:, 0, :]
-    E_agg = np.apply_along_axis(_aggregate_E, 1, unique_dose_indices, E, aggfunc)
+    unique_dose_indices = [_find_matching_rows(unique_row, d) for unique_row in d_unique]
+    E_agg = np.asarray([aggfunc(E[indices]) for indices in unique_dose_indices])
+
     return d_unique, E_agg
