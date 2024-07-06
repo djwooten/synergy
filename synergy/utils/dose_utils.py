@@ -204,12 +204,25 @@ def get_drug_alone_mask_ND(d: ArrayLike, drug_idx: int) -> tuple[np.ndarray]:
     :param int drug_idx: Index of the drug to check for
     :return tuple[np.ndarray]: Mask of rows where only the requested drug is present
     """
+    return get_drug_subset_mask_ND(d, [drug_idx])
+
+
+def get_drug_subset_mask_ND(d: ArrayLike, drug_indices: list[int]) -> tuple[np.ndarray]:
+    """Return a mask of rows where only the requested drugs are present.
+
+    Note: other drugs are considered to be absent as long as they are at their minimum dose.
+
+    :param ArrayLike d: Dose array, shape (n_samples, n_drugs)
+    :param list[int] drug_indices: Indices of the drugs to check for
+    :return tuple[np.ndarray]: Mask of rows where only the requested drugs are present
+    """
     N = d.shape[1]
-    mask = d[:, drug_idx] >= 0  # This inits it to "True"
-    for other_idx in range(N):
-        if other_idx == drug_idx:
-            continue
-        mask = mask & (d[:, other_idx] == np.min(d[:, other_idx]))
+    mask = d[:, drug_indices[0]] >= 0  # This inits it to "True"
+    for drug_idx in drug_indices:
+        for other_idx in range(N):
+            if other_idx == drug_idx:
+                continue
+            mask = mask & (d[:, other_idx] == np.min(d[:, other_idx]))
     return np.where(mask)
 
 
