@@ -226,25 +226,6 @@ def get_drug_subset_mask_ND(d: ArrayLike, drug_indices: list[int]) -> tuple[np.n
     return np.where(mask)
 
 
-def get_num_replicates(d1: ArrayLike, d2: ArrayLike) -> ArrayLike:
-    """Determine how many replicates of each unique combination are present.
-
-    Parameters:
-    -----------
-    d1 : ArrayLike
-        Doses of drug 1
-
-    d2 : ArrayLike
-        Doses of drug 2
-
-    Returns:
-    -----------
-    replicates : ArrayLike
-        Counts of each unique dose combination
-    """
-    return np.unique(np.asarray([d1, d2]), axis=1, return_counts=True)[1]
-
-
 def is_on_grid(d) -> bool:
     """Return True if the doses are on a grid.
 
@@ -266,8 +247,8 @@ def is_on_grid(d) -> bool:
 def aggregate_replicates(d: ArrayLike, E: ArrayLike, aggfunc=np.median):
     """Aggregate rows of d and E with repeated combination doses.
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     d : ArrayLike
         Doses, shape (n_samples, n_drugs)
     E : ArrayLike
@@ -275,8 +256,8 @@ def aggregate_replicates(d: ArrayLike, E: ArrayLike, aggfunc=np.median):
     aggfunc : Callable, optional
         Function to aggregate replicate values of E, default is np.median
 
-    Returns:
-    --------
+    Returns
+    -------
     d : ArrayLike
         Unique doses, shape (n_unique_samples, n_drugs)
     E : ArrayLike

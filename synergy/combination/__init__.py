@@ -1,3 +1,5 @@
+"""Blah blah syn.comb"""
+
 from .synergy_model_2d import SynergyModel2D, DoseDependentSynergyModel2D, ParametricSynergyModel2D
 
 # Parametric Models

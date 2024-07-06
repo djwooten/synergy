@@ -22,19 +22,10 @@ from synergy.combination.schindler import Schindler
 
 
 class CombinationIndex(DoseDependentSynergyModel2D):
-    """Combination Index (CI).
+    """The Combination Index (CI) model of drug synergy.
 
-    CI is a mass-action-derived model of drug combination synergy. In the original 1984 paper (TODO: doi), CI was
-    derived with two forms:
-        (1) mutually-exclusive drugs, and
-        (2) mutually non-exclustive drugs.
-    Since then, model (1) has been preferred, and is the one implemented here.
-
-    CI fits single-drug responses using a log-linearization scatchard-like regression, that implicitly assumes E0=1 and
-    Emax=0, so should only be applied in those cases. If this assumption is not met, users may wish to use Loewe(),
-    which is here calculated identically to CI, but without the E0 and Emax assumptions, and fits drugs to a 4-parameter
-    Hill equation using nonlinear optimization.
-
+    Members
+    -------
     synergy : array_like, float
         [0,1)=synergism, (1,inf)=antagonism
     """

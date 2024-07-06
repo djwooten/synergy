@@ -20,12 +20,13 @@ from synergy.single.log_linear import LogLinear
 
 
 class Bliss(DoseDependentSynergyModel2D):
-    """Bliss independence model
+    """Bliss independence synergy model.
 
     Bliss synergy is defined as the difference between the observed E and the E predicted by the Bliss Independence
-    assumption:
-        E_pred = E_drug1_alone * E_drug2_alone
+    assumption, which is that the effects of two drugs will multiply.
 
+    Members
+    -------
     synergy : array_like, float
         (-inf,0)=antagonism, (0,inf)=synergism
     """

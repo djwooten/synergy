@@ -2,16 +2,19 @@
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Optional, Union
 import logging
 
 from scipy.optimize import curve_fit
+from numpy.typing import ArrayLike
 import numpy as np
+
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy import utils
 from synergy.utils.model_mixins import ParametricModelMixins
+from synergy.typing import DRModel1D
 
 _LOGGER = logging.Logger(__name__)
 
@@ -40,12 +43,17 @@ class SynergyModel2D(ABC):
         )
 
     @abstractmethod
-    def fit(self, d1, d2, E, **kwargs):
+    def fit(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike, **kwargs) -> Union[None, ArrayLike]:
         """-"""
 
     @abstractmethod
-    def E_reference(self, d1, d2):
-        """Return the expected effect of the combination of drugs at doses d1 and d2."""
+    def E_reference(self, d1: ArrayLike, d2: ArrayLike) -> ArrayLike:
+        """Return the expected effect of the combination of drugs at doses d1 and d2.
+
+        :param ArrayLike d1: Concentration of drug 1
+        :param ArrayLike d2: Concentration of drug 2
+        :return ArrayLike: Reference model for Loewe
+        """
 
     @property
     @abstractmethod
@@ -60,7 +68,7 @@ class SynergyModel2D(ABC):
     @property
     @abstractmethod
     def is_specified(self):
-        """True if all parameters are set, or synergy has been calculated."""
+        """True if all parameters are set."""
 
     @property
     @abstractmethod
@@ -87,9 +95,7 @@ class SynergyModel2D(ABC):
 class DoseDependentSynergyModel2D(SynergyModel2D):
     """Base class for 2-drug synergy models for which synergy varies based on dose."""
 
-    def __init__(
-        self, drug1_model: Optional[DoseResponseModel1D] = None, drug2_model: Optional[DoseResponseModel1D] = None
-    ):
+    def __init__(self, drug1_model: Optional[DRModel1D] = None, drug2_model: Optional[DRModel1D] = None):
         """Ctor."""
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
         self.synergy = None
@@ -98,8 +104,17 @@ class DoseDependentSynergyModel2D(SynergyModel2D):
         self.reference = None
         self._is_fit = False
 
-    def fit(self, d1, d2, E, **kwargs):
-        """-"""
+    def fit(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike, **kwargs) -> ArrayLike:
+        """Fit the model to data.
+
+        :param ArrayLike d1: Concentration of drug 1
+        :param ArrayLike d2: Concentration of drug 2
+        :param ArrayLike E: Effect of the combination of drugs at doses d1 and d2
+        :param dict kwargs:
+            - use_jacobian: whether to use the model jacobian when fitting single-drug models
+            - Additional keyword arguments for ``scipy.optimize.curve_fit()``
+        :return ArrayLike: Synergy values
+        """
         self.d1 = d1
         self.d2 = d2
         self.synergy = d1 * np.nan
@@ -124,19 +139,25 @@ class DoseDependentSynergyModel2D(SynergyModel2D):
 
     @property
     def is_specified(self):
-        """-"""
-        return self.drug1_model is not None and self.drug2_model is not None
+        """True if each single-drug model is specified."""
+        return (
+            self.drug1_model is not None
+            and self.drug2_model is not None
+            and self.drug1_model.is_specified
+            and self.drug2_model.is_specified
+        )
 
     @property
     def is_fit(self):
-        """-"""
+        """True if the model has been fit to data."""
         return self._is_fit
 
     @abstractmethod
-    def _get_synergy(self, d1, d2, E):
-        """-"""
+    def _get_synergy(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike):
+        """Calculate synergy at doses d1 and d2."""
 
-    def _sanitize_synergy(self, d1, d2, synergy, default_val: float):
+    def _sanitize_synergy(self, d1: ArrayLike, d2: ArrayLike, synergy: ArrayLike, default_val: float):
+        """Set the synergy to the default value when one of the doses is 0."""
         if hasattr(synergy, "__iter__"):
             synergy[(d1 == 0) | (d2 == 0)] = default_val
         elif d1 == 0 or d2 == 0:
@@ -145,12 +166,12 @@ class DoseDependentSynergyModel2D(SynergyModel2D):
 
 
 class ParametricSynergyModel2D(SynergyModel2D):
-    """-"""
+    """Base class for parametric 2-drug synergy models."""
 
     def __init__(
         self,
-        drug1_model: Optional[DoseResponseModel1D] = None,
-        drug2_model: Optional[DoseResponseModel1D] = None,
+        drug1_model: Optional[DRModel1D] = None,
+        drug2_model: Optional[DRModel1D] = None,
         **kwargs,
     ):
         """Ctor."""
@@ -173,46 +194,45 @@ class ParametricSynergyModel2D(SynergyModel2D):
         self.bootstrap_parameters = None
 
     @abstractmethod
-    def E(self, d1, d2):
-        """-"""
+    def E(self, d1: ArrayLike, d2: ArrayLike) -> ArrayLike:
+        """Calculate the expected effect of the combination of drugs at doses d1 and d2.
+
+        :param ArrayLike d1: Concentration of drug 1
+        :param ArrayLike d2: Concentration of drug 2
+        :return ArrayLike: Expected effect of the combination of drugs at doses d1 and d2
+        """
 
     def get_parameters(self) -> dict[str, Any]:
-        """Returns model's parameters"""
+        """Return the model's parameters as a dict keyed by parameter name.
+
+        :return dict[str, Any]: Model parameters
+        """
         return {param: self.__getattribute__(param) for param in self._parameter_names}
 
     @abstractmethod
-    def _set_parameters(self, parameters):
-        """-"""
+    def _set_parameters(self, parameters: ArrayLike):
+        """Set the model parameters."""
 
     @property
     @abstractmethod
     def _parameter_names(self) -> list[str]:
-        """-"""
+        """String names of each parameter."""
 
     @property
     @abstractmethod
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
-        """-"""
+        """Default bounds for each parameter."""
 
-    def fit(self, d1, d2, E, **kwargs):
+    def fit(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike, **kwargs):
         """Fit the model to data.
 
-        Parameters
-        ----------
-        d : array_like
-            Array of doses measured
-
-        E : array_like
-            Array of effects measured at doses d
-
-        use_jacobian : bool, default=True
-            If True, will use the Jacobian to help guide fit. When the number
-            of data points is less than a few hundred, this makes the fitting
-            slower. However, it also improves the reliability with which a fit
-            can be found.
-
-        kwargs
-            kwargs to pass to scipy.optimize.curve_fit()
+        :param ArrayLike d1: Concentration of drug 1
+        :param ArrayLike d2: Concentration of drug 2
+        :param ArrayLike E: Effect of the combination of drugs at doses d1 and d2
+        :param dict kwargs:
+            - p0: Initial parameter guesses
+            - use_jacobian: whether to use the model jacobian when fitting
+            - Additional kwargs for ``scipy.optimize.curve_fit()``
         """
         self._is_fit = True
         d1 = np.asarray(d1)
@@ -253,13 +273,18 @@ class ParametricSynergyModel2D(SynergyModel2D):
                 self, E, use_jacobian, bootstrap_iterations, max_iterations, d1, d2, **kwargs
             )
 
-    def get_confidence_intervals(self, confidence_interval: float = 95):
-        """Returns the lower bound and upper bound estimate for each parameter.
+    def get_confidence_intervals(self, confidence_interval: float = 95) -> dict[str, tuple[float, float]]:
+        """Return the lower bound and upper bound estimates for each parameter.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         confidence_interval : float, default=95
             % confidence interval to return. Must be between 0 and 100.
+
+        Returns
+        -------
+        dict[str, tuple[float, float]]
+            Lower and upper bounds for each parameter keyed by parameter name.
         """
         if not self.is_specified:
             raise ModelNotParameterizedError()
@@ -277,7 +302,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
         intervals = np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
         return dict(zip(self._parameter_names, intervals))
 
-    def _get_initial_guess(self, d1, d2, E, p0):
+    def _get_initial_guess(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike, p0: ArrayLike):
         """Transform user supplied initial guess to correct scale, and/or guess p0."""
         if p0:
             p0 = list(self._transform_params_to_fit(p0))
@@ -349,10 +374,10 @@ class ParametricSynergyModel2D(SynergyModel2D):
 
     @property
     def is_converged(self) -> bool:
-        """-"""
+        """True if model.fit() was called and the optimization converged."""
         return self._converged
 
     @property
     def is_fit(self) -> bool:
-        """-"""
+        """True if model.fit() was called."""
         return self._is_fit

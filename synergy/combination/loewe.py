@@ -27,6 +27,7 @@ class Loewe(DoseDependentSynergyModel2D):
     """The Loewe additivity non-parametric synergy model for combinations of two drugs.
 
     The Loewe model is used to calculate a dose-dependent scalar value of synergy. Multiple modes are supported:
+
     - mode="CI" (default) - calculates synergy using an equation equivalent to combination index
     - mode="delta_HSA" - calculates synergy as the difference between the measured values and an expected values,
     - mode="delta_weakest" - calculates synergy as the difference between the measured values and an expected values
@@ -126,10 +127,6 @@ class Loewe(DoseDependentSynergyModel2D):
         return np.float_power((d1 / self.drug1_model.E_inv(E)) + (d2 / self.drug2_model.E_inv(E)) - 1.0, 2.0)
 
     def E_reference(self, d1, d2):
-        """Calculates a reference (null) model for Loewe for drug1 and drug2.
-
-        Credits: Mark Russo, David Wooten
-        """
         if not (isinstance(self.drug1_model, Hill) and isinstance(self.drug2_model, Hill)):
             # TODO: Log a warning
             raise ValueError("E_reference() for this model requires individual drugs to be Hill models")
@@ -186,18 +183,20 @@ class Loewe(DoseDependentSynergyModel2D):
                         E_ref[i] = min(E2_alone, E1_alone)
         return E_ref
 
-    def plot_heatmap(self, cmap="PRGn", neglog=None, center_on_zero=True, **kwargs):
-        if neglog is None:
-            if self.mode == "delta_weakest":
-                neglog = False
-            else:
-                neglog = True
-        # super().plot_heatmap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
+    def E_goose(self, d1, d2):
+        """Calculates a reference (null) model for Loewe for drug1 and drug2.
 
-    def plot_surface_plotly(self, cmap="PRGn", neglog=None, center_on_zero=True, **kwargs):
-        if neglog is None:
-            if self.mode == "delta_weakest":
-                neglog = False
-            else:
-                neglog = True
-        # super().plot_surface_plotly(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
+        Credits: Mark Russo, David Wooten
+
+        Parameters
+        ----------
+        d1 : ArrayLike
+            Concentration of drug 1
+        d2 : ArrayLike
+            Concentration of drug 2
+
+        Returns
+        -------
+        ArrayLike
+            Reference model for Loewe
+        """

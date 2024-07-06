@@ -36,7 +36,7 @@ release = VERSION
 # ones.
 extensions = [
     "sphinx.ext.autodoc",
-    "sphinx.ext.autosummary",
+    #    "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "myst_parser",
     "sphinx.ext.intersphinx",
@@ -74,6 +74,7 @@ intersphinx_mapping = {
 
 # By default, sort documented members by type within classes and modules.
 autodoc_member_order = "groupwise"
+autodoc_inherit_docstrings = True
 
 # Include default values when documenting parameter types.
 typehints_defaults = "comma"

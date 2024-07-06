@@ -32,6 +32,13 @@ as well as the original research for any synergy models you use.
    models/synergy_models
 
 .. toctree::
+   :maxdepth: 3
+   :hidden:
+   :caption: API Reference
+   
+   modules
+
+.. toctree::
    :hidden:
    :caption: Development
 

@@ -1,3 +1,5 @@
+"""goo goo high"""
+
 from .synergy_model_Nd import DoseDependentSynergyModelND, ParametricSynergyModelND, SynergyModelND
 
 # Parametric Models
