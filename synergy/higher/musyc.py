@@ -25,7 +25,24 @@ from synergy.utils.model_mixins import ParametricModelMixins
 
 
 class MuSyC(ParametricSynergyModelND):
-    """The MuSyC model for n-dimensional drug combinations."""
+    """The MuSyC model for n-dimensional drug combinations.
+
+    In MuSyC, synergy is parametrically defined as shifts in potency (alpha), efficacy (beta), or cooperativity (gamma).
+
+    Two modes are supported:
+    - fit_gamma=False (default) - fits only alpha and beta, with gamma fixed to 1.0
+    - fit_gamma=True - fits all synergy parameters (alpha, beta, and gamma)
+
+    .. csv-table:: Interpretation of synergy parameters
+       :header: "Parameter", "Values", "Synergy/Antagonism", "Interpretation"
+
+       "``alpha_a_b``", "[0, 1)", "Antagonistic Potency",       "Drug(s) ``a`` decrease the potency of drug ``b``"
+       ,                "> 1",    "Synergistic Potency",        "Drug(s) ``a`` increase the potency of drug ``b``"
+       "``beta_a``",    "< 0",    "Antagonistic Efficacy",      "Combination ``a`` is weaker than with one fewer drug"
+       ,                "> 0",    "Synergistic Efficacy",       "Combination ``a`` is stronger than with one fewer drug"
+       "``gamma_a_b``", "[0, 1)", "Antagonistic Cooperativity", "Drug(s) ``a`` decrease the cooperativity of drug ``b``"
+       ,                "> 1",    "Synergistic Cooperativity",  "Drug(s) ``a`` increase the cooperativity of drug ``b``"
+    """
 
     # Bounds will depened on the number of dimensions, so will be filled out in _get_initial_guess()
     def __init__(

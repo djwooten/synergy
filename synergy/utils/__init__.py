@@ -14,7 +14,6 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
-from typing import Union
 
 import numpy as np
 from numpy.typing import ArrayLike
@@ -22,57 +21,40 @@ from numpy.typing import ArrayLike
 from synergy.exceptions import InvalidDrugModelError
 
 
-def remove_zeros(d, min_buffer=0.2, num_dilutions: int = 1):
-    """Replace zeros with some semi-intelligently chosen small value
+def residual_ss(d1: ArrayLike, d2: ArrayLike, E: ArrayLike, function: callable):
+    """Calculate the sum of squares of the residuals for a 2D dose response model.
 
-    When plotting on a log scale, 0 doses can cause problems. This replaces all 0's using the dilution factor between
-    the smallest non-zero, and second-smallest non-zero doses. If that dilution factor is too close to 1, it will
-    replace 0's doses with a dose that is min_buffer*(max(d)-min(d[d>0])) less than min(d[d>0]) on a log scale.
-
-    Parameters
-    ----------
-    d : array_like
-        Doses to remove zeros from. Original array will not be changed.
-
-    min_buffer : float , default=0.2
-        For very large dose arrays with very small step sizes (useful for getting smooth plots), replacing 0's may lead
-        to a value too close to the smallest non-zero dose. min_buffer is the minimum buffer (in log scale, relative to
-        the full dose range) that 0's will be replaced with.
+    :param ArrayLike d1: The doses of drug 1
+    :param ArrayLike d2: The doses of drug 2
+    :param ArrayLike E: The observed values
+    :param callable function: The model to use
     """
-
-    d = np.array(d, copy=True)
-    dmin = np.min(d[d > 0])  # smallest nonzero dose
-    dmin2 = np.min(d[d > dmin])
-    dilution = dmin / dmin2
-
-    dmax = np.max(d)
-    logdmin = np.log(dmin)
-    logdmin2 = np.log(dmin2)
-    logdmax = np.log(dmax)
-
-    if (logdmin2 - logdmin) / (logdmax - logdmin) < min_buffer:
-        logdmin2_effective = logdmin + min_buffer * (logdmax - logdmin)
-        dilution = dmin / np.exp(logdmin2_effective)
-
-    d[d == 0] = dmin * np.float_power(dilution, num_dilutions)
-    return d
-
-
-def residual_ss(d1, d2, E, model):
-    E_model = model(d1, d2)
+    E_model = function(d1, d2)
     return np.sum((E - E_model) ** 2)
 
 
-def residual_ss_1d(d, E, model):
-    E_model = model(d)
+def residual_ss_1d(d: ArrayLike, E: ArrayLike, function: callable):
+    """Calculate the sum of squares of the residuals for a 1D dose response model.
+
+    :param ArrayLike d: The doses
+    :param ArrayLike E: The observed values
+    :param callable function: The model to use
+    """
+    E_model = function(d)
     return np.sum((E - E_model) ** 2)
 
 
-def AIC(sum_of_squares_residuals, n_parameters, n_samples):
-    """
+def AIC(sum_of_squares_residuals: float, n_parameters: int, n_samples: int) -> float:
+    """Calculate the Akaike Information Criterion.
+
     SOURCE: AIC under the Framework of Least Squares Estimation, HT Banks, Michele L Joyner, 2017
     Equations (6) and (16)
     https://projects.ncsu.edu/crsc/reports/ftp/pdf/crsc-tr17-09.pdf
+
+    :param float sum_of_squares_residuals: The sum of squares of the residuals
+    :param int n_parameters: The number of parameters in the model
+    :param int n_samples: The number of samples
+    :return float: The AIC value
     """
     aic = n_samples * np.log(sum_of_squares_residuals / n_samples) + 2 * (n_parameters + 1)
     if n_samples / n_parameters > 40:
@@ -81,11 +63,24 @@ def AIC(sum_of_squares_residuals, n_parameters, n_samples):
         return aic + 2 * n_parameters * (n_parameters + 1) / (n_samples - n_parameters - 1)
 
 
-def BIC(sum_of_squares_residuals, n_parameters, n_samples):
+def BIC(sum_of_squares_residuals: float, n_parameters: int, n_samples: int) -> float:
+    """Calculate the Bayesian Information Criterion
+
+    :param float sum_of_squares_residuals: The sum of squares of the residuals
+    :param int n_parameters: The number of parameters in the model
+    :param int n_samples: The number of samples
+    :return float: The BIC value
+    """
     return n_samples * np.log(sum_of_squares_residuals / n_samples) + (n_parameters + 1) * np.log(n_samples)
 
 
-def r_squared(E, sum_of_squares_residuals):
+def r_squared(E: ArrayLike, sum_of_squares_residuals: float) -> float:
+    """Calculate the R^2 value.
+
+    :param ArrayLike E: The observed values
+    :param float sum_of_squares_residuals: The sum of squares of the residuals
+    :return float: The R^2 value
+    """
     ss_tot = np.sum((E - np.mean(E)) ** 2)
     return 1 - sum_of_squares_residuals / ss_tot
 

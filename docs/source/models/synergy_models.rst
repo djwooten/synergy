@@ -6,4 +6,12 @@ Synergy
    :hidden:
    :caption: Synergy models
    
-   synergy/musyc_notebook.ipynb
+   synergy/bliss.ipynb
+   synergy/braid.ipynb
+   synergy/combination_index.ipynb
+   synergy/hsa.ipynb
+   synergy/loewe.ipynb
+   synergy/musyc.ipynb
+   synergy/schindler.ipynb
+   synergy/zimmer.ipynb
+   synergy/zip.ipynb

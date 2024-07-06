@@ -27,10 +27,11 @@ from synergy.utils.model_mixins import ParametricModelMixins
 class MuSyC(ParametricSynergyModel2D):
     """The MuSyC parametric synergy model for combinations of two drugs.
 
-    Multidimensional Synergy of Combinations (MuSyC) is a drug synergy framework based on the law of mass action
-    (`doi: 10.1016/j.cels.2019.01.003 <https://doi.org/10.1016/j.cels.2019.01.003>`_, `doi: 10.1101/683433 <https://doi.org/10.1101/683433>`_).
-
     In MuSyC, synergy is parametrically defined as shifts in potency (alpha), efficacy (beta), or cooperativity (gamma).
+
+    Two modes are supported:
+    - fit_gamma=True (default) - fits all synergy parameters (alpha, beta, and gamma)
+    - fit_gamma=False - fits only alpha and beta, with gamma fixed to 1.0
 
     .. csv-table:: Interpretation of synergy parameters
        :header: "Parameter", "Values", "Synergy/Antagonism", "Interpretation"
@@ -39,8 +40,8 @@ class MuSyC(ParametricSynergyModel2D):
        ,              "> 1",    "Synergistic Potency",        "Drug 1 increases the effective dose (potency) of drug 2"
        "``alpha21``", "[0, 1)", "Antagonistic Potency",       "Drug 2 decreases the effective dose (potency) of drug 1"
        ,              "> 1",    "Synergistic Potency",        "Drug 2 increases the effective dose (potency) of drug 1"
-       "``beta``",    "< 0",    "Antagonistic Efficacy",      "The combination is weaker than the stronger of drugs 1 and 2"
-       ,              "> 0",    "Synergistic Efficacy",       "The combination is stronger than the stronger of drugs 1 and 2"
+       "``beta``",    "< 0",    "Antagonistic Efficacy",      "The combination is weaker than the stronger drug"
+       ,              "> 0",    "Synergistic Efficacy",       "The combination is stronger than the stronger drug"
        "``gamma12``", "[0, 1)", "Antagonistic Cooperativity", "Drug 1 decreases the cooperativity of drug 2"
        ,              "> 1",    "Synergistic Cooperativity",  "Drug 1 increases the cooperativity of drug 2"
        "``gamma21``", "[0, 1)", "Antagonistic Cooperativity", "Drug 2 decreases the cooperativity of drug 1"

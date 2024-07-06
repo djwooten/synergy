@@ -14,6 +14,42 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import numpy as np
+from numpy.typing import ArrayLike
+
+
+def remove_zeros(d: ArrayLike, min_buffer: float = 0.2, num_dilutions: int = 1) -> ArrayLike:
+    """Replace zeros with a small value based on the dilution factor between the smallest non-zero doses.
+
+    When plotting on a log scale, 0 doses can cause problems. This replaces all 0's using the dilution factor between
+    the smallest non-zero, and second-smallest non-zero doses. If that dilution factor is too close to 1, it will
+    replace 0's doses with a dose that is min_buffer*(max(d)-min(d[d>0])) less than min(d[d>0]) on a log scale.
+
+    Parameters
+    ----------
+    d : ArrayLike
+        Doses to remove zeros from. Original array will not be changed.
+
+    min_buffer : float , default=0.2
+        For high resolution dose arrays with very small step sizes (useful for getting smooth plots), replacing 0's
+        based on the dilution factor may lead to a value too close to the smallest non-zero dose. min_buffer is the
+        minimum buffer (in log scale, relative to the full dose range) that 0's will be replaced with.
+    """
+    d = np.array(d, copy=True)
+    dmin = np.min(d[d > 0])  # smallest nonzero dose
+    dmin2 = np.min(d[d > dmin])  # second smallest nonzero dose
+    dilution = dmin / dmin2
+
+    dmax = np.max(d)
+    logdmin = np.log(dmin)
+    logdmin2 = np.log(dmin2)
+    logdmax = np.log(dmax)
+
+    if (logdmin2 - logdmin) / (logdmax - logdmin) < min_buffer:
+        logdmin2_effective = logdmin + min_buffer * (logdmax - logdmin)
+        dilution = dmin / np.exp(logdmin2_effective)
+
+    d[d == 0] = dmin * np.float_power(dilution, num_dilutions)
+    return d
 
 
 def make_dose_grid(
@@ -29,7 +65,7 @@ def make_dose_grid(
 ):
     """Create a grid of doses.
 
-    If ```logscale``` is `True`, use ```include_zero``` instead of setting the min dose to `0`.
+    If ```logscale``` is `True`, use ```include_zero=True``` instead of setting the min dose to `0`.
 
     :param float d1min: Minimum dose for drug 1
     :param float d1max: Maximum dose for drug 1
@@ -76,7 +112,24 @@ def make_dose_grid(
     return D1, D2
 
 
-def make_dose_grid_multi(dmin, dmax, npoints, logscale=True, include_zero=False, replicates: int = 1):
+def make_dose_grid_multi(
+    dmin: list[float],
+    dmax: list[float],
+    npoints: list[int],
+    logscale: bool = True,
+    include_zero: bool = False,
+    replicates: int = 1,
+) -> np.ndarray:
+    """Create a grid of doses for N drugs.
+
+    :param list[float] dmin: List of minimum doses for each drug
+    :param list[float] dmax: List of maximum doses for each drug
+    :param list[int] npoints: List of number of distinct doses to include for each drug
+    :param bool logscale: If True, doses will be uniform in log space. If False, doses will be uniform in linear space.
+    :param bool include_zero: If True, will include a dose of 0
+    :param int replicates: The number of replicates to include for each dose combination
+    :return np.ndarray: Dose grid
+    """
     if not (len(dmin) == len(dmax) and len(dmin) == len(npoints)):
         raise ValueError("Cannot generate Nd drug grid with unequal N.")
     doses = []
@@ -108,8 +161,14 @@ def make_dose_grid_multi(dmin, dmax, npoints, logscale=True, include_zero=False,
     return np.vstack([return_d] * replicates)
 
 
-def is_monotherapy_ND(d):
-    """Return True if no more than 1 drug is present."""
+def is_monotherapy_ND(d: ArrayLike) -> bool:
+    """Return True if no more than 1 drug is present in the given N-drug dose array.
+
+    Note, this still returns True if no drugs are present.
+
+    :param ArrayLike d: Dose array, shape (n_samples, n_drugs)
+    :return bool: True if no more than 1 drug is present in the given N-drug dose array
+    """
     vals, counts = np.unique(d > 0, return_counts=True)
     drugs_present_count = counts[vals]
     if len(drugs_present_count) == 0:
@@ -117,18 +176,25 @@ def is_monotherapy_ND(d):
     return drugs_present_count[0] == 1
 
 
-def get_monotherapy_mask_ND(d):
-    """Return a mask of where no more than 1 drug is present.
+def get_monotherapy_mask_ND(d: ArrayLike) -> tuple[np.ndarray]:
+    """Return a mask of rows where no more than 1 drug is present in the given N-drug dose array.
 
     This helps to set synergy to the default value for monotherapy combinations.
+
+    :param ArrayLike d: Dose array, shape (n_samples, n_drugs)
+    :return tuple[np.ndarray]: Mask of rows where no more than 1 drug is present
     """
     return np.where(np.apply_along_axis(is_monotherapy_ND, 1, d))
 
 
-def get_drug_alone_mask_ND(d, drug_idx):
-    """Find all dose combinations where only the requested drug is present.
+def get_drug_alone_mask_ND(d: ArrayLike, drug_idx: int) -> tuple[np.ndarray]:
+    """Return a mask of rows where only the requested drug is present.
 
     Note: other drugs are considered to be absent as long as they are at their minimum dose.
+
+    :param ArrayLike d: Dose array, shape (n_samples, n_drugs)
+    :param int drug_idx: Index of the drug to check for
+    :return tuple[np.ndarray]: Mask of rows where only the requested drug is present
     """
     N = d.shape[1]
     mask = d[:, drug_idx] >= 0  # This inits it to "True"
@@ -139,53 +205,27 @@ def get_drug_alone_mask_ND(d, drug_idx):
     return np.where(mask)
 
 
-def get_num_replicates(d1, d2):
-    """Given 1d dose arrays d1 and d2, determine how many replicates of each unique combination are present
+def get_num_replicates(d1: ArrayLike, d2: ArrayLike) -> ArrayLike:
+    """Determine how many replicates of each unique combination are present.
 
     Parameters:
     -----------
-    d1 : array_like, float
+    d1 : ArrayLike
         Doses of drug 1
 
-    d2 : array_like, float
+    d2 : ArrayLike
         Doses of drug 2
 
     Returns:
     -----------
-    replicates : numpy.array
+    replicates : ArrayLike
         Counts of each unique dose combination
     """
     return np.unique(np.asarray([d1, d2]), axis=1, return_counts=True)[1]
 
 
-@DeprecationWarning
-def remove_replicates(d1, d2):
-    """Given 1d dose arrays d1 and d2, remove replicates.
-
-    This is needed sometimes for plotting, since some plot functions expect a single d1, d2 -> E for each dose.
-
-    Parameters:
-    -----------
-    d1 : array_like, float
-        Doses of drug 1
-
-    d2 : array_like, float
-        Doses of drug 2
-
-    Returns:
-    -----------
-    d1 : array_like, float
-        Doses of drug 1 without replicates
-
-    d2 : array_like, float
-        Doses of drug 2 without replicates
-    """
-    d = np.asarray(list(set(zip(d1, d2))))
-    return d[:, 0], d[:, 1]
-
-
-def aggregate_replicates(d, E, aggfunc=np.median):
-    """Aggregate replicates of dose-response data.
+def aggregate_replicates(d: ArrayLike, E: ArrayLike, aggfunc=np.median):
+    """Aggregate rows of d and E with repeated combination doses.
 
     Parameters:
     -----------
@@ -193,6 +233,8 @@ def aggregate_replicates(d, E, aggfunc=np.median):
         Doses, shape (n_samples, n_drugs)
     E : array_like
         Responses, shape (n_samples,)
+    aggfunc : Callable, optional
+        Function to aggregate replicate values of E, default is np.median
 
     Returns:
     --------

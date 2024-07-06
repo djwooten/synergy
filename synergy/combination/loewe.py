@@ -26,32 +26,27 @@ from scipy.optimize import minimize_scalar
 class Loewe(DoseDependentSynergyModel2D):
     """The Loewe additivity non-parametric synergy model for combinations of two drugs.
 
-    Loewe's model of drug combination additivity expects a linear tradeoff, such that withholding ```X``` parts of
-    drug 1 can be compensated for by adding ```Y``` parts of drug 2. In Loewe's model, ```X``` and ```Y``` are constant
-    (e.g., withholding 5X parts of drug 1 will be compensated for with 5Y parts of drug 2.)
+    The Loewe model is used to calculate a dose-dependent scalar value of synergy. Multiple modes are supported:
+    - mode="CI" (default) - calculates synergy using an equation equivalent to combination index
+    - mode="delta_HSA" - calculates synergy as the difference between the measured values and an expected values,
+    - mode="delta_weakest" - calculates synergy as the difference between the measured values and an expected values
+    - mode="delta_nan" - calculates synergy as the difference between the measured values and an expected values,
 
-    The Loewe model is used to calculate a dose-dependent scalar value of synergy. Two modes are supported: "CI" and "delta"
+    All delta modes require that the single drug models be Hill models. The CI mode can be used with any single drug
+    models.
 
-    CI mode (default)
-    =================
-    This mode calculates synergy using an equation equivalent to combination index. But unlike CI, Loewe allows arbitrary
-    single-drug models.
+    All delta modes are identical except for how they handle the case where the effect of one drug exceeds the max
+    effect of the other. "HSA" sets the expected response to be the stronger drug's effect. "weakest" sets the expected
+    response to be Emax of the weakest drug. "nan" sets the expected response to be nan.
 
     In CI mode, 0 <= Loewe < 1 indicates synergism, while Loewe > 1 indicates antagonism
-
-
-    delta mode
-    ==========
-    This mode calculates an expected dose response surface, and defines synergy as the difference between the measured
-    values and the expected values. This mode requires single-drugs be fitted using a Hill model.
-
-    In delta mode, Loewe > 0 indicates synergism, while Loewe < 0 indicates antagonism
+    In the delta modes, Loewe > 0 indicates synergism, while Loewe < 0 indicates antagonism
     """
 
     def __init__(self, mode: str = "CI", drug1_model=None, drug2_model=None, **kwargs):
         """Ctor."""
         mode = mode.lower()
-        if mode not in ["ci", "delta", "delta_hsa", "delta_nan"]:
+        if mode not in ["ci", "delta_weakest", "delta_hsa", "delta_nan"]:
             raise ValueError("Unrecognized mode for Loewe ({mode})")
         self.mode = mode
 
@@ -141,22 +136,14 @@ class Loewe(DoseDependentSynergyModel2D):
 
         with np.errstate(divide="ignore", invalid="ignore"):
             E_ref = 0 * d1
-
-            Emax_1 = self.drug1_model.Emax
-            Emax_2 = self.drug2_model.Emax
-
-            weakest_E = max(Emax_1, Emax_2)
-
-            stronger_drug = self.drug1_model
-            if Emax_1 > Emax_2:
-                stronger_drug = self.drug2_model
+            weakest_E = max(self.drug1_model.Emax, self.drug2_model.Emax)
 
             # Loewe becomes undefined for effects past the weaker drug's Emax
             # We implement several modes to handle this case:
-            #  1) mode="delta" - this will set E_reference to weakest_E
+            #  1) mode="delta_weakest" - this will set E_reference to weakest_E
             #  2) mode="delta_HSA" - this will set E_r to min(E1, E2)
             #  3) mode="delta_nan" - this will set E_r to nan
-            if self.mode == "delta":
+            if self.mode == "delta_weakest":
                 option = 1
             elif self.mode == "delta_hsa":
                 option = 2
@@ -201,7 +188,7 @@ class Loewe(DoseDependentSynergyModel2D):
 
     def plot_heatmap(self, cmap="PRGn", neglog=None, center_on_zero=True, **kwargs):
         if neglog is None:
-            if self.mode == "delta":
+            if self.mode == "delta_weakest":
                 neglog = False
             else:
                 neglog = True
@@ -209,7 +196,7 @@ class Loewe(DoseDependentSynergyModel2D):
 
     def plot_surface_plotly(self, cmap="PRGn", neglog=None, center_on_zero=True, **kwargs):
         if neglog is None:
-            if self.mode == "delta":
+            if self.mode == "delta_weakest":
                 neglog = False
             else:
                 neglog = True

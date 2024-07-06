@@ -1,24 +1,10 @@
-#    Copyright (C) 2020 David J. Wooten
-#
-#    This program is free software: you can redistribute it and/or modify
-#    it under the terms of the GNU General Public License as published by
-#    the Free Software Foundation, either version 3 of the License, or
-#    (at your option) any later version.
-#
-#    This program is distributed in the hope that it will be useful,
-#    but WITHOUT ANY WARRANTY; without even the implied warranty of
-#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#    GNU General Public License for more details.
-#
-#    You should have received a copy of the GNU General Public License
-#    along with this program.  If not, see <http://www.gnu.org/licenses/>.
+"""Helper functions to make plots of drug combination responses and synergy."""
 
 import logging
 
 import numpy as np
 
-from synergy import utils
-from synergy.utils.dose_utils import get_num_replicates, aggregate_replicates
+from synergy.utils.dose_utils import aggregate_replicates, get_num_replicates, remove_zeros
 
 SUPPORTED_PLOTLY_EXTENSIONS = ["png", "jpeg", "jpg", "webp", "svg", "pdf", "eps"]
 _LOGGER = logging.Logger(__name__)
@@ -95,8 +81,8 @@ def plot_heatmap(
         raise ImportError("matplotlib must be installed to plot")
 
     if logscale:
-        d1 = utils.remove_zeros(d1)
-        d2 = utils.remove_zeros(d2)
+        d1 = remove_zeros(d1)
+        d2 = remove_zeros(d2)
     else:
         d1 = np.array(d1, copy=True)
         d2 = np.array(d2, copy=True)
@@ -300,8 +286,8 @@ def plot_surface_plotly(
     E = np.asarray(E)
 
     if logscale:
-        d1 = utils.remove_zeros(d1)
-        d2 = utils.remove_zeros(d2)
+        d1 = remove_zeros(d1)
+        d2 = remove_zeros(d2)
         d1 = np.log10(d1)
         d2 = np.log10(d2)
 
@@ -378,8 +364,8 @@ def plot_surface_plotly(
         d1scatter = np.array(scatter_points["drug1.conc"], copy=True, dtype=np.float64)
         d2scatter = np.array(scatter_points["drug2.conc"], copy=True, dtype=np.float64)
         if logscale:
-            d1scatter = np.log10(utils.remove_zeros(d1scatter))
-            d2scatter = np.log10(utils.remove_zeros(d2scatter))
+            d1scatter = np.log10(remove_zeros(d1scatter))
+            d2scatter = np.log10(remove_zeros(d2scatter))
 
         data_to_plot.append(
             go.Scatter3d(
@@ -468,9 +454,9 @@ def plotly_isosurfaces(
     d3 = d[:, 2]
 
     if logscale:
-        d1 = utils.remove_zeros(d1)
-        d2 = utils.remove_zeros(d2)
-        d3 = utils.remove_zeros(d3)
+        d1 = remove_zeros(d1)
+        d2 = remove_zeros(d2)
+        d3 = remove_zeros(d3)
         d1 = np.log10(d1)
         d2 = np.log10(d2)
         d3 = np.log10(d3)

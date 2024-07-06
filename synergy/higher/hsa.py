@@ -22,10 +22,7 @@ from synergy.single.log_linear import LogLinear
 
 
 class HSA(DoseDependentSynergyModelND):
-    """Highest single agent (HSA)
-
-    HSA says that any improvement a combination gives over the strongest single agent counts as synergy.
-    """
+    """Highest single agent (HSA) for n-drug combinaations."""
 
     def E_reference(self, d):
         """-"""

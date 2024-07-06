@@ -12,15 +12,15 @@ Overview
 
 ### Synergy
 
-- [MuSyC](models/synergy/musyc_notebook)
-- Bliss
-- Loewe
-- Combination Index
-- ZIP
-- Zimmer
-- BRAID
-- Schindler
-- HSA
+- [Bliss](models/synergy/bliss)
+- [BRAID](models/synergy/braid)
+- [Combination Index](models/synergy/combination_index)
+- [HSA](models/synergy/hsa)
+- [Loewe](models/synergy/loewe)
+- [MuSyC](models/synergy/musyc)
+- [Schindler](models/synergy/schindler)
+- [Zimmer](models/synergy/zimmer)
+- [ZIP](models/synergy/zip)
 
 ## Choosing a model
 

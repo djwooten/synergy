@@ -1,7 +1,10 @@
+"""Methods used by both 2d and Nd synergy models."""
+
 import logging
 from typing import Sequence
 
 import numpy as np
+from numpy.typing import ArrayLike
 from scipy.stats import norm
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
@@ -10,17 +13,30 @@ _LOGGER = logging.Logger(__name__)
 
 
 class ParametricModelMixins:
-    """-"""
+    """Utility functions for parametric models."""
 
     @staticmethod
-    def set_init_parameters(model, parameter_names: list[str], **kwargs):
-        """-"""
+    def set_init_parameters(model, parameter_names: list[str], **kwargs) -> None:
+        """Set parameters for a model passed to the models' constructor.
+
+        For instance, this lets us call `model = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)` to create a fully funcitonal
+        Hill model.
+
+        :param model: The model to set parameters for.
+        :param list[str] parameter_names: Names of the parameters that can be set.
+        :param kwargs: The kwargs supplied to the constructor, which may contain these initial values.
+        """
         for param in parameter_names:
             model.__setattr__(param, kwargs.get(param, None))
 
     @staticmethod
-    def set_parameters(model, parameter_names: list[str], *args):
-        """-"""
+    def set_parameters(model, parameter_names: list[str], *args) -> None:
+        """Set parameters for a model to values in args.
+
+        :param model: The model to set parameters for.
+        :param list[str] parameter_names: Names of the parameters to be set.
+        :param args[float] args: The parameter values
+        """
         # TODO use this for synergy_model_2d just like with synergy_model_Nd
         if len(parameter_names) != len(args):
             raise ValueError("Number of parameters must match number of parameter names.")
@@ -70,12 +86,27 @@ class ParametricModelMixins:
         return lower_bounds, upper_bounds
 
     @staticmethod
-    def bootstrap_parameter_ranges(model, E, use_jacobian, bootstrap_iterations, max_iterations, *args, **kwargs):
+    def bootstrap_parameter_ranges(
+        model, E: ArrayLike, use_jacobian: bool, bootstrap_iterations: int, max_iterations: int, *args, **kwargs
+    ):
         """Identify confidence intervals for parameters using bootstrap resampling.
 
         Residuals are randomly sampled from a normal distribution with :math:`\sigma = \sqrt{\frac{RSS}{n - N}}`
         where :math:`RSS` is the residual sum of square, :math:`n` is the number of data points, and :math:`N` is the
         number of parameters.
+
+        This will set the property ```model.bootstrap_parameters``` which is an np.ndarray of shape
+        (bootstrap_iterations, n_parameters).
+
+        If fewer than ```bootstrap_iterations``` iterations converge, a warning is logged, but no error is raised.
+
+        :param model: The model to bootstrap.
+        :param ArrayLike E: The observed values.
+        :param bool use_jacobian: Whether to use the Jacobian when fitting the model.
+        :param int bootstrap_iterations: The number of bootstrap iterations to perform.
+        :param int max_iterations: The maximum number of iterations to perform when fitting the model.
+        :param args: Args to pass to model.E() to get model predicted values.
+        :param kwargs: Additional arguments to pass to the model's _fit method.
         """
         if bootstrap_iterations <= 0:
             model.bootstrap_parameters = None
@@ -129,7 +160,21 @@ class ParametricModelMixins:
         gt_outcome: str,
         lt_outcome: str,
         default_outcome: str = "additive",
-    ):
+    ) -> list[str]:
+        """Create a string summary row for a synergy parameter.
+
+        :param str key: The parameter name.
+        :param int comp_val: The "additive" value that the synergy value will be compared against.
+        :param float val: The synergy value.
+        :param dict[str, tuple[float, float]] ci: Confidence intervals keyed by parameter names.
+        :param float tol: The tolerance for comparing the synergy value to the comparison value.
+        :param bool log: Whether to log-transform the synergy and comp values before comparing, which may be appropriate
+            if ```tol > 0```.
+        :param str gt_outcome: The outcome if the synergy value is greater than the comparison value.
+        :param str lt_outcome: The outcome if the synergy value is less than the comparison value.
+        :param str default_outcome: The default outcome if the synergy value is within the tolerance of the comparison.
+        :return list[str]: A list of strings for the summary row, where each element is a column in the summary table.
+        """
         if ci:
             lb, ub = ci[key]
             if lb > comp_val:

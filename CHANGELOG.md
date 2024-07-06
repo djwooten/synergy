@@ -29,3 +29,4 @@ Initial stable release.
 ### Removed
 
 - Plotting functionality that was built into individual models. Use `synergy.utils.plots` directly instead, or your own custom plotting code.
+- `synergy.utils.dose_utils.remove_replicates()`

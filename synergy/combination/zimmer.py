@@ -24,24 +24,20 @@ from synergy.utils.model_mixins import ParametricModelMixins
 
 
 class Zimmer(ParametricSynergyModel2D):
-    """The Effective Dose Model from Zimmer et al (doi: 10.1073/pnas.1606301113). This model uses the multiplicative survival principle (i.e., Bliss), but adds a parameter for each drug describing how it affects the potency of the other. Specifically, given doses d1 and d2, this model translates them to "effective" doses using the following system of equations
+    """The Effective Dose synergy model from Zimmer et al.
 
-                            d1
-    d1_eff =  --------------------------------
-              1 + a12*(1/(1+(d2_eff/C2)^(-1)))
-
-                            d2
-    d2_eff =  --------------------------------
-              1 + a21*(1/(1+(d1_eff/C1)^(-1)))
+    This model uses the multiplicative survival principle (i.e., Bliss), but adds a parameter for each drug describing
+    how it affects the potency of the other.
 
     Synergy by Zimmer is described by these parameters
 
-    a12 : float
-        (-(1+(d2_eff/C2))/(d2_eff/C2),0)=synergism, (0,inf)=antagonism.         Describes how drug 2 affects the effective dose of drug 1.
+    .. csv-table:: Interpretation of synergy parameters
+       :header: "Parameter", "Values", "Synergy/Antagonism", "Interpretation"
 
-    a21 : float
-        (-(1+(d1_eff/C1))/(d1_eff/C1),0)=synergism, (0,inf)=antagonism. Describes how drug 1 affects the effective dose of drug 2.
-
+       "``a12``", "< 0", "Synergism",  "Drug 2 increases the effective dose (potency) of drug 1"
+       ,          "> 0", "Antagonism", "Drug 2 decreases the effective dose (potency) of drug 1"
+       "``a21``", "< 0", "Synergism",  "Drug 1 increases the effective dose (potency) of drug 2"
+       ,          "> 0", "Antagonism", "Drug 1 decreases the effective dose (potency) of drug 2"
     """
 
     def __init__(self, drug1_model=None, drug2_model=None, **kwargs):

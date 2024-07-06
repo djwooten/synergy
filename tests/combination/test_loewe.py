@@ -27,10 +27,10 @@ class ShamLoeweTests(TestCase):
             single_drug, 0.01, 100, 5, 1, logscale=True, E_noise=0, d_noise=0
         )
 
-    def test_fit_loewe_delta(self):
+    def test_fit_loewe_delta_weakest(self):
         """-"""
         # Give it non-prefit single-drug models
-        model = Loewe(mode="delta", drug1_model=Hill, drug2_model=Hill)
+        model = Loewe(mode="delta_weakest", drug1_model=Hill, drug2_model=Hill)
         synergy = model.fit(self.d1, self.d2, self.E)
         np.testing.assert_allclose(synergy, 0, atol=1e-2)
 
@@ -73,7 +73,7 @@ class ShamLoeweTests(TestCase):
         E[combo_mask] *= 0.9  # Make the combo stronger than loewe expects
 
         # Give it non-prefit single-drug models
-        model_delta = Loewe(mode="delta", drug1_model=Hill, drug2_model=Hill)
+        model_delta = Loewe(mode="delta_hsa", drug1_model=Hill, drug2_model=Hill)
         synergy_delta = model_delta.fit(self.d1, self.d2, E)
         self.assertTrue((synergy_delta[combo_mask] > 0).all())
         np.testing.assert_allclose(synergy_delta[single_mask], 0, atol=1e-2)
@@ -91,7 +91,7 @@ class ShamLoeweTests(TestCase):
         E[combo_mask] *= 1.02  # Make the combo weaker than loewe expects
 
         # Give it non-prefit single-drug models
-        model_delta = Loewe(mode="delta", drug1_model=Hill, drug2_model=Hill)
+        model_delta = Loewe(mode="delta_hsa", drug1_model=Hill, drug2_model=Hill)
         synergy_delta = model_delta.fit(self.d1, self.d2, E)
         self.assertTrue((synergy_delta[combo_mask] < 0).all())
         np.testing.assert_allclose(synergy_delta[single_mask], 0, atol=1e-2)

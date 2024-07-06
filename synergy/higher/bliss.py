@@ -20,7 +20,7 @@ from synergy.single.log_linear import LogLinear
 
 
 class Bliss(DoseDependentSynergyModelND):
-    """Bliss independence synergy model."""
+    """Bliss independence synergy model for n-drug combinations."""
 
     def E_reference(self, d):
         """-"""
