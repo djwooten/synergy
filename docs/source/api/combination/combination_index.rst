@@ -1,7 +1,8 @@
-Bliss
------
+CombinationIndex
+----------------
 
-   .. autoclass:: synergy.combination.combination_index.CombinationIndex
+   .. autoclass:: synergy.combination.CombinationIndex
       :members:
       :inherited-members:
       :show-inheritance:
+      :noindex:

@@ -43,11 +43,11 @@ class SynergyModel2D(ABC):
         )
 
     @abstractmethod
-    def fit(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike, **kwargs) -> Union[None, ArrayLike]:
+    def fit(self, d1, d2, E, **kwargs) -> Union[None, ArrayLike]:
         """-"""
 
     @abstractmethod
-    def E_reference(self, d1: ArrayLike, d2: ArrayLike) -> ArrayLike:
+    def E_reference(self, d1, d2):
         """Return the expected effect of the combination of drugs at doses d1 and d2.
 
         :param ArrayLike d1: Concentration of drug 1
@@ -104,7 +104,7 @@ class DoseDependentSynergyModel2D(SynergyModel2D):
         self.reference = None
         self._is_fit = False
 
-    def fit(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike, **kwargs) -> ArrayLike:
+    def fit(self, d1, d2, E, **kwargs):
         """Fit the model to data.
 
         :param ArrayLike d1: Concentration of drug 1
@@ -153,10 +153,10 @@ class DoseDependentSynergyModel2D(SynergyModel2D):
         return self._is_fit
 
     @abstractmethod
-    def _get_synergy(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike):
+    def _get_synergy(self, d1, d2, E):
         """Calculate synergy at doses d1 and d2."""
 
-    def _sanitize_synergy(self, d1: ArrayLike, d2: ArrayLike, synergy: ArrayLike, default_val: float):
+    def _sanitize_synergy(self, d1, d2, synergy, default_val: float):
         """Set the synergy to the default value when one of the doses is 0."""
         if hasattr(synergy, "__iter__"):
             synergy[(d1 == 0) | (d2 == 0)] = default_val
@@ -194,7 +194,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
         self.bootstrap_parameters = None
 
     @abstractmethod
-    def E(self, d1: ArrayLike, d2: ArrayLike) -> ArrayLike:
+    def E(self, d1, d2):
         """Calculate the expected effect of the combination of drugs at doses d1 and d2.
 
         :param ArrayLike d1: Concentration of drug 1
@@ -210,7 +210,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
         return {param: self.__getattribute__(param) for param in self._parameter_names}
 
     @abstractmethod
-    def _set_parameters(self, parameters: ArrayLike):
+    def _set_parameters(self, parameters):
         """Set the model parameters."""
 
     @property
@@ -223,7 +223,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
         """Default bounds for each parameter."""
 
-    def fit(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike, **kwargs):
+    def fit(self, d1, d2, E, **kwargs):
         """Fit the model to data.
 
         :param ArrayLike d1: Concentration of drug 1
@@ -302,7 +302,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
         intervals = np.percentile(self.bootstrap_parameters, [lb, ub], axis=0).transpose()
         return dict(zip(self._parameter_names, intervals))
 
-    def _get_initial_guess(self, d1: ArrayLike, d2: ArrayLike, E: ArrayLike, p0: ArrayLike):
+    def _get_initial_guess(self, d1, d2, E, p0):
         """Transform user supplied initial guess to correct scale, and/or guess p0."""
         if p0:
             p0 = list(self._transform_params_to_fit(p0))
@@ -381,3 +381,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
     def is_fit(self) -> bool:
         """True if model.fit() was called."""
         return self._is_fit
+
+    @abstractmethod
+    def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
+        """Print a summary table of the synergy model."""

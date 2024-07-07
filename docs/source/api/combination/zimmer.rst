@@ -1,6 +1,7 @@
 Zimmer
 ------
 
-   .. autoclass:: synergy.combination.zimmer.Zimmer
+   .. autoclass:: synergy.combination.Zimmer
       :members:
       :inherited-members:
+      :noindex:

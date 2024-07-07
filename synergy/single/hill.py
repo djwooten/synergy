@@ -23,9 +23,7 @@ from synergy.single.dose_response_model_1d import ParametricDoseResponseModel1D
 class Hill(ParametricDoseResponseModel1D):
     """The four-parameter Hill equation
 
-                            d^h
-    E = E0 + (Emax-E0) * ---------
-                         C^h + d^h
+    E = E0 + (Emax - E0) * d^h / (C^h + d^h)
 
     The Hill equation is a standard model for single-drug dose-response curves.
     This is the base model for Hill_2P and Hill_CI.
@@ -197,9 +195,7 @@ class Hill(ParametricDoseResponseModel1D):
 class Hill_2P(Hill):
     """The two-parameter Hill equation
 
-                            d^h
-    E = E0 + (Emax-E0) * ---------
-                         C^h + d^h
+    E = E0 + (Emax - E0) * d^h / (C^h + d^h)
 
     Mathematically equivalent to the four-parameter Hill equation, but E0 and Emax are held constant (not fit to data).
     """

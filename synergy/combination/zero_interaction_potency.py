@@ -35,6 +35,9 @@ class ZIP(DoseDependentSynergyModel2D):
     ZIP models store these delta values as model._synergy, but also store the Hill equation fits for drug1 and drug2
     across the whole surface, allowing investigation of how h and C change across the surface
 
+
+    Members
+    -------
     synergy : array_like
         (-inf,0)=antagonism, (0,inf)=synergism. The "delta" synergy score from ZIP
 
@@ -65,12 +68,10 @@ class ZIP(DoseDependentSynergyModel2D):
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill
 
     def _get_synergy(self, d1, d2, E):

@@ -171,7 +171,7 @@ def _relabel_log_ticks(ax, d1, d2):
     ax.set_yticks(minor_ticks, minor=True)
 
 
-def _interp(x: ArrayLike, x0: float, x1: float, y0: float, y1: float):
+def _interp(x, x0: float, x1: float, y0: float, y1: float):
     """Interpolate values of x between x0 and x1 to y values between y0 and y1.
 
     :param ArrayLike x: array of values to interpolate
@@ -185,9 +185,9 @@ def _interp(x: ArrayLike, x0: float, x1: float, y0: float, y1: float):
 
 
 def plot_heatmap(
-    d1: ArrayLike,
-    d2: ArrayLike,
-    vals: ArrayLike,
+    d1,
+    d2,
+    vals,
     title: str = "",
     xlabel: str = "Drug 1",
     ylabel: str = "Drug 2",
@@ -207,6 +207,7 @@ def plot_heatmap(
     :param str ylabel: label for the y-axis
     :param str fname: filename to save the plot (if not empty)
     :param kwargs: additional keyword arguments to configure the plot
+
         - aggfunc: callable function to aggregate replicates (default is np.median)
         - aspect: str aspect ratio of the plot (default is "equal")
         - ax: matplotlib axis or None to generate a new figure
@@ -277,9 +278,9 @@ def plot_heatmap(
 
 
 def plot_surface_plotly(
-    d1: ArrayLike,
-    d2: ArrayLike,
-    vals: ArrayLike,
+    d1,
+    d2,
+    vals,
     scatter_points=None,
     logscale: bool = True,
     xlabel: str = "Drug 1",
@@ -289,6 +290,28 @@ def plot_surface_plotly(
     fname: str = "",
     **kwargs,
 ):
+    """Plot 3d surface of drug combination data.
+
+    :param ArrayLike d1: array of doses for drug 1
+    :param ArrayLike d2: array of doses for drug 2
+    :param ArrayLike vals: array of values
+    :param scatter_points: pandas dataframe of points to scatter on the surface plot
+    :param bool logscale: if True, plot the doses on a log scale
+    :param str xlabel: label for the x-axis (e.g., drug name, concentration units)
+    :param str ylabel: label for the y-axis
+    :param str zlabel: label for the z-axis
+    :param str title: title of the plot
+    :param str fname: filename to save the plot (if not empty)
+    :param kwargs: additional keyword arguments to configure the plot
+
+        - figsize: tuple of width and height for the figure
+        - font: dict of font properties
+        - fontsize: int font size (if font is not specified)
+        - cmap: colormap str
+        - vmin: float minimum value for the color scale (or None to use the minimum value in vals)
+        - vmax: float maximum value for the color scale (or None to use the maximum value in vals)
+        - center_on_zero: bool if True, set vmin and vmax to symmetric values around
+    """
     if not plotly_import:
         raise ImportError("plot_surface_plotly() requires plotly to be installed.")
 
@@ -416,8 +439,8 @@ def plot_surface_plotly(
 
 
 def plotly_isosurfaces(
-    d: ArrayLike,
-    vals: ArrayLike,
+    d,
+    vals,
     drug_indices: list[int] = [0, 1, 2],
     fname: str = "",
     xlabel: str = "Drug 1",
@@ -441,6 +464,7 @@ def plotly_isosurfaces(
     :param int surface_count: number of isosurfaces
     :param str title: title of the plot
     :param kwargs: additional keyword arguments to configure the plot
+
         - figsize: tuple of width and height for the figure
         - font: dict of font properties
         - fontsize: int font size (if font is not specified)

@@ -1,6 +1,7 @@
 ZIP
 ---
 
-   .. autoclass:: synergy.combination.zero_interaction_potency.ZIP
+   .. autoclass:: synergy.combination.ZIP
       :members:
       :inherited-members:
+      :noindex:

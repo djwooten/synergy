@@ -2,7 +2,7 @@ synergy.combination
 ===================
 
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 0
 
    combination/bliss
    combination/braid

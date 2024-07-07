@@ -14,14 +14,15 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
+from typing import Sequence
 
 import numpy as np
-from numpy.typing import ArrayLike
 
 from synergy.exceptions import InvalidDrugModelError
+from synergy.single import DoseResponseModel1D
 
 
-def residual_ss(d1: ArrayLike, d2: ArrayLike, E: ArrayLike, function: callable):
+def residual_ss(d1, d2, E, function: callable):
     """Calculate the sum of squares of the residuals for a 2D dose response model.
 
     :param ArrayLike d1: The doses of drug 1
@@ -33,7 +34,7 @@ def residual_ss(d1: ArrayLike, d2: ArrayLike, E: ArrayLike, function: callable):
     return np.sum((E - E_model) ** 2)
 
 
-def residual_ss_1d(d: ArrayLike, E: ArrayLike, function: callable):
+def residual_ss_1d(d, E, function: callable):
     """Calculate the sum of squares of the residuals for a 1D dose response model.
 
     :param ArrayLike d: The doses
@@ -74,7 +75,7 @@ def BIC(sum_of_squares_residuals: float, n_parameters: int, n_samples: int) -> f
     return n_samples * np.log(sum_of_squares_residuals / n_samples) + (n_parameters + 1) * np.log(n_samples)
 
 
-def r_squared(E: ArrayLike, sum_of_squares_residuals: float) -> float:
+def r_squared(E, sum_of_squares_residuals: float) -> float:
     """Calculate the R^2 value.
 
     :param ArrayLike E: The observed values
@@ -85,7 +86,7 @@ def r_squared(E: ArrayLike, sum_of_squares_residuals: float) -> float:
     return 1 - sum_of_squares_residuals / ss_tot
 
 
-def sanitize_initial_guess(p0: ArrayLike, bounds: tuple[ArrayLike, ArrayLike]) -> ArrayLike:
+def sanitize_initial_guess(p0, bounds: tuple[Sequence[float], Sequence[float]]):
     """Ensure sure p0 is within the bounds.
 
     :param p0: Initial guess for the parameters
@@ -125,14 +126,14 @@ def sanitize_initial_guess(p0: ArrayLike, bounds: tuple[ArrayLike, ArrayLike]) -
     return p0
 
 
-def sanitize_single_drug_model(model, default_type: type, required_type: type, **kwargs):
+def sanitize_single_drug_model(model, default_type: type, required_type: type, **kwargs) -> DoseResponseModel1D:
     """Ensure the given single drug model is a class or object of a class that is permitted for the given synergy model.
 
-    :param DRModel1D model: The single drug model
+    :param DoseResponseModel1D model: The single drug model
     :param type default_type: The type of model to return if the given model is None
     :param type required_type: The class the model is expected to be an instance of
     :param kwargs: Additional arguments to pass to the model constructor
-    :return DRModel1D: An object that is an instance of required_type
+    :return DoseResponseModel1D: An object that is an instance of required_type
     """
     if model is None:
         model = default_type(**kwargs)

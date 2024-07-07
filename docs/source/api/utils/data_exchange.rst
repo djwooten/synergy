@@ -5,3 +5,4 @@ data_exchange
       :members:
       :inherited-members:
       :show-inheritance:
+      :noindex:

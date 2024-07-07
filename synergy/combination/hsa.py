@@ -24,6 +24,11 @@ class HSA(DoseDependentSynergyModel2D):
     """Highest single agent (HSA)
 
     HSA says that any improvement a combination gives over the strongest single agent counts as synergy.
+
+    Members
+    -------
+    synergy : array_like, float
+        (-inf,0)=antagonism, (0,inf)=synergism
     """
 
     def __init__(self, stronger_orientation=np.minimum, drug1_model=None, drug2_model=None, **kwargs):

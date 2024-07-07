@@ -9,9 +9,9 @@ except ImportError:
 
 
 def to_synergyfinder(
-    d1: ArrayLike,
-    d2: ArrayLike,
-    E: ArrayLike,
+    d1,
+    d2,
+    E,
     d1_name: str = "drug1",
     d2_name: str = "drug2",
     d1_unit: str = "uM",

@@ -87,7 +87,7 @@ class ParametricModelMixins:
 
     @staticmethod
     def bootstrap_parameter_ranges(
-        model, E: ArrayLike, use_jacobian: bool, bootstrap_iterations: int, max_iterations: int, *args, **kwargs
+        model, E, use_jacobian: bool, bootstrap_iterations: int, max_iterations: int, *args, **kwargs
     ):
         """Identify confidence intervals for parameters using bootstrap resampling.
 

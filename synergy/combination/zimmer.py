@@ -51,11 +51,9 @@ class Zimmer(ParametricSynergyModel2D):
 
     @property
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
-        """-"""
         return {"h1": (0, np.inf), "h2": (0, np.inf), "C1": (0, np.inf), "C2": (0, np.inf)}
 
     def _model_to_fit(self, d, logh1, logh2, logC1, logC2, a12, a21):
-        """-"""
         return self._model(d[0], d[1], np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), a12, a21)
 
     def _get_initial_guess(self, d1, d2, E, p0):
@@ -131,17 +129,14 @@ class Zimmer(ParametricSynergyModel2D):
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill_2P
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill_2P
 
     @property
     def _default_drug1_kwargs(self) -> dict:
-        """-"""
         lb, ub = self._bounds
         param_names = self._parameter_names
         h_idx = param_names.index("h1")
@@ -155,7 +150,6 @@ class Zimmer(ParametricSynergyModel2D):
 
     @property
     def _default_drug2_kwargs(self) -> dict:
-        """-"""
         lb, ub = self._bounds
         param_names = self._parameter_names
         h_idx = param_names.index("h2")
@@ -168,7 +162,6 @@ class Zimmer(ParametricSynergyModel2D):
         }
 
     def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
-        """-"""
         pars = self.get_parameters()
 
         header = ["Parameter", "Value", "Comparison", "Synergy"]

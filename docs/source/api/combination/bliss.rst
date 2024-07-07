@@ -1,7 +1,8 @@
 Bliss
 -----
 
-   .. autoclass:: synergy.combination.bliss.Bliss
+   .. autoclass:: synergy.combination.Bliss
       :members:
       :inherited-members:
       :show-inheritance:
+      :noindex:

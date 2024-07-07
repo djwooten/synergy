@@ -23,7 +23,7 @@ from numpy.typing import ArrayLike
 _LOGGER = logging.getLogger(__name__)
 
 
-def remove_zeros(d: ArrayLike, min_buffer: float = 0.2, num_dilutions: int = 1) -> ArrayLike:
+def remove_zeros(d, min_buffer: float = 0.2, num_dilutions: int = 1):
     """Replace zeros with a small value based on the dilution factor between the smallest non-zero doses.
 
     When plotting on a log scale, 0 doses can cause problems. This replaces all 0's using the dilution factor between
@@ -32,7 +32,7 @@ def remove_zeros(d: ArrayLike, min_buffer: float = 0.2, num_dilutions: int = 1) 
 
     Parameters
     ----------
-    d : ArrayLike
+    d 
         Doses to remove zeros from. Original array will not be changed.
 
     min_buffer : float , default=0.2
@@ -167,7 +167,7 @@ def make_dose_grid_multi(
     return np.vstack([return_d] * replicates)
 
 
-def is_monotherapy_ND(d: ArrayLike) -> bool:
+def is_monotherapy_ND(d) -> bool:
     """Return True if no more than 1 drug is present in the given N-drug dose array.
 
     This should only be applied to a single row (i.e., a single dose combination).
@@ -184,7 +184,7 @@ def is_monotherapy_ND(d: ArrayLike) -> bool:
     return drugs_present_count[0] == 1
 
 
-def get_monotherapy_mask_ND(d: ArrayLike) -> tuple[np.ndarray]:
+def get_monotherapy_mask_ND(d) -> tuple[np.ndarray]:
     """Return a mask of rows where no more than 1 drug is present in the given N-drug dose array.
 
     This helps to set synergy to the default value for monotherapy combinations.
@@ -195,7 +195,7 @@ def get_monotherapy_mask_ND(d: ArrayLike) -> tuple[np.ndarray]:
     return np.where(np.apply_along_axis(is_monotherapy_ND, 1, d))
 
 
-def get_drug_alone_mask_ND(d: ArrayLike, drug_idx: int) -> tuple[np.ndarray]:
+def get_drug_alone_mask_ND(d, drug_idx: int) -> tuple[np.ndarray]:
     """Return a mask of rows where only the requested drug is present.
 
     Note: other drugs are considered to be absent as long as they are at their minimum dose.
@@ -207,7 +207,7 @@ def get_drug_alone_mask_ND(d: ArrayLike, drug_idx: int) -> tuple[np.ndarray]:
     return get_drug_subset_mask_ND(d, [drug_idx])
 
 
-def get_drug_subset_mask_ND(d: ArrayLike, drug_indices: list[int]) -> tuple[np.ndarray]:
+def get_drug_subset_mask_ND(d, drug_indices: list[int]) -> tuple[np.ndarray]:
     """Return a mask of rows where only the requested drugs are present.
 
     Note: other drugs are considered to be absent as long as they are at their minimum dose.
@@ -233,7 +233,7 @@ def is_on_grid(d) -> bool:
 
     Parameters:
     -----------
-    d : ArrayLike
+    d 
         Doses, shape (n_samples, n_drugs)
     """
     unique_doses = [np.unique(d[:, i]) for i in range(d.shape[1])]
@@ -244,23 +244,23 @@ def is_on_grid(d) -> bool:
     return True
 
 
-def aggregate_replicates(d: ArrayLike, E: ArrayLike, aggfunc=np.median):
+def aggregate_replicates(d, E, aggfunc=np.median):
     """Aggregate rows of d and E with repeated combination doses.
 
     Parameters
     ----------
-    d : ArrayLike
+    d 
         Doses, shape (n_samples, n_drugs)
-    E : ArrayLike
+    E 
         Responses, shape (n_samples,)
     aggfunc : Callable, optional
         Function to aggregate replicate values of E, default is np.median
 
     Returns
     -------
-    d : ArrayLike
+    d 
         Unique doses, shape (n_unique_samples, n_drugs)
-    E : ArrayLike
+    E 
         Aggregated responses, shape (n_unique_samples,)
     """
     d_unique, num_replicates = np.unique(d, axis=0, return_counts=True)

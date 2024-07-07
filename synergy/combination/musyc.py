@@ -29,10 +29,6 @@ class MuSyC(ParametricSynergyModel2D):
 
     In MuSyC, synergy is parametrically defined as shifts in potency (alpha), efficacy (beta), or cooperativity (gamma).
 
-    Two modes are supported:
-    - fit_gamma=True (default) - fits all synergy parameters (alpha, beta, and gamma)
-    - fit_gamma=False - fits only alpha and beta, with gamma fixed to 1.0
-
     .. csv-table:: Interpretation of synergy parameters
        :header: "Parameter", "Values", "Synergy/Antagonism", "Interpretation"
 
@@ -46,17 +42,29 @@ class MuSyC(ParametricSynergyModel2D):
        ,              "> 1",    "Synergistic Cooperativity",  "Drug 1 increases the cooperativity of drug 2"
        "``gamma21``", "[0, 1)", "Antagonistic Cooperativity", "Drug 2 decreases the cooperativity of drug 1"
        ,              "> 1",    "Synergistic Cooperativity",  "Drug 2 increases the cooperativity of drug 1"
+
+    Parameters
+    ----------
+    drug1_model : DoseResponseModel1D
+        The model for the first drug.
+
+    drug2_model : DoseResponseModel1D
+        The model for the second drug.
+
+    r1r : float, default=1.0
+        The rate parameter for drug 1. This is required but makes very little impact on the overall output.
+
+    r2r : float, default=1.0
+        The rate parameter for drug 2. This is required but makes very little impact on the overall output.
+
+    fit_gamma : bool , default="True"
+        If True will fit gamma, otherwise will keep it constant at 1.0
     """
 
-    def __init__(self, drug1_model=None, drug2_model=None, r1r=1.0, r2r=1.0, fit_gamma=True, **kwargs):
-        """Ctor.
-
-        :param float alpha12: Synergistic potency of drug 1 on drug 2 ([0, 1) = antagonism, (1, inf) = synergism)
-        :param float alpha21: Synergistic potency of drug 2 on drug 1 ([0, 1) = antagonism, (1, inf) = synergism).
-        :param float beta: Synergistic efficacy ((-inf,0) = antagonism, (0,inf) = synergism)
-        :param float gamma12: Synergistic cooperativity of drug 1 on drug 2 ([0,1) = antagonism, (1,inf) = synergism)
-        :param float gamma21: Synergistic cooperativity of drug 2 on drug 1 ([0,1) = antagonism, (1,inf) = synergism)
-        """
+    def __init__(
+        self, drug1_model=None, drug2_model=None, r1r: float = 1.0, r2r: float = 1.0, fit_gamma: bool = True, **kwargs
+    ):
+        """Ctor."""
         self.fit_gamma = fit_gamma
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
 
@@ -75,14 +83,12 @@ class MuSyC(ParametricSynergyModel2D):
 
     @property
     def _parameter_names(self) -> list[str]:
-        """-"""
         if self.fit_gamma:
             return ["E0", "E1", "E2", "E3", "h1", "h2", "C1", "C2", "alpha12", "alpha21", "gamma12", "gamma21"]
         return ["E0", "E1", "E2", "E3", "h1", "h2", "C1", "C2", "alpha12", "alpha21"]
 
     @property
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
-        """-"""
         return {
             "h1": (0, np.inf),
             "h2": (0, np.inf),
@@ -95,7 +101,6 @@ class MuSyC(ParametricSynergyModel2D):
         }
 
     def E_reference(self, d1, d2):
-        """-"""
         return self._model(
             d1,
             d2,
@@ -117,17 +122,14 @@ class MuSyC(ParametricSynergyModel2D):
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill
 
     @property
     def _default_drug1_kwargs(self) -> dict:
-        """-"""
         lb, ub = self._bounds
         param_names = self._parameter_names
         E0_idx = param_names.index("E0")
@@ -143,7 +145,6 @@ class MuSyC(ParametricSynergyModel2D):
 
     @property
     def _default_drug2_kwargs(self) -> dict:
-        """-"""
         lb, ub = self._bounds
         param_names = self._parameter_names
         E0_idx = param_names.index("E0")
@@ -158,8 +159,8 @@ class MuSyC(ParametricSynergyModel2D):
         }
 
     @property
-    def beta(self):
-        """-"""
+    def beta(self) -> float:
+        """Synergistic efficacy."""
         return MuSyC._get_beta(self.E0, self.E1, self.E2, self.E3)
 
     def _model_to_fit_with_gamma(
@@ -536,13 +537,6 @@ class MuSyC(ParametricSynergyModel2D):
         return beta
 
     def get_confidence_intervals(self, confidence_interval: float = 95):
-        """Returns the lower bound and upper bound estimate for each parameter.
-
-        Parameters:
-        -----------
-        confidence_interval : float, default=95
-            % confidence interval to return. Must be between 0 and 100.
-        """
         ci = super().get_confidence_intervals(confidence_interval=confidence_interval)
 
         if self.bootstrap_parameters is None:
@@ -561,7 +555,6 @@ class MuSyC(ParametricSynergyModel2D):
         return ci
 
     def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
-        """-"""
         pars = self.get_parameters()
 
         header = ["Parameter", "Value", "Comparison", "Synergy"]

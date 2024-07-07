@@ -5,3 +5,4 @@ dose_utils
       :members:
       :inherited-members:
       :show-inheritance:
+      :noindex:

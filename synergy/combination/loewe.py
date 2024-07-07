@@ -190,9 +190,9 @@ class Loewe(DoseDependentSynergyModel2D):
 
         Parameters
         ----------
-        d1 : ArrayLike
+        d1 
             Concentration of drug 1
-        d2 : ArrayLike
+        d2 
             Concentration of drug 2
 
         Returns

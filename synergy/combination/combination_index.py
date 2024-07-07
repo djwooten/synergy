@@ -27,7 +27,7 @@ class CombinationIndex(DoseDependentSynergyModel2D):
     Members
     -------
     synergy : array_like, float
-        [0,1)=synergism, (1,inf)=antagonism
+        (0,1)=synergism, (1,inf)=antagonism
     """
 
     def E_reference(self, d1, d2):

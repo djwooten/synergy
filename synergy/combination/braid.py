@@ -24,20 +24,30 @@ from synergy.utils.model_mixins import ParametricModelMixins
 
 
 class BRAID(ParametricSynergyModel2D):
-    """BRAID synergy (doi:10.1038/srep25523).
+    """BRAID synergy.
 
     kappa and delta are the BRAID synergy parameters, though E3 is related to how much more effective the combination is
     than either drug alone. Note though that lim_{d1 -> inf, d2 -> inf}E(d1, d2) does not equal E3 in BRAID.
 
+    .. csv-table:: Interpretation of synergy parameters
+       :header: "Parameter", "Values", "Synergy/Antagonism"
+
+       "``kappa``", "< 0",    "Antagonism"
+       ,            "> 0",    "Synergism"
+       "``delta``", "[0, 1)", "Antagonism"
+       ,            "> 1",    "Synergism"
+
     Parameters
     ----------
-    [X]_bounds : tuple
-        Upper and lower bounds for each parameter to constrain fits.
+    drug1_model : DoseResponseModel1D
+        The model for the first drug.
 
-    variant : str , default="kappa"
+    drug2_model : DoseResponseModel1D
+        The model for the second drug.
+
+    mode : str , default="kappa"
         Options are "kappa", "delta", "both". BRAID has model versions that fit synergy using the parameter "kappa", the
         parameter "delta", or both. The standard version only fits kappa, but the other variants are available.
-
     """
 
     def __init__(self, drug1_model=None, drug2_model=None, mode="kappa", **kwargs):
@@ -67,7 +77,6 @@ class BRAID(ParametricSynergyModel2D):
 
     @property
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
-        """-"""
         bounds: dict[str, tuple[float, float]] = {
             "h1": (0, np.inf),
             "h2": (0, np.inf),
@@ -108,17 +117,14 @@ class BRAID(ParametricSynergyModel2D):
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill
 
     @property
     def _default_drug1_kwargs(self) -> dict:
-        """-"""
         lb, ub = self._bounds
         param_names = self._parameter_names
         E0_idx = param_names.index("E0")
@@ -134,7 +140,6 @@ class BRAID(ParametricSynergyModel2D):
 
     @property
     def _default_drug2_kwargs(self) -> dict:
-        """-"""
         lb, ub = self._bounds
         param_names = self._parameter_names
         E0_idx = param_names.index("E0")
@@ -324,7 +329,6 @@ class BRAID(ParametricSynergyModel2D):
             return self.E0, self.E1, self.E2, self.E3, self.h1, self.h2, self.C1, self.C2, self.kappa, self.delta
 
     def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
-        """-"""
         pars = self.get_parameters()
 
         header = ["Parameter", "Value", "Comparison", "Synergy"]

@@ -26,17 +26,8 @@ class Schindler(DoseDependentSynergyModel2D):
     From "Theory of synergistic effects: Hill-type response surfaces as 'null-interaction' models for mixtures" by
     Michael Schindler. This model is built to satisfy the Loewe additivity criterion,
 
-    Schindler assumes each drug has a Hill dose response, and defines a multidimensional Hill equation that satisfies
-    Loewe additivity. Unlike Loewe, Schindler can be defined for combinations whose effect exceeds Emax of either drug
-    (Loewe is limited by Emax of the *weaker* drug).
-
-    Synergy is simply defined as the difference between the observed E and the E predicted by Schindler's
-    ultidimensional Hill equation.
-
-        E - u_hill = 0 : Additive
-        E - u_hill > 0 : Synergistic
-        E - u_hill < 0 : Antagonistic
-
+    Members
+    -------
     synergy : array_like, float
         (-inf,0)=antagonism, (0,inf)=synergism
     """

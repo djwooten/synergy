@@ -12,3 +12,4 @@ synergy.utils
    :members:
    :inherited-members:
    :show-inheritance:
+   :noindex:
