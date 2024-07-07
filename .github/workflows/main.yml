@@ -69,7 +69,7 @@ jobs:
       # Conditional step for installing Pandoc in the Docs task
       - name: Install Pandoc
         if: matrix.task.name == 'Docs'
-        uses: pandoc/actions/setup@{main}
+        uses: pandoc/actions/setup@main
         with:
           version: 2.19
 
