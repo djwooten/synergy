@@ -1,6 +1,7 @@
 import os
 import sys
 import unittest
+from typing import Dict
 from unittest import TestCase
 
 import numpy as np
@@ -367,7 +368,7 @@ class MuSyCNDModelTests(TestCase):
 class MuSyC3DFittingTests(TestCase):
     """Tests for fitting the n-dimensional MuSyC model"""
 
-    EXPECTED_PARAMETERS: dict[str, dict[str, float]]
+    EXPECTED_PARAMETERS: Dict[str, Dict[str, float]]
 
     @classmethod
     def setUpClass(cls) -> None:

@@ -4,6 +4,7 @@ import os
 import sys
 import unittest
 from copy import deepcopy
+from typing import Dict
 from unittest import TestCase
 
 import numpy as np
@@ -174,7 +175,7 @@ class MuSyCTests(TestCase):
 class MuSyCFitTests(TestCase):
     """Tests requiring fitting the 2D MuSyC synergy model."""
 
-    EXPECTED_PARAMETERS: dict[str, dict[str, float]]
+    EXPECTED_PARAMETERS: Dict[str, Dict[str, float]]
 
     @classmethod
     def setUpClass(cls) -> None:

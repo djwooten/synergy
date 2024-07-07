@@ -120,7 +120,7 @@ def main():
         *EffectiveDoseModelDataGenerator.get_2drug_combination(a12=-0.5, a21=-0.5, **EDM_kwargs),
     )
 
-    BRAID_kwargs: dict[str, float] = {
+    BRAID_kwargs: Dict[str, float] = {
         "E2": 0.1,
         "E3": 0,
         "replicates": 1,

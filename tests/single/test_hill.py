@@ -4,6 +4,7 @@ import os
 import sys
 import unittest
 from copy import deepcopy
+from typing import Type
 from unittest import TestCase
 
 import hypothesis
@@ -24,7 +25,7 @@ TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 class TestHill(TestCase):
     """Tests for 1D Hill dose-response models."""
 
-    MODEL: type[Hill]
+    MODEL: Type[Hill]
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -166,7 +167,7 @@ class TestHill(TestCase):
 class TestHillFit(TestCase):
     """Tests requiring fitting 1D Hill dose-response models."""
 
-    MODEL: type[Hill]
+    MODEL: Type[Hill]
     INIT_KWARGS: dict
     EXPECTED_PARAMETERS: dict
 

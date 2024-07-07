@@ -4,6 +4,7 @@ import os
 import sys
 import unittest
 from copy import deepcopy
+from typing import Dict
 from unittest import TestCase
 
 import hypothesis
@@ -108,7 +109,7 @@ class EffectiveDoseModelTests(TestCase):
 class ZimmerFitTests(TestCase):
     """Tests requiring fitting the 2D Zimmer synergy model."""
 
-    EXPECTED_PARAMETERS: dict[str, dict[str, float]]
+    EXPECTED_PARAMETERS: Dict[str, Dict[str, float]]
 
     @classmethod
     def setUpClass(cls) -> None:
