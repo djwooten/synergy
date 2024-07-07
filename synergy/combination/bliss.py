@@ -45,10 +45,8 @@ class Bliss(DoseDependentSynergyModel2D):
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return DoseResponseModel1D
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return LogLinear

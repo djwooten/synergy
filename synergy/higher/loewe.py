@@ -24,11 +24,10 @@ class Loewe(DoseDependentSynergyModelND):
     """The Loewe Additivity synergy model."""
 
     def E_reference(self, d):
-        """-"""
+        # TODO: Implement multidimensional Loewe reference using the quadratic minimization in the 2D version
         return d * np.nan
 
     def _get_synergy(self, d, E):
-        """-"""
         d_singles = d * 0  # The dose of each drug that alone achieves E
         with np.errstate(divide="ignore", invalid="ignore"):
             for i in range(self.N):
@@ -39,10 +38,8 @@ class Loewe(DoseDependentSynergyModelND):
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return DoseResponseModel1D
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return LogLinear

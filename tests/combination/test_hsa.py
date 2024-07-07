@@ -15,7 +15,7 @@ class HSATests(TestCase):
     """Tests for the HSA model."""
 
     def test_fit_reference(self):
-        """-"""
+        """Ensure HSA is zero for reference data."""
         np.random.seed(2193)
         dmin = 0.01
         dmax = 100

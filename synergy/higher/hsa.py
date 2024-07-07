@@ -25,7 +25,6 @@ class HSA(DoseDependentSynergyModelND):
     """Highest single agent (HSA) for n-drug combinaations."""
 
     def E_reference(self, d):
-        """-"""
         if not self.is_specified:
             raise InvalidDrugModelError("Model is not specified.")
         E = d * np.nan  # Initialize to NaN
@@ -34,16 +33,13 @@ class HSA(DoseDependentSynergyModelND):
         return np.nanmin(E, axis=1)
 
     def _get_synergy(self, d, E):
-        """-"""
         synergy = self.reference - E
         return self._sanitize_synergy(d, synergy, 0)
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return DoseResponseModel1D
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return LogLinear

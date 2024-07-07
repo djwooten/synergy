@@ -55,7 +55,7 @@ class Schindler(DoseDependentSynergyModel2D):
         return self._sanitize_synergy(d1, d2, synergy, 0)
 
     def _model(self, d1, d2, E1, E2, h1, h2, C1, C2):
-        """-"""
+        """The Schindler model."""
         m1 = d1 / C1
         m2 = d2 / C2
 
@@ -67,10 +67,8 @@ class Schindler(DoseDependentSynergyModel2D):
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill

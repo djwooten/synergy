@@ -18,10 +18,14 @@ _LOGGER = logging.Logger(__name__)
 
 
 class SynergyModelND(ABC):
-    """Base class for all N-drug synergy models (N > 2)."""
+    """Base class for all N-drug synergy models (N > 2).
+
+    :param Sequence[DoseResponseModel1D] single_drug_models: Single drug models for each drug
+    """
 
     def __init__(self, single_drug_models: Optional[Sequence] = None):
-        """-"""
+        """Ctor."""
+        self._is_fit = False
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
 
@@ -43,10 +47,40 @@ class SynergyModelND(ABC):
 
     @abstractmethod
     def fit(self, d, E, **kwargs):
-        """-"""
+        """Fit the model to data.
+
+        Parameters
+        ----------
+        d : array_like
+            Array of doses measured
+
+        E : array_like
+            Array of effects measured at doses d
+
+        bootstrap_iterations : int, default=0
+            Number of bootstrap iterations to perform to estimate confidence intervals. If 0, no bootstrapping is
+            performed.
+
+        kwargs
+            Optional parameters to pass to scipy.optimize.curve_fit().
+        """
 
     def _fit_single_drugs(self, d, E, **kwargs):
-        """-"""
+        """Fit the single drug models that are not specified.
+
+        This will take slices of data where all drugs but one are held at their minimum dose. Ideally this dose is 0.
+
+        Parameters
+        ----------
+        d : array_like
+            Array of doses measured
+
+        E : array_like
+            Array of effects measured at doses d
+
+        kwargs
+            Optional parameters to pass to scipy.optimize.curve_fit().
+        """
         N = d.shape[-1]
 
         if self.N > 1 and N != self.N:
@@ -76,27 +110,31 @@ class SynergyModelND(ABC):
 
     @abstractmethod
     def E_reference(self, d):
-        """-"""
+        """Return the expected effect of the combination of drugs at doses d1 and d2.
+
+        :param ArrayLike d: doses (shape=(N,) or (M, N) where N is the number of drugs and M is the number of samples)
+        :return ArrayLike: Reference (additive) values of E at the given doses
+        """
 
     @property
     @abstractmethod
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
+        """The required type of single drug model for this synergy model."""
 
     @property
     @abstractmethod
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
+        """The default type of single drug model for this synergy model."""
 
     @property
     @abstractmethod
     def is_specified(self):
-        """-"""
+        """True if the model's parameters, or its single_drug parameters are set."""
 
     @property
-    @abstractmethod
     def is_fit(self):
-        """-"""
+        """True if the model has been fit to data."""
+        return self._is_fit
 
     def _get_default_single_drug_kwargs(self, drug_idx: int) -> dict[str, Any]:
         """Default keyword arguments for single drug models.
@@ -110,15 +148,13 @@ class DoseDependentSynergyModelND(SynergyModelND):
     """Base class for N-drug synergy models (N > 2) for which synergy varies based on dose."""
 
     def __init__(self, single_drug_models: Optional[Sequence[DoseResponseModel1D]] = None):
-        """-"""
+        """Ctor."""
         super().__init__(single_drug_models=single_drug_models)
         self.synergy = None
         self.d = None
         self.reference = None
-        self._is_fit = False
 
     def fit(self, d, E, **kwargs):
-        """-"""
         self.d = d
         self.synergy = E * np.nan
 
@@ -134,18 +170,13 @@ class DoseDependentSynergyModelND(SynergyModelND):
 
     @property
     def is_specified(self):
-        """True if all single drug models are specified."""
+        """True if all single drug models are specified"""
         if not self.single_drug_models or len(self.single_drug_models) < 2:
             return False
         for model in self.single_drug_models:
             if not model.is_specified:
                 return False
         return True
-
-    @property
-    def is_fit(self):
-        """True if the model was fit to data."""
-        return self._is_fit
 
     @abstractmethod
     def _get_synergy(self, d, E):
@@ -164,7 +195,7 @@ class DoseDependentSynergyModelND(SynergyModelND):
 
 
 class ParametricSynergyModelND(SynergyModelND):
-    """-"""
+    """Base model for N-drug synergy models (N > 2) that are parametric."""
 
     def __init__(
         self,
@@ -177,6 +208,13 @@ class ParametricSynergyModelND(SynergyModelND):
             self.N = len(single_drug_models)
         else:
             self.N = num_drugs
+
+        if self.N < 2:
+            raise ValueError(
+                f"Cannot create a parametric synergy model with fewer than two drugs (N={self.N}). Specify num_drugs"
+                " or provide single_drug_models."
+            )
+
         self._bounds: tuple[Sequence[float], Sequence[float]]
         ParametricModelMixins.set_init_parameters(self, self._parameter_names, **kwargs)
         ParametricModelMixins.set_bounds(
@@ -197,7 +235,11 @@ class ParametricSynergyModelND(SynergyModelND):
         self.bootstrap_parameters = None
 
     def E(self, d):
-        """-"""
+        """Return the effect of the drug combination at doses d.
+
+        :param ArrayLike d: doses (shape=(N,) or (M, N) where N is the number of drugs and M is the number of samples
+        :return ArrayLike: The effect of the drug combination at doses d (shape=(M,) where M is the number of samples)
+        """
         if len(d.shape) == 0 or len(d.shape) > 2:
             raise ValueError("d must be an array with columns representing each drug and rows each dose")
 
@@ -212,45 +254,28 @@ class ParametricSynergyModelND(SynergyModelND):
         return self.fit_function(d, *params)
 
     def get_parameters(self) -> dict[str, Any]:
-        """Returns model's parameters"""
-        return {param: self.__getattribute__(param) for param in self._parameter_names}
+        """Return the model's parameter values keyed by parameter names."""
+        return {
+            param: self.__getattribute__(param) if hasattr(self, param) else None for param in self._parameter_names
+        }
 
     @property
     @abstractmethod
     def _parameter_names(self) -> list[str]:
-        """-"""
+        """Names of the model parameters."""
 
     @property
     @abstractmethod
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
-        """-"""
+        """Default bounds for each parameter, keyed by parameter name."""
 
     def fit(self, d, E, **kwargs):
-        """Fit the model to data.
-
-        Parameters
-        ----------
-        d : array_like
-            Array of doses measured
-
-        E : array_like
-            Array of effects measured at doses d
-
-        use_jacobian : bool, default=True
-            If True, will use the Jacobian to help guide fit. When the number
-            of data points is less than a few hundred, this makes the fitting
-            slower. However, it also improves the reliability with which a fit
-            can be found.
-
-        kwargs
-            kwargs to pass to scipy.optimize.curve_fit()
-        """
         self._is_fit = True
         d = np.asarray(d)
         E = np.asarray(E)
 
         # Parse optional kwargs
-        use_jacobian = kwargs.pop("use_jacobian", True)
+        use_jacobian = kwargs.pop("use_jacobian", True if self.jacobian_function is not None else False)
         bootstrap_iterations = kwargs.pop("bootstrap_iterations", 0)
         max_iterations = kwargs.pop("max_iterations", 10000)
         p0 = kwargs.pop("p0", None)
@@ -334,7 +359,7 @@ class ParametricSynergyModelND(SynergyModelND):
         return params
 
     def _get_parameters(self):
-        """-"""
+        """Return parameter values as a list."""
         return [self.__getattribute__(param) for param in self._parameter_names]
 
     def _fit(self, d, E, use_jacobian: bool, **kwargs):
@@ -358,7 +383,8 @@ class ParametricSynergyModelND(SynergyModelND):
     def _score(self, d, E):
         """Calculate goodness of fit and model quality scores
 
-        This calculations
+        This calculates
+
         - `sum_of_squares_residuals`
         - `r_squared`
         - `aic` (Akaike Information Criterion)
@@ -389,10 +415,14 @@ class ParametricSynergyModelND(SynergyModelND):
 
     @property
     def is_converged(self) -> bool:
-        """-"""
+        """True if the model converged during fitting."""
         return self._converged
 
-    @property
-    def is_fit(self) -> bool:
-        """-"""
-        return self._is_fit
+    @abstractmethod
+    def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
+        """Print a summary table of the synergy model.
+
+        :param float confidence_interval: The confidence interval to use for parameter estimates (must be between 0 and
+            100).
+        :param float tol: The tolerance around additivity for determining synergism or antagonism.
+        """

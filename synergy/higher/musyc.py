@@ -115,7 +115,11 @@ class MuSyC(ParametricSynergyModelND):
         }
 
     def _get_initial_guess(self, d, E, p0):
-        """-"""
+        """Get the initial guess.
+
+        MuSyC will look at doses around the minimum, maximum, and median doses for each drug and use those to make
+        guesses for E and C parameters. h, alpha, and gamma will be set to 1.0.
+        """
         if p0 is None:
             E_params = [0] * self._num_E_params  # These will all be overridden by (1) single drug fits or (2) E(dmax)
             h_params = [1] * self._num_h_params  # These may all be overridden by single drug fits
@@ -259,7 +263,6 @@ class MuSyC(ParametricSynergyModelND):
 
     @property
     def _parameter_names(self) -> list[str]:
-        """-"""
         param_names = []
         gamma_names = []
         for i in range(self._num_E_params):
@@ -283,7 +286,6 @@ class MuSyC(ParametricSynergyModelND):
 
     @property
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
-        """-"""
         return {
             param: (0, np.inf)
             for param in self._parameter_names
@@ -292,36 +294,39 @@ class MuSyC(ParametricSynergyModelND):
 
     @property
     def _num_E_params(self):
-        """-"""
+        """One per drug state."""
         return 2**self.N
 
     @property
     def _num_h_params(self):
-        """-"""
+        """One per drug."""
         return self.N
 
     @property
     def _num_C_params(self):
-        """-"""
+        """One per drug."""
         return self.N
 
     @property
     def _num_alpha_params(self):
-        """-"""
+        """One per edge from a drugged state to another drugged state."""
         return 2 ** (self.N - 1) * self.N - self.N
 
     @property
     def _num_gamma_params(self):
-        """-"""
+        """One per edge from a drugged state to another drugged state."""
         return 2 ** (self.N - 1) * self.N - self.N
 
     def _model_no_gamma(self, d, *args):
-        """-"""
+        """MuSyC model assuming gamma == 1."""
         loggammas = [0] * self._num_gamma_params
         return self._model(d, *args, *loggammas)
 
     def _model(self, d, *args):
-        """-"""
+        """MuSyC model.
+
+        This creates a transition matrix for the MuSyC model and then solves for the equilibrium state by inverting it.
+        """
         # `matrix` is the state transition matrix for the MuSyC model
         # matrix[i, :, :] is the state transition matrix at d[i]
         # That is to say, the matrix is handled completely numerically, rather than symbolically solving and then
@@ -527,16 +532,13 @@ class MuSyC(ParametricSynergyModelND):
 
     @property
     def _default_single_drug_class(self):
-        """-"""
         return Hill
 
     @property
     def _required_single_drug_class(self):
-        """-"""
         return Hill
 
     def E_reference(self, d):
-        """-"""
         if not self.is_specified and (
             not self.single_drug_models or not all([model.is_specified for model in self.single_drug_models])
         ):
@@ -606,7 +608,6 @@ class MuSyC(ParametricSynergyModelND):
         return ci
 
     def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
-        """-"""
         pars = self.get_parameters()
 
         header = ["Parameter", "Value", "Comparison", "Synergy"]

@@ -42,39 +42,14 @@ class Hill(ParametricDoseResponseModel1D):
         super().__init__(**kwargs)
 
     def E(self, d):
-        """Evaluate this model at dose d. If the model is not parameterized, returns 0.
-
-        Parameters
-        ----------
-        d : array_like
-            Doses to calculate effect at
-
-        Returns
-        ----------
-        effect : array_like
-            Evaluate's the model at dose in d
-        """
         if not self.is_specified:
-            return super().E(d)
+            raise ModelNotParameterizedError("Model mustbe specified before calling E().")
 
         return self._model(d, self.E0, self.Emax, self.h, self.C)
 
     def E_inv(self, E):
-        """Inverse of the Hill equation
-
-        Parameters
-        ----------
-        E : array_like
-            Effects to get the doses for
-
-        Returns
-        ----------
-        doses : array_like
-            Doses which achieve effects E using this model. Effects that are
-            outside the range [E0, Emax] will return np.nan for the dose
-        """
         if not self.is_specified:
-            return super().E_inv(E)
+            raise ModelNotParameterizedError("Model mustbe specified before calling E().")
 
         return self._model_inv(E, self.E0, self.Emax, self.h, self.C)
 
@@ -111,7 +86,6 @@ class Hill(ParametricDoseResponseModel1D):
             self._bounds[1][C_idx] -= np.log(self._dose_scale)
 
     def fit(self, d, E, use_jacobian=True, bootstrap_iterations=0, **kwargs):
-        """-"""
         self._set_dose_scale(d)
         super().fit(
             d / self._dose_scale, E, use_jacobian=use_jacobian, bootstrap_iterations=bootstrap_iterations, **kwargs
@@ -121,13 +95,16 @@ class Hill(ParametricDoseResponseModel1D):
         self.E0, self.Emax, self.h, self.C = parameters
 
     def _model(self, d, E0, Emax, h, C):
+        """Hill equation."""
         dh = np.float_power(d, h)
         return E0 + (Emax - E0) * (dh / (C**h + dh))
 
     def _model_to_fit(self, d, E0, Emax, logh, logC):
+        """Hill equation expecting log-transformed parameters h and C parameters, for fitting."""
         return self._model(d, E0, Emax, np.exp(logh), np.exp(logC))
 
     def _model_inv(self, E, E0, Emax, h, C):
+        """Inverse Hill equation."""
         E_ratio = (E - E0) / (Emax - E)
         d = np.float_power(E_ratio, 1.0 / h) * C
 
@@ -143,9 +120,10 @@ class Hill(ParametricDoseResponseModel1D):
         return d
 
     def _model_jacobian_for_fit(self, d, E0, Emax, logh, logC):
-        """
-        Returns
-        ----------
+        """Hill equation jacobian, expecting log-transformed h and C, for fitting.
+
+        Return
+        ------
         jacobian : array_like
             Derivatives of the Hill equation with respect to E0, Emax, logh,
             and logC
@@ -173,15 +151,18 @@ class Hill(ParametricDoseResponseModel1D):
         return jac
 
     def _get_initial_guess(self, d, E, p0):
+        """Default initial guess is E0=E(dmin), Emax=E(dmax), h=1, C=median(d)"""
         if p0 is None:
             p0 = [np.median(E[d == min(d)]), np.median(E[d == max(d)]), 1, np.median(d) * self._dose_scale]
 
         return super()._get_initial_guess(d, E, p0)
 
     def _transform_params_from_fit(self, params):
+        """Exponentiate h and C to get the final parameters."""
         return params[0], params[1], np.exp(params[2]), np.exp(params[3]) * self._dose_scale
 
     def _transform_params_to_fit(self, params):
+        """Log-transform h and C for fitting."""
         with np.errstate(divide="ignore"):
             return params[0], params[1], np.log(params[2]), np.log(params[3] / self._dose_scale)
 

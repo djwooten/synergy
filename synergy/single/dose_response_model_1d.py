@@ -14,33 +14,46 @@ _LOGGER = logging.Logger(__name__)
 
 
 class DoseResponseModel1D(ABC):
-    """-"""
+    """Base class for dose-response models."""
 
     @abstractmethod
     def fit(self, d, E, **kwargs) -> None:
-        """-"""
+        """Fit the model to data.
+
+        :param ArrayLike d: Doses
+        :param ArrayLike E: Measured dose-response effect at doses d
+        :param kwargs: Additional arguments to pass to the fitting function
+        """
 
     @abstractmethod
     def E(self, d):
-        """-"""
+        """Return the model's effect(s) at dose(s) d.
+
+        :param ArrayLike d: Doses
+        :return ArrayLike: Effects at doses d
+        """
 
     @abstractmethod
     def E_inv(self, E):
-        """-"""
+        """Return the dose(s) required to achieve effect(s) E.
+
+        :param ArrayLike E: Effects
+        :return ArrayLike: Doses required to achieve effects E
+        """
 
     @property
     @abstractmethod
     def is_specified(self) -> bool:
-        """-"""
+        """True if all parameters are set."""
 
     @property
     @abstractmethod
     def is_fit(self) -> bool:
-        """-"""
+        """True if the model has been fit to data."""
 
 
 class ParametricDoseResponseModel1D(DoseResponseModel1D):
-    """-"""
+    """Base class for parametric dose-response models."""
 
     def __init__(self, **kwargs):
         """Ctor."""
@@ -63,52 +76,23 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
 
     def get_parameters(self) -> dict[str, Any]:
         """Returns model's parameters"""
-        return {param: self.__getattribute__(param) for param in self._parameter_names}
+        return {
+            param: self.__getattribute__(param) if hasattr(self, param) else None for param in self._parameter_names
+        }
 
     @abstractmethod
     def _set_parameters(self, parameters):
         """Internal method to set model parameters"""
 
-    @abstractmethod
-    def E(self, d):
-        """Evaluate this model at dose d.
-
-        Parameters
-        ----------
-        d : array_like
-            Doses to calculate effect at
-
-        Returns
-        ----------
-        effect : array_like
-            Evaluate's the model at dose in d
-        """
-
-    @abstractmethod
-    def E_inv(self, E):
-        """Evaluate the inverse of this model.
-
-        Parameters
-        ----------
-        E : array_like
-            Effects to get the doses for
-
-        Returns
-        ----------
-        doses : array_like
-            Doses which achieve effects E using this model. Will return np.nan for effects outside of the model's effect
-            range, or for non-invertable models
-        """
-
     @property
     @abstractmethod
     def _parameter_names(self) -> list[str]:
-        """-"""
+        """The names of the parameters for this model."""
 
     @property
     @abstractmethod
     def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
-        """-"""
+        """The default bounds for the parameters for this model."""
 
     def fit(self, d, E, **kwargs):
         """Fit the model to data.
@@ -121,11 +105,9 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         E : array_like
             Array of effects measured at doses d
 
-        use_jacobian : bool, default=True
-            If True, will use the Jacobian to help guide fit. When the number
-            of data points is less than a few hundred, this makes the fitting
-            slower. However, it also improves the reliability with which a fit
-            can be found.
+        bootstrap_iterations : int, default=0
+            Number of bootstrap iterations to perform to estimate confidence intervals. If 0, no bootstrapping is
+            performed.
 
         kwargs
             kwargs to pass to scipy.optimize.curve_fit()
@@ -135,7 +117,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         E = np.asarray(E)
 
         # Parse optional kwargs
-        use_jacobian = kwargs.pop("use_jacobian", True)
+        use_jacobian = kwargs.pop("use_jacobian", True if self.jacobian_function is not None else False)
         bootstrap_iterations = kwargs.pop("bootstrap_iterations", 0)
         max_iterations = kwargs.pop("max_iterations", 10000)
         p0 = kwargs.pop("p0", None)
@@ -169,13 +151,18 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
             )
             # self._bootstrap_resample(d, E, use_jacobian, bootstrap_iterations, **kwargs)
 
-    def get_confidence_intervals(self, confidence_interval: float = 95):
-        """Returns the lower bound and upper bound estimate for each parameter.
+    def get_confidence_intervals(self, confidence_interval: float = 95) -> dict[str, tuple[float, float]]:
+        """Return the lower bound and upper bound estimate for each parameter, keyed by parameter name.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         confidence_interval : float, default=95
             % confidence interval to return. Must be between 0 and 100.
+
+        Return
+        ------
+        dict[str, Tuple[float, float]
+            Lower and upper bounds for each parameter, keyed by parameter name
         """
         if not self.is_specified:
             raise ModelNotParameterizedError()
@@ -296,17 +283,15 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
 
     @property
     def is_specified(self) -> bool:
-        """True if all parameters are set."""
         parameters = list(self.get_parameters().values())
 
         return None not in parameters and not np.isnan(np.asarray(parameters)).any()
 
     @property
     def is_converged(self) -> bool:
-        """-"""
+        """True if the model has converged to a solution."""
         return self._converged
 
     @property
     def is_fit(self) -> bool:
-        """-"""
         return self._is_fit

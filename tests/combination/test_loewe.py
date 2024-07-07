@@ -28,21 +28,21 @@ class ShamLoeweTests(TestCase):
         )
 
     def test_fit_loewe_delta_weakest(self):
-        """-"""
+        """Ensure delta_weakest mode is zero for sham data."""
         # Give it non-prefit single-drug models
         model = Loewe(mode="delta_weakest", drug1_model=Hill, drug2_model=Hill)
         synergy = model.fit(self.d1, self.d2, self.E)
         np.testing.assert_allclose(synergy, 0, atol=1e-2)
 
     def test_fit_loewe_delta_hsa(self):
-        """-"""
+        """Ensure delta_hsa mode is zero for sham data."""
         # Give it non-prefit single-drug models
         model = Loewe(mode="delta_hsa", drug1_model=Hill, drug2_model=Hill)
         synergy = model.fit(self.d1, self.d2, self.E)
         np.testing.assert_allclose(synergy, 0, atol=1e-2)
 
     def test_fit_loewe_ci(self):
-        """-"""
+        """Ensure ci mode is 1 for sham data."""
         # Give it non-prefit single-drug models
         model = Loewe(mode="ci", drug1_model=Hill, drug2_model=Hill)
         synergy = model.fit(self.d1, self.d2, self.E)
@@ -66,7 +66,7 @@ class ShamLoeweTests(TestCase):
         np.testing.assert_allclose(synergy_to_test, 1, rtol=2e-4)
 
     def test_fit_loewe_synergistm(self):
-        """-"""
+        """Ensure a synergistic combo is synergistic by Loewe."""
         E = np.asarray(list(self.E))
         single_mask = np.where((self.d1 == 0) | (self.d2 == 0))
         combo_mask = np.where((self.d1 != 0) & (self.d2 != 0))
@@ -84,7 +84,7 @@ class ShamLoeweTests(TestCase):
         np.testing.assert_allclose(synergy_ci[single_mask], 1, atol=1e-2)
 
     def test_fit_loewe_antagonism(self):
-        """-"""
+        """Ensure an antagonistic combo is antagonistic by Loewe."""
         E = np.asarray(list(self.E))
         single_mask = np.where((self.d1 == 0) | (self.d2 == 0))
         combo_mask = np.where((self.d1 != 0) & (self.d2 != 0))

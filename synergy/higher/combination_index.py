@@ -23,10 +23,8 @@ class CombinationIndex(Loewe):
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill_CI
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill_CI

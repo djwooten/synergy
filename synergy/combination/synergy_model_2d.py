@@ -41,7 +41,13 @@ class SynergyModel2D(ABC):
 
     @abstractmethod
     def fit(self, d1, d2, E, **kwargs):
-        """-"""
+        """Fit the model to data.
+
+        :param ArrayLike d1: Concentration of drug 1
+        :param ArrayLike d2: Concentration of drug 2
+        :param ArrayLike E: Effect of the combination of drugs at doses d1 and d2
+        :param dict kwargs: Additional keyword arguments for fitting
+        """
 
     @abstractmethod
     def E_reference(self, d1, d2):
@@ -49,7 +55,7 @@ class SynergyModel2D(ABC):
 
         :param ArrayLike d1: Concentration of drug 1
         :param ArrayLike d2: Concentration of drug 2
-        :return ArrayLike: Reference model for Loewe
+        :return ArrayLike: Reference (additive) values of E at the given doses
         """
 
     @property
@@ -224,6 +230,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
         :param ArrayLike E: Effect of the combination of drugs at doses d1 and d2
         :param dict kwargs:
             - p0: Initial parameter guesses
+            - bootstrap_iterations: Number of bootstrap iterations to perform to estimate confidence intervals
             - use_jacobian: whether to use the model jacobian when fitting
             - Additional kwargs for ``scipy.optimize.curve_fit()``
         """
@@ -233,7 +240,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
         E = np.asarray(E)
 
         # Parse optional kwargs
-        use_jacobian = kwargs.pop("use_jacobian", True)
+        use_jacobian = kwargs.pop("use_jacobian", True if self.jacobian_function is not None else False)
         bootstrap_iterations = kwargs.pop("bootstrap_iterations", 0)
         max_iterations = kwargs.pop("max_iterations", 10000)
         p0 = kwargs.pop("p0", None)
@@ -377,4 +384,9 @@ class ParametricSynergyModel2D(SynergyModel2D):
 
     @abstractmethod
     def summarize(self, confidence_interval: float = 95, tol: float = 0.01):
-        """Print a summary table of the synergy model."""
+        """Print a summary table of the synergy model.
+
+        :param float confidence_interval: The confidence interval to use for parameter estimates (must be between 0 and
+            100).
+        :param float tol: The tolerance around additivity for determining synergism or antagonism.
+        """

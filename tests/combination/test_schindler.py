@@ -15,7 +15,7 @@ class SchindlerTests(TestCase):
     """Tests for the Schindler synergy model."""
 
     def test_fit_sham(self):
-        """-"""
+        """Ensure Schindler is zero for sham data."""
         np.random.seed(49)
         single_drug = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)
         d1, d2, E = ShamDataGenerator.get_combination(single_drug, 0.01, 100, 5, 2, E_noise=0, d_noise=0)

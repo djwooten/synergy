@@ -195,7 +195,6 @@ class DoseDependentReferenceDataGenerator:
         d_noise: float = 0.05,
         include_zero: bool = False,
     ):
-        """-"""
         if cls.MODEL is None:
             raise ValueError("No 2-drug model defined for this reference data generator")
         d1, d2 = dose_utils.make_dose_grid(
@@ -221,7 +220,6 @@ class DoseDependentReferenceDataGenerator:
         E_noise: float = 0.05,
         d_noise: float = 0.05,
     ):
-        """-"""
         if cls.MODEL_ND is None:
             raise ValueError("No N-drug model defined for this reference data generator")
         # default dose range to to 1/20 to 20
@@ -247,7 +245,6 @@ class DoseDependentReferenceDataGenerator:
 
 
 class MultiplicativeSurvivalReferenceDataGenerator(DoseDependentReferenceDataGenerator):
-    """-"""
 
     MODEL: type[DoseDependentSynergyModel2D] = Bliss2D
     MODEL_ND: type[DoseDependentSynergyModelND] = BlissND
@@ -256,14 +253,12 @@ class MultiplicativeSurvivalReferenceDataGenerator(DoseDependentReferenceDataGen
 
 
 class HSAReferenceDataGenerator(DoseDependentReferenceDataGenerator):
-    """-"""
 
     MODEL: type[DoseDependentSynergyModel2D] = Hsa2D
     MODEL_ND: type[DoseDependentSynergyModelND] = HsaND
 
 
 class SchindlerReferenceDataGenerator(DoseDependentReferenceDataGenerator):
-    """-"""
 
     MODEL: type[DoseDependentSynergyModel2D] = Schindler2D
     MODEL_ND: type[DoseDependentSynergyModelND] = SchindlerND

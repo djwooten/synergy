@@ -15,7 +15,7 @@ class CombinationIndexTests(TestCase):
     """Tests for the combination index synergy model."""
 
     def test_fit_ci(self):
-        """-"""
+        """Ensure CI is 1 for sham data."""
         np.random.seed(89234)
         single_drug = Hill_CI(h=1.0, C=1.0)
         d1, d2, E = ShamDataGenerator.get_combination(single_drug, 0.01, 10, 6, 2, E_noise=0, d_noise=0)

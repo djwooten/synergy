@@ -56,11 +56,3 @@ class CombinationIndex(DoseDependentSynergyModel2D):
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
         """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
         return Hill_CI
-
-    def plot_heatmap(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
-        """-"""
-        # super().plot_heatmap(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)
-
-    def plot_surface_plotly(self, cmap="PRGn", neglog=True, center_on_zero=True, **kwargs):
-        """-"""
-        # super().plot_surface_plotly(cmap=cmap, neglog=neglog, center_on_zero=center_on_zero, **kwargs)

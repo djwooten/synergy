@@ -21,7 +21,7 @@ MIN_FLOAT = sys.float_info.min
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
-class HillTests(TestCase):
+class TestHill(TestCase):
     """Tests for 1D Hill dose-response models."""
 
     MODEL: type[Hill]
@@ -163,7 +163,7 @@ class HillTests(TestCase):
         np.testing.assert_allclose(E_inv, d, rtol=0.01, err_msg="E_inv(E(d)) should equal d")
 
 
-class HillFitTests(TestCase):
+class TestHillFit(TestCase):
     """Tests requiring fitting 1D Hill dose-response models."""
 
     MODEL: type[Hill]
@@ -258,7 +258,7 @@ class HillFitTests(TestCase):
         np.testing.assert_allclose(observed["C"], expected["C"], atol=0.2 * scale)
 
 
-class Hill2PTests(HillTests):
+class TestHill_2P(TestHill):
     """Tests for 1D Hill_2P dose-response models."""
 
     @classmethod
@@ -266,8 +266,8 @@ class Hill2PTests(HillTests):
         cls.MODEL = Hill_2P
 
 
-class Hill2PFitTests(HillFitTests):
-    """-"""
+class TestHill_2PFit(TestHillFit):
+    """Tests for fitting Hill_2P models."""
 
     @classmethod
     def setUpClass(cls) -> None:
@@ -276,7 +276,7 @@ class Hill2PFitTests(HillFitTests):
         cls.EXPECTED_PARAMETERS = {"synthetic_hill_1.csv": {"h": 1.0, "C": 1.0}}
 
 
-class HillCITests(HillTests):
+class TestHill_CI(TestHill):
     """Tests for the combination index model."""
 
     @classmethod
@@ -284,8 +284,8 @@ class HillCITests(HillTests):
         cls.MODEL = Hill_CI
 
 
-class HillCIFitTests(HillFitTests):
-    """-"""
+class TestHill_CIFit(TestHillFit):
+    """Tests for fitting Hill_CI models."""
 
     @classmethod
     def setUpClass(cls) -> None:

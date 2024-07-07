@@ -20,7 +20,6 @@ def write_data(fname, column_names, *args):
 
 
 def main():
-    """-"""
     np.random.seed(490)
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_musyc_reference_1.csv"),

@@ -16,7 +16,6 @@ def write_data(fname, column_names, *args):
 
 
 def main():
-    """-"""
     np.random.seed(2)
     write_data(
         os.path.join(TEST_DATA_DIR, "synthetic_hill_1.csv"),

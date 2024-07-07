@@ -17,7 +17,7 @@ class BlissTests(TestCase):
     """Tests for the Bliss Independence model."""
 
     def test_fit_bliss(self):
-        """-"""
+        """Ensure Bliss is additive for multiplicative surfaces"""
         np.random.seed(943)
         drug1 = Hill(E0=1.0, Emax=0.1, h=1.0, C=1.0)
         drug2 = Hill(E0=1.0, Emax=0.3, h=1.0, C=1.0)

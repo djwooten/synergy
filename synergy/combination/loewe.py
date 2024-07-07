@@ -55,14 +55,12 @@ class Loewe(DoseDependentSynergyModel2D):
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         if self.mode == "ci":
             return DoseResponseModel1D
         return Hill
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         if self.mode == "ci":
             return LogLinear
         return Hill

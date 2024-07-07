@@ -23,7 +23,6 @@ class Bliss(DoseDependentSynergyModelND):
     """Bliss independence synergy model for n-drug combinations."""
 
     def E_reference(self, d):
-        """-"""
         if not self.is_specified:
             raise InvalidDrugModelError("Model is not specified.")
         E = 0 * d[:, 0] + 1  # Initialize to 1
@@ -32,16 +31,13 @@ class Bliss(DoseDependentSynergyModelND):
         return E
 
     def _get_synergy(self, d, E):
-        """-"""
         synergy = self.reference - E
         return self._sanitize_synergy(d, synergy, 0)
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return DoseResponseModel1D
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return LogLinear

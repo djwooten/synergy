@@ -25,9 +25,6 @@ class LogLinear(DoseResponseModel1D):
     This model is useful for drugs whose dose response do not follow some known parametric equation.
     """
 
-    # NOTE on __init__() and fit(): **kwargs is only present to avoid errors
-    # people may run into when reusing code for fitting Hill functions in which
-    # they set kwargs. There are no kwargs used for these methods
     def __init__(self, aggregation_function=np.median, nan_inverses=False, **kwargs):
         """Ctor.
 
@@ -38,8 +35,7 @@ class LogLinear(DoseResponseModel1D):
         that E_inv can be uniquely calculated.
 
         :param Callable aggregation_function: Used to compute a representative effect given replicate dose measurements
-        :param bool nan_inverses: If True, the fit model
-
+        :param bool nan_inverses: If True, the fit model will return np.nan for E_inv(E) where E is in a non-invertible
         """
         self._d = np.asarray([])
         self._E = np.asarray([])
@@ -61,20 +57,9 @@ class LogLinear(DoseResponseModel1D):
 
     @property
     def is_fit(self):
-        """Unlike parametric models, LogLinear is only fit if it is specified"""
         return self.is_specified
 
     def fit(self, d, E, **kwargs):
-        """Calls __init__(d, E, aggregation_function)
-
-        Parameters
-        ----------
-        d : array_like
-            Array of doses measured
-
-        E : array_like
-            Array of effects measured at doses d
-        """
         self._ready_for_inverse = False
 
         if len(d) > len(np.unique(d)):
@@ -109,18 +94,6 @@ class LogLinear(DoseResponseModel1D):
         self._logd = np.log(self._d / self._dose_scale)
 
     def E(self, d):
-        """Evaluate this model at dose d
-
-        Parameters
-        ----------
-        d : array_like
-            Doses to calculate effect at
-
-        Returns
-        ----------
-        effect : array_like
-            Evaluate's the model at dose in d
-        """
         if not self.is_specified:
             raise ModelNotParameterizedError("Must call fit() before calling E().")
 
@@ -133,18 +106,6 @@ class LogLinear(DoseResponseModel1D):
         return E
 
     def E_inv(self, E):
-        """Find the inverse of the dose response model.
-
-        Parameters
-        ----------
-        E : array_like
-            Effects to get the doses for
-
-        Returns
-        ----------
-        doses : array_like
-            Doses which achieve effects E using this model.
-        """
         if not self.is_specified:
             raise ModelNotParameterizedError("Must call fit() before calling E_inv().")
 
@@ -175,16 +136,19 @@ class LogLinear(DoseResponseModel1D):
 
         return d * self._dose_scale
 
+    @staticmethod
     def create_fit(d, E, aggregation_function=np.median):
-        """Courtesy function to build a marginal linear model directly from
-        data. Initializes a model using the provided aggregation function, then
-        fits.
-        """
+        """Factory method to build a log-linear model directly from data."""
         drug = LogLinear(aggregation_function=aggregation_function)
         drug.fit(d, E)
         return drug
 
     def _prepare_inverse(self):
+        """Find the uninvertable domains prior to calculating E_inv().
+
+        This is not done in .fit() because it is not necessary for the forward calculation of E(d). But it is necessary
+        for calls of E_inv(E), so it is called the first time E_inv() is called.
+        """
         if not self.is_specified:
             raise ModelNotParameterizedError("Must run fit() before preparing for inverse.")
 

@@ -25,7 +25,6 @@ class Schindler(DoseDependentSynergyModelND):
     """Schindler's multidimensional Hill equation model."""
 
     def E_reference(self, d):
-        """-"""
         if not self.is_specified:
             raise InvalidDrugModelError("Model is not specified.")
 
@@ -41,7 +40,6 @@ class Schindler(DoseDependentSynergyModelND):
         return E0 - uE_model
 
     def _get_synergy(self, d, E):
-        """-"""
         # E0 = 0
         # for single in self.single_drug_models:
         #    E0 += single.E0 / self.N
@@ -72,10 +70,8 @@ class Schindler(DoseDependentSynergyModelND):
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill
 
     @property
     def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
-        """-"""
         return Hill

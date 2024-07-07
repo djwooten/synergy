@@ -9,7 +9,7 @@ from synergy.single import LogLinear
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 
-class LogLinearTests(TestCase):
+class TestLogLinear(TestCase):
     """Tests for the log linear model."""
 
     def test_is_specified(self):
