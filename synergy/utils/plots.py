@@ -1,6 +1,7 @@
 """Helper functions to make plots of drug combination responses and synergy."""
 
 import logging
+from typing import Sequence
 
 import numpy as np
 
@@ -440,7 +441,7 @@ def plot_surface_plotly(
 def plotly_isosurfaces(
     d,
     vals,
-    drug_indices: list[int] = [0, 1, 2],
+    drug_indices: Sequence[int] = [0, 1, 2],
     fname: str = "",
     xlabel: str = "Drug 1",
     ylabel: str = "Drug 2",
@@ -454,7 +455,7 @@ def plotly_isosurfaces(
 
     :param ArrayLike d: array of doses for each drug
     :param ArrayLike E: array of effect values
-    :param list[int] drug_indices: indices of the drugs to plot
+    :param Sequence[int] drug_indices: indices of the drugs to plot
     :param str fname: filename to save the plot (if not empty)
     :param str xlabel: label for the x-axis (e.g., drug name, concentration units)
     :param str ylabel: label for the y-axis

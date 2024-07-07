@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List
+
 import numpy as np
 
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
@@ -58,12 +60,12 @@ class ZIP(DoseDependentSynergyModel2D):
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
         self.use_jacobian = use_jacobian
 
-        self._h_21: list[float] = []  # h of drug 1, holding drug 2 fixed
-        self._h_12: list[float] = []  # h of drug 2, holding drug 1 fixed
-        self._C_21: list[float] = []  # C of drug 1, holding drug 2 fixed
-        self._C_12: list[float] = []  # C of drug 2, holding drug 1 fixed
-        self._Emax_21: list[float] = []  # Emax of drug 1, holding drug 2 fixed
-        self._Emax_12: list[float] = []  # Emax of drug 2, holding drug 1 fixed
+        self._h_21: List[float] = []  # h of drug 1, holding drug 2 fixed
+        self._h_12: List[float] = []  # h of drug 2, holding drug 1 fixed
+        self._C_21: List[float] = []  # C of drug 1, holding drug 2 fixed
+        self._C_12: List[float] = []  # C of drug 2, holding drug 1 fixed
+        self._Emax_21: List[float] = []  # Emax of drug 1, holding drug 2 fixed
+        self._Emax_12: List[float] = []  # Emax of drug 2, holding drug 1 fixed
 
     @property
     def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
@@ -183,7 +185,7 @@ class _Hill_3P(Hill):
         super().__init__(**kwargs)
 
     @property
-    def _parameter_names(self) -> list[str]:
+    def _parameter_names(self) -> List[str]:
         return ["Emax", "h", "C"]
 
     def _model_to_fit(self, d, Emax, logh, logC):

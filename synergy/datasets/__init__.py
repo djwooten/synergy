@@ -1,4 +1,5 @@
 from importlib import resources
+from typing import Sequence
 
 import numpy as np
 
@@ -24,7 +25,7 @@ def _load_data(fname: str) -> np.typing.NDArray[np.float64]:
     return np.asarray(lines)
 
 
-def _write_data(fname: str, column_names: list[str], *args):
+def _write_data(fname: str, column_names: Sequence[str], *args):
     path = resources.files(DEFAULT_DATA_MODULE).joinpath(fname)
     with open(path, "w") as outfile:  # type: ignore
         outfile.write(",".join(column_names) + "\n")

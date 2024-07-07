@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List
+
 import numpy as np
 
 from synergy.combination.jacobians.musyc_jacobian import jacobian
@@ -82,7 +84,7 @@ class MuSyC(ParametricSynergyModel2D):
             self.gamma21 = 1.0
 
     @property
-    def _parameter_names(self) -> list[str]:
+    def _parameter_names(self) -> List[str]:
         if self.fit_gamma:
             return ["E0", "E1", "E2", "E3", "h1", "h2", "C1", "C2", "alpha12", "alpha21", "gamma12", "gamma21"]
         return ["E0", "E1", "E2", "E3", "h1", "h2", "C1", "C2", "alpha12", "alpha21"]

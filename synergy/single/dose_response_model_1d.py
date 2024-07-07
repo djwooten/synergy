@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional
+from typing import Any, Callable, List, Optional
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -86,7 +86,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
 
     @property
     @abstractmethod
-    def _parameter_names(self) -> list[str]:
+    def _parameter_names(self) -> List[str]:
         """The names of the parameters for this model."""
 
     @property

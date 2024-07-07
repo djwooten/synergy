@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Optional, Sequence
+from typing import Any, Callable, List, Optional, Sequence
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -214,7 +214,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
 
     @property
     @abstractmethod
-    def _parameter_names(self) -> list[str]:
+    def _parameter_names(self) -> List[str]:
         """String names of each parameter."""
 
     @property

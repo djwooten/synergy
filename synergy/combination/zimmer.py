@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List
+
 import numpy as np
 
 from synergy.combination.synergy_model_2d import ParametricSynergyModel2D
@@ -46,7 +48,7 @@ class Zimmer(ParametricSynergyModel2D):
         self.jacobian_function = None  # TODO
 
     @property
-    def _parameter_names(self) -> list[str]:
+    def _parameter_names(self) -> List[str]:
         return ["h1", "h2", "C1", "C2", "a12", "a21"]
 
     @property

@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Any, Optional, Sequence
+from typing import Any, List, Optional, Sequence
 
 import numpy as np
 
@@ -263,7 +263,7 @@ class MuSyC(ParametricSynergyModelND):
         return edge_index
 
     @property
-    def _parameter_names(self) -> list[str]:
+    def _parameter_names(self) -> List[str]:
         param_names = []
         gamma_names = []
         for i in range(self._num_E_params):
@@ -425,7 +425,7 @@ class MuSyC(ParametricSynergyModelND):
         return np.dot(np.dot(matrix_inv, b), np.asarray(E_params))
 
     @staticmethod
-    def _get_drug_string_from_state(state: list[int]) -> str:
+    def _get_drug_string_from_state(state: Sequence[int]) -> str:
         """Converts state (e.g., [1, 1, 0]) to drug-string (e.g., "2,3")
 
         State in this context indicates which drugs are present (1) vs absent (0). The 0th state index corresponds to
@@ -441,14 +441,14 @@ class MuSyC(ParametricSynergyModelND):
         return ",".join(sorted([str(n - i) for i, val in enumerate(state) if val == 1]))
 
     @staticmethod
-    def _get_drug_string_from_edge(state_a: list[int], state_b: list[int]) -> str:
+    def _get_drug_string_from_edge(state_a: Sequence[int], state_b: Sequence[int]) -> str:
         """Return a string representing the edge between two states
 
         The string is {start_state}_{added_drugs}. So for example, if drugs 2 and 3 are present in state_a, and
         drug 1 is added to get to state_b, the edge string would be "2,3_1".
 
-        :param list[int] state_a: List of drugs in state_a (0 for absent, 1 for present)
-        :param list[int] state_b: List of drugs in state_b
+        :param Sequence[int] state_a: List of drugs in state_a (0 for absent, 1 for present)
+        :param Sequence[int] state_b: List of drugs in state_b
         :return str: String representing the edge between state_a and state_b
         """
         drugstr_a = MuSyC._get_drug_string_from_state(state_a)
@@ -456,13 +456,13 @@ class MuSyC(ParametricSynergyModelND):
         return "_".join([drugstr_a, drugstr_b])
 
     @staticmethod
-    def _get_drug_difference_string(state_a: list[int], state_b: list[int]) -> str:
+    def _get_drug_difference_string(state_a: Sequence[int], state_b: Sequence[int]) -> str:
         """Return the difference in drugs between two states.
 
         The drug difference string is a comma-separated list of drugs that are added. Removed drugs are ignored
 
-        :param list[int] state_a: List of drugs in state_a (0 for absent, 1 for present)
-        :param list[int] state_b: List of drugs in state_b
+        :param Sequence[int] state_a: List of drugs in state_a (0 for absent, 1 for present)
+        :param Sequence[int] state_b: List of drugs in state_b
         :return str: Comma-separated list of drugs that are added
         """
         n = len(state_a)

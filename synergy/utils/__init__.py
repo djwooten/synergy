@@ -148,10 +148,10 @@ def sanitize_single_drug_model(model, default_type: type, required_type: type, *
     return model
 
 
-def format_table(rows, first_row_is_header: bool = True, col_sep: str = "  |  ") -> str:
+def format_table(rows: Sequence[Sequence[str]], first_row_is_header: bool = True, col_sep: str = "  |  ") -> str:
     """Format a list of rows into a human readable table.
 
-    :param list[list[str]] rows: A list of rows, where each row is a list of strings
+    :param Sequence[Sequence[str]] rows: A list of rows, where each row is a list of strings
     :param bool first_row_is_header: Whether the first row should be formatted as a header
     :param str col_sep: The separator between columns
     :return str: A string representation of the table

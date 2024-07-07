@@ -206,13 +206,13 @@ def get_drug_alone_mask_ND(d, drug_idx: int) -> tuple[np.ndarray]:
     return get_drug_subset_mask_ND(d, [drug_idx])
 
 
-def get_drug_subset_mask_ND(d, drug_indices: list[int]) -> tuple[np.ndarray]:
+def get_drug_subset_mask_ND(d, drug_indices: Sequence[int]) -> tuple[np.ndarray]:
     """Return a mask of rows where only the requested drugs are present.
 
     Note: other drugs are considered to be absent as long as they are at their minimum dose.
 
     :param ArrayLike d: Dose array, shape (n_samples, n_drugs)
-    :param list[int] drug_indices: Indices of the drugs to check for
+    :param Sequence[int] drug_indices: Indices of the drugs to check for
     :return tuple[np.ndarray]: Mask of rows where only the requested drugs are present
     """
     N = d.shape[1]

@@ -29,7 +29,7 @@ class SynergyModelND(ABC):
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
 
-        self.single_drug_models: Optional[list[DoseResponseModel1D]] = None
+        self.single_drug_models: Optional[Sequence[DoseResponseModel1D]] = None
         if not hasattr(self, "N"):
             self.N = -1
 
@@ -278,7 +278,7 @@ class ParametricSynergyModelND(SynergyModelND):
 
     @property
     @abstractmethod
-    def _parameter_names(self) -> list[str]:
+    def _parameter_names(self) -> Sequence[str]:
         """Names of the model parameters."""
 
     @property

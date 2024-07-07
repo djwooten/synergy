@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import List
+
 import numpy as np
 from scipy.stats import linregress
 
@@ -54,7 +56,7 @@ class Hill(ParametricDoseResponseModel1D):
         return self._model_inv(E, self.E0, self.Emax, self.h, self.C)
 
     @property
-    def _parameter_names(self) -> list[str]:
+    def _parameter_names(self) -> List[str]:
         return ["E0", "Emax", "h", "C"]
 
     @property
@@ -209,7 +211,7 @@ class Hill_2P(Hill):
         return jac
 
     @property
-    def _parameter_names(self) -> list[str]:
+    def _parameter_names(self) -> List[str]:
         return ["h", "C"]
 
     def _get_initial_guess(self, d, E, p0):

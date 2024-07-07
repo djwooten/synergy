@@ -1,7 +1,7 @@
 """Methods used by both 2d and Nd synergy models."""
 
 import logging
-from typing import Callable, Sequence
+from typing import Callable, List, Sequence
 
 import numpy as np
 from scipy.stats import norm
@@ -15,25 +15,25 @@ class ParametricModelMixins:
     """Utility functions for parametric models."""
 
     @staticmethod
-    def set_init_parameters(model, parameter_names: list[str], **kwargs) -> None:
+    def set_init_parameters(model, parameter_names: Sequence[str], **kwargs) -> None:
         """Set parameters for a model passed to the models' constructor.
 
         For instance, this lets us call `model = Hill(E0=1.0, Emax=0.0, h=1.0, C=1.0)` to create a fully funcitonal
         Hill model.
 
         :param model: The model to set parameters for.
-        :param list[str] parameter_names: Names of the parameters that can be set.
+        :param Sequence[str] parameter_names: Names of the parameters that can be set.
         :param kwargs: The kwargs supplied to the constructor, which may contain these initial values.
         """
         for param in parameter_names:
             model.__setattr__(param, kwargs.get(param, None))
 
     @staticmethod
-    def set_parameters(model, parameter_names: list[str], *args) -> None:
+    def set_parameters(model, parameter_names: Sequence[str], *args) -> None:
         """Set parameters for a model to values in args.
 
         :param model: The model to set parameters for.
-        :param list[str] parameter_names: Names of the parameters to be set.
+        :param Sequence[str] parameter_names: Names of the parameters to be set.
         :param args[float] args: The parameter values
         """
         # TODO use this for synergy_model_2d just like with synergy_model_Nd
@@ -44,7 +44,11 @@ class ParametricModelMixins:
 
     @staticmethod
     def set_bounds(
-        model, transform: Callable, default_bounds: dict[str, tuple[float, float]], parameter_names: list[str], **kwargs
+        model,
+        transform: Callable,
+        default_bounds: dict[str, tuple[float, float]],
+        parameter_names: Sequence[str],
+        **kwargs,
     ):
         """Set model._bounds for a model, which will be used when fitting the model.
 
@@ -60,7 +64,7 @@ class ParametricModelMixins:
         :param model: The model to set bounds for.
         :param Callable transform: A function to transform the bounds into the space used for fitting.
         :param dict default_bounds: Default bounds for each parameter.
-        :param list[str] parameter_names: Names of the parameters to set bounds for.
+        :param Sequence[str] parameter_names: Names of the parameters to set bounds for.
         :param kwargs: Bounds for specific (e.g., E0_bounds=(-1, 1)) or generic parameters (e.g., E_bounds=(-1, 1)).
         """
         lower_bounds = []
@@ -159,7 +163,7 @@ class ParametricModelMixins:
         gt_outcome: str,
         lt_outcome: str,
         default_outcome: str = "additive",
-    ) -> list[str]:
+    ) -> List[str]:
         """Create a string summary row for a synergy parameter.
 
         :param str key: The parameter name.
@@ -172,7 +176,7 @@ class ParametricModelMixins:
         :param str gt_outcome: The outcome if the synergy value is greater than the comparison value.
         :param str lt_outcome: The outcome if the synergy value is less than the comparison value.
         :param str default_outcome: The default outcome if the synergy value is within the tolerance of the comparison.
-        :return list[str]: A list of strings for the summary row, where each element is a column in the summary table.
+        :return List[str]: A list of strings for the summary row, where each element is a column in the summary table.
         """
         if ci:
             lb, ub = ci[key]

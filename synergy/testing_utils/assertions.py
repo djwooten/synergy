@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Sequence
 
 import numpy as np
 
@@ -43,7 +43,7 @@ def assert_dict_allclose(
 
 
 def assert_dict_values_in_intervals(
-    values: dict, intervals: dict, tol: float = 0, err_msg: str = "", log_keys: list[str] = []
+    values: dict, intervals: dict, tol: float = 0, err_msg: str = "", log_keys: Sequence[str] = []
 ):
     _assert_keys_equal(values, intervals)
     failed_vals = []
