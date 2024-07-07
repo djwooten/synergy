@@ -13,7 +13,6 @@ conda:
   environment: .pandoc_rtd_environment.yml
 
 python:
-  version: "3.10"
   install:
     - method: pip
       path: .
