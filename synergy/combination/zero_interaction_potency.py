@@ -15,8 +15,8 @@
 
 import numpy as np
 
-from synergy.single import Hill
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
+from synergy.single import Hill
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 
 
@@ -55,7 +55,6 @@ class ZIP(DoseDependentSynergyModel2D):
     """
 
     def __init__(self, use_jacobian: bool = True, drug1_model=None, drug2_model=None, **kwargs):
-
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model, **kwargs)
         self.use_jacobian = use_jacobian
 

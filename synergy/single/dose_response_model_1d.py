@@ -1,13 +1,13 @@
-from abc import ABC, abstractmethod
 import logging
+from abc import ABC, abstractmethod
 from typing import Any, Callable, Optional
 
 import numpy as np
 from scipy.optimize import curve_fit
 from scipy.stats import norm
 
-from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy import utils
+from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.utils.model_mixins import ParametricModelMixins
 
 _LOGGER = logging.Logger(__name__)

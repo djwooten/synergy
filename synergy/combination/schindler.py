@@ -15,8 +15,8 @@
 
 import numpy as np
 
-from synergy.single import Hill
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
+from synergy.single import Hill
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 
 

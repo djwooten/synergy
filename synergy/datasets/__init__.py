@@ -5,11 +5,10 @@ import numpy as np
 from synergy.single.hill import Hill
 from synergy.testing_utils.synthetic_data_generators import (
     HillDataGenerator,
+    MultiplicativeSurvivalReferenceDataGenerator,
     MuSyCDataGenerator,
     ShamDataGenerator,
-    MultiplicativeSurvivalReferenceDataGenerator,
 )
-
 
 DEFAULT_DATA_MODULE = "synergy.datasets.data"
 

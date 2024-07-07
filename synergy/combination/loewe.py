@@ -15,12 +15,12 @@
 
 import numpy as np
 
-from synergy.single import Hill, LogLinear
-from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
-from synergy.single.dose_response_model_1d import DoseResponseModel1D
-
 # Used for delta mode of Loewe
 from scipy.optimize import minimize_scalar
+
+from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
+from synergy.single import Hill, LogLinear
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
 
 
 class Loewe(DoseDependentSynergyModel2D):
@@ -190,9 +190,9 @@ class Loewe(DoseDependentSynergyModel2D):
 
         Parameters
         ----------
-        d1 
+        d1
             Concentration of drug 1
-        d2 
+        d2
             Concentration of drug 2
 
         Returns

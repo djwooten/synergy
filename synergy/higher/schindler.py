@@ -16,9 +16,9 @@
 import numpy as np
 
 from synergy.exceptions import InvalidDrugModelError
+from synergy.higher.synergy_model_Nd import DoseDependentSynergyModelND
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.single.hill import Hill
-from synergy.higher.synergy_model_Nd import DoseDependentSynergyModelND
 
 
 class Schindler(DoseDependentSynergyModelND):

@@ -1,17 +1,16 @@
 """Base classes for 2-drug synergy models."""
 
+import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Callable, Optional, Sequence
-import logging
 
-from scipy.optimize import curve_fit
 import numpy as np
+from scipy.optimize import curve_fit
 
-
+from synergy import utils
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
-from synergy import utils
 from synergy.utils.model_mixins import ParametricModelMixins
 
 _LOGGER = logging.Logger(__name__)

@@ -1,16 +1,19 @@
 """goo goo high"""
 
-from .synergy_model_Nd import DoseDependentSynergyModelND, ParametricSynergyModelND, SynergyModelND
+# Nonparametric models
+from .bliss import Bliss
+from .combination_index import CombinationIndex
+from .hsa import HSA
+from .loewe import Loewe
 
 # Parametric Models
 from .musyc import MuSyC
-
-# Nonparametric models
-from .bliss import Bliss
-from .hsa import HSA
-from .loewe import Loewe
-from .combination_index import CombinationIndex
 from .schindler import Schindler
+from .synergy_model_Nd import (
+    DoseDependentSynergyModelND,
+    ParametricSynergyModelND,
+    SynergyModelND,
+)
 
 ######################
 

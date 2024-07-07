@@ -17,10 +17,10 @@ import numpy as np
 
 from synergy.combination.jacobians.musyc_jacobian import jacobian
 from synergy.combination.synergy_model_2d import ParametricSynergyModel2D
-from synergy.single.dose_response_model_1d import DoseResponseModel1D
-from synergy.single import Hill
-from synergy.utils import format_table
 from synergy.exceptions import ModelNotParameterizedError
+from synergy.single import Hill
+from synergy.single.dose_response_model_1d import DoseResponseModel1D
+from synergy.utils import format_table
 from synergy.utils.model_mixins import ParametricModelMixins
 
 
@@ -248,7 +248,6 @@ class MuSyC(ParametricSynergyModel2D):
     def _get_initial_guess(self, d1, d2, E, p0):
         # If there is no intial guess, use single-drug models to come up with intitial guess
         if p0 is None:
-
             drug1 = self.drug1_model
             drug2 = self.drug2_model
 

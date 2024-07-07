@@ -1,16 +1,19 @@
 """Blah blah syn.comb"""
 
-from .synergy_model_2d import SynergyModel2D, DoseDependentSynergyModel2D, ParametricSynergyModel2D
+# Nonparametric models
+from .bliss import Bliss
+from .braid import BRAID
+from .combination_index import CombinationIndex
+from .hsa import HSA
+from .loewe import Loewe
 
 # Parametric Models
 from .musyc import MuSyC
-from .zimmer import Zimmer
-from .braid import BRAID
-
-# Nonparametric models
-from .bliss import Bliss
-from .hsa import HSA
-from .loewe import Loewe
-from .combination_index import CombinationIndex
 from .schindler import Schindler
+from .synergy_model_2d import (
+    DoseDependentSynergyModel2D,
+    ParametricSynergyModel2D,
+    SynergyModel2D,
+)
 from .zero_interaction_potency import ZIP
+from .zimmer import Zimmer

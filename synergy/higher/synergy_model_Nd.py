@@ -5,14 +5,12 @@ from abc import ABC, abstractmethod
 from copy import deepcopy
 from typing import Any, Callable, Optional, Sequence, Union
 
-
 import numpy as np
 from scipy.optimize import curve_fit
 
-
+from synergy import utils
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
-from synergy import utils
 from synergy.utils import dose_utils
 from synergy.utils.model_mixins import ParametricModelMixins
 
