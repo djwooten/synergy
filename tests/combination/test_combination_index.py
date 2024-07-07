@@ -4,8 +4,8 @@ from unittest import TestCase
 
 import numpy as np
 
-from synergy.single import Hill_CI
 from synergy.combination import CombinationIndex
+from synergy.single import Hill_CI
 from synergy.testing_utils.synthetic_data_generators import ShamDataGenerator
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")

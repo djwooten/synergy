@@ -1,14 +1,11 @@
 import numpy as np
 from matplotlib import pyplot as plt
 
-from synergy.combination import ZIP
-from synergy.combination import MuSyC
+from synergy.combination import ZIP, MuSyC
 from synergy.single import Hill
-
 from synergy.utils import plots
-from synergy.utils.dose_tools import make_dose_grid
 from synergy.utils.data_exchange import to_synergyfinder
-
+from synergy.utils.dose_tools import make_dose_grid
 
 E0, E1, E2, E3 = 1.0, 0.0, 0.0, 0.0
 h1, h2 = 1.0, 3.0
@@ -53,10 +50,7 @@ if False:
     sfdf = pd.read_csv("synergyfinder_comparison/synergyfinder_output.csv", index_col=0)
     sfdf.sort_values(by=["d2", "d1"], inplace=True)
 
-    print(
-        "Correlation between this package and synergyfinder = %f"
-        % np.corrcoef(model.synergy, sfdf["synergy"])[0, 1]
-    )
+    print("Correlation between this package and synergyfinder = %f" % np.corrcoef(model.synergy, sfdf["synergy"])[0, 1])
     fig = plt.figure(figsize=(4, 4))
     ax = fig.add_subplot(111)
     ax.scatter(model.synergy * 100, sfdf["synergy"])

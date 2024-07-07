@@ -1,10 +1,9 @@
 import numpy as np
-from synergy.single import Hill
-from synergy.combination import MuSyC
-from synergy.combination import Schindler
-from synergy.utils.dose_tools import make_dose_grid
-
 from matplotlib import pyplot as plt
+
+from synergy.combination import MuSyC, Schindler
+from synergy.single import Hill
+from synergy.utils.dose_tools import make_dose_grid
 
 E0, E1, E2, E3 = 1, 0.5, 0.2, 0.1
 h1, h2 = 1.0, 1.0

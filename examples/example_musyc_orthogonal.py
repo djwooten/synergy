@@ -1,10 +1,9 @@
-from matplotlib import pyplot as plt
 import numpy as np
+from matplotlib import pyplot as plt
 
 from synergy.combination import MuSyC
 from synergy.utils import plots
 from synergy.utils.dose_tools import make_dose_grid
-
 
 # Shows that alpha and gamma are orthogonal synergy parameters
 

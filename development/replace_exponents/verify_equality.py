@@ -1,9 +1,9 @@
+import numpy as np
+
 from synergy.combination import MuSyC, MuSyC2
 from synergy.combination.jacobians import musyc_jacobian as MJ
 from synergy.combination.jacobians import musyc_jacobian_updated as MJ_U
 from synergy.utils.dose_tools import make_dose_grid
-
-import numpy as np
 
 E0 = 1
 E1 = 0.5

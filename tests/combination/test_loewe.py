@@ -5,8 +5,8 @@ from unittest import TestCase
 import numpy as np
 from numpy.typing import ArrayLike
 
-from synergy.single import Hill
 from synergy.combination import Loewe
+from synergy.single import Hill
 from synergy.testing_utils.synthetic_data_generators import ShamDataGenerator
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")

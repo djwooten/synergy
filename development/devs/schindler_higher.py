@@ -1,10 +1,10 @@
 import numpy as np
-from matplotlib import pyplot as plt
 import plotly.graph_objects as go
+from matplotlib import pyplot as plt
 
-from synergy.utils import dose_tools, plots
 from synergy.higher import MuSyC, Schindler
 from synergy.single import Hill
+from synergy.utils import dose_tools, plots
 
 E_params = [1, 0.5, 0.4, 0.5, 0.2, 0, 0, 0]
 # h_params = [2,1,0.8]

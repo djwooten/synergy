@@ -5,9 +5,8 @@ from unittest import TestCase
 import numpy as np
 
 import synergy.testing_utils.synthetic_data_generators as generators
-from synergy.single.hill import Hill
 from synergy.higher.schindler import Schindler
-
+from synergy.single.hill import Hill
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 

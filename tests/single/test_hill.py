@@ -12,9 +12,8 @@ from hypothesis import given, seed
 from hypothesis.strategies import floats, sampled_from
 
 from synergy.single import Hill, Hill_2P, Hill_CI
-from synergy.testing_utils.test_data_loader import load_test_data
 from synergy.testing_utils import assertions as synergy_assertions
-
+from synergy.testing_utils.test_data_loader import load_test_data
 
 MAX_FLOAT = sys.float_info.max
 MIN_FLOAT = sys.float_info.min

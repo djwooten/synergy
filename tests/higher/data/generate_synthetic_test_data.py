@@ -3,9 +3,9 @@ import os
 
 import numpy as np
 
+import synergy.testing_utils.synthetic_data_generators as generators
 from synergy.single.hill import Hill
 from synergy.single.log_linear import LogLinear
-import synergy.testing_utils.synthetic_data_generators as generators
 
 TEST_DATA_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
 

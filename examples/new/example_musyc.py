@@ -3,9 +3,9 @@
 from matplotlib import pyplot as plt
 
 from synergy.combination.musyc import MuSyC
-from synergy.utils import plots
-from synergy.testing_utils.synthetic_data_generators import MuSyCDataGenerator
 from synergy.plot.plot_mixins import PlotMixins
+from synergy.testing_utils.synthetic_data_generators import MuSyCDataGenerator
+from synergy.utils import plots
 
 E0, E1, E2, E3 = 1, 0.2, 0.1, 0.4
 h1, h2 = 2.3, 0.8

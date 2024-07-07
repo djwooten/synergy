@@ -1,11 +1,9 @@
 import numpy as np
-from matplotlib import pyplot as plt
 import pandas as pd
+from matplotlib import pyplot as plt
 
-from synergy.combination import MuSyC
+from synergy.combination import BRAID, MuSyC
 from synergy.single import Hill
-from synergy.combination import BRAID
-
 from synergy.utils import plots
 from synergy.utils.dose_tools import make_dose_grid
 

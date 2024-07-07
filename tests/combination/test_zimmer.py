@@ -12,10 +12,9 @@ from hypothesis import given
 from hypothesis.strategies import sampled_from
 
 from synergy.combination import Zimmer
-from synergy.testing_utils.test_data_loader import load_test_data
 from synergy.testing_utils import assertions as synergy_assertions
+from synergy.testing_utils.test_data_loader import load_test_data
 from synergy.utils import dose_utils
-
 
 MAX_FLOAT = sys.float_info.max
 

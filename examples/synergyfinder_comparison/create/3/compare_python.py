@@ -1,15 +1,11 @@
 import numpy as np
-from matplotlib import pyplot as plt
 import pandas as pd
+from matplotlib import pyplot as plt
 
-from synergy.combination import ZIP
-from synergy.combination import MuSyC
+from synergy.combination import BRAID, ZIP, MuSyC
 from synergy.single import Hill
-from synergy.combination import BRAID
-
 from synergy.utils import plots
 from synergy.utils.dose_tools import make_dose_grid
-
 
 E0, E1, E2, E3 = 1.0, 0.4, 0.2, 0.0
 h1, h2 = 2.0, 1.0
@@ -51,10 +47,7 @@ zip_model.fit(D1, D2, E)
 sfdf = pd.read_csv("synergyfinder_output.csv")
 sfdf.sort_values(by=["d2", "d1"], inplace=True)
 
-print(
-    "Correlation between this package and synergyfinder = %f"
-    % np.corrcoef(zip_model.synergy, sfdf["synergy"])[0, 1]
-)
+print("Correlation between this package and synergyfinder = %f" % np.corrcoef(zip_model.synergy, sfdf["synergy"])[0, 1])
 fig = plt.figure(figsize=(4, 4))
 ax = fig.add_subplot(111)
 ax.scatter(zip_model.synergy * 100, sfdf["synergy"])

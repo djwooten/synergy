@@ -1,7 +1,8 @@
 import numpy as np
+from scipy.optimize import approx_fprime, check_grad
+
 import synergy.combination.musyc as musyc
 import synergy.combination.musyc_jacobian as musyc_jacobian
-from scipy.optimize import check_grad, approx_fprime
 
 # Using jacobian slighly slows the fit when there are ~10-100 datapoints
 # Using jacobian speeds the fit when there are > ~1000 datapoints
@@ -17,7 +18,7 @@ model = musyc.MuSyC(E0=E0, E1=E1, E2=E2, E3=E3, h1=h1, h2=h2, C1=C1, C2=C2, alph
 r1 = model.r1
 r2 = model.r2
 
-d = np.logspace(-3,1,num=30)
+d = np.logspace(-3, 1, num=30)
 
 # Numerically check gradient
 logh1 = np.log(h1)
@@ -29,12 +30,29 @@ logalpha21 = np.log(alpha21)
 
 # Jacobian return order
 # E0, E1, E2, E3, logh1, logh2, logC1, logC2, logalpha12, logalpha21
-f = lambda logalpha21: model._model(C1*2., C2/2., E0, E1, E2, E3, np.exp(logh1), np.exp(logh2), np.exp(logC1), np.exp(logC2), r1, r2, np.exp(logalpha12), np.exp(logalpha21))
+f = lambda logalpha21: model._model(
+    C1 * 2.0,
+    C2 / 2.0,
+    E0,
+    E1,
+    E2,
+    E3,
+    np.exp(logh1),
+    np.exp(logh2),
+    np.exp(logC1),
+    np.exp(logC2),
+    r1,
+    r2,
+    np.exp(logalpha12),
+    np.exp(logalpha21),
+)
 
 fj = lambda i: approx_fprime(np.asarray([i]), f, 0.0001)
 print(fj(logalpha21))
 
-jac =  lambda E0: musyc_jacobian.jacobian(C1*2., C2/2., E0, E1, E2, E3, logh1, logh2, logC1, logC2, r1, r2, logalpha12, logalpha21)
+jac = lambda E0: musyc_jacobian.jacobian(
+    C1 * 2.0, C2 / 2.0, E0, E1, E2, E3, logh1, logh2, logC1, logC2, r1, r2, logalpha12, logalpha21
+)
 
 #       jac                                 fj
 #  2.23939104e-01, #    E0              0.2239391 # These are all correct

@@ -1,7 +1,7 @@
 import numpy as np
+
 from synergy.combination import Zimmer
 from synergy.utils.dose_tools import make_dose_grid
-
 
 h1, h2 = 2.3, 0.8
 C1, C2 = 1e-2, 1e-1

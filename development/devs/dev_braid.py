@@ -1,8 +1,9 @@
 import numpy as np
-from synergy.combination import BRAID
-from synergy.utils.dose_tools import make_dose_grid
 import pandas as pd
 from matplotlib import pyplot as plt
+
+from synergy.combination import BRAID
+from synergy.utils.dose_tools import make_dose_grid
 
 E0, E1, E2, E3 = 0, 1, 1, 1
 h1, h2 = 3, 3

@@ -6,9 +6,8 @@ from unittest import TestCase
 import numpy as np
 
 from synergy.higher import MuSyC
-from synergy.testing_utils.test_data_loader import load_nd_test_data
 from synergy.testing_utils import assertions as synergy_assertions
-
+from synergy.testing_utils.test_data_loader import load_nd_test_data
 
 MAX_FLOAT = sys.float_info.max
 

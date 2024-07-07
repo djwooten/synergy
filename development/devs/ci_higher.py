@@ -1,9 +1,9 @@
 import numpy as np
-from matplotlib import pyplot as plt
 import plotly.graph_objects as go
+from matplotlib import pyplot as plt
 
+from synergy.higher import CombinationIndex, MuSyC
 from synergy.utils import dose_tools, plots
-from synergy.higher import MuSyC, CombinationIndex
 
 E_params = [1, 0, 0, 0, 0, 0, 0, 0]
 h_params = [2, 1, 0.8]

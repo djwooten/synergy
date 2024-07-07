@@ -9,7 +9,6 @@ from synergy.higher.combination_index import CombinationIndex
 from synergy.single.hill import Hill
 from synergy.utils.dose_utils import is_monotherapy_ND
 
-
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 
 

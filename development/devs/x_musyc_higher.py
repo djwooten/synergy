@@ -1,11 +1,9 @@
 import numpy as np
-from matplotlib import pyplot as plt
 import plotly.graph_objects as go
+from matplotlib import pyplot as plt
 
-from synergy.utils import dose_tools
 from synergy.higher import MuSyC
-from synergy.utils import plots
-
+from synergy.utils import dose_tools, plots
 
 E_params = [2, 1, 1, 1, 1, 0, 0, 0]
 h_params = [2, 1, 0.8]

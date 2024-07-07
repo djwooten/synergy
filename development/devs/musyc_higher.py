@@ -1,11 +1,9 @@
 import numpy as np
-from matplotlib import pyplot as plt
 import plotly.graph_objects as go
+from matplotlib import pyplot as plt
 
-from synergy.utils import dose_tools
 from synergy.higher import MuSyC
-from synergy.utils import plots
-
+from synergy.utils import dose_tools, plots
 
 E_params = [2, 1, 1, 1, 1, 0, 0, 0]
 h_params = [2, 1, 0.8]
@@ -42,9 +40,7 @@ if False:
     plt.show()
 
 
-model = MuSyC(
-    E_bounds=(0, 2), h_bounds=(1e-3, 1e3), alpha_bounds=(1e-5, 1e5), gamma_bounds=(1e-5, 1e5)
-)
+model = MuSyC(E_bounds=(0, 2), h_bounds=(1e-3, 1e3), alpha_bounds=(1e-5, 1e5), gamma_bounds=(1e-5, 1e5))
 model.fit(d, E_fit, bootstrap_iterations=20)
 
 pars = model.get_parameters()

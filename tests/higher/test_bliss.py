@@ -4,9 +4,11 @@ from unittest import TestCase
 
 import numpy as np
 
-from synergy.single.hill import Hill
 from synergy.higher import Bliss
-from synergy.testing_utils.synthetic_data_generators import MultiplicativeSurvivalReferenceDataGenerator
+from synergy.single.hill import Hill
+from synergy.testing_utils.synthetic_data_generators import (
+    MultiplicativeSurvivalReferenceDataGenerator,
+)
 
 TEST_DATA_DIR = os.path.join(os.path.dirname(__file__), "data")
 

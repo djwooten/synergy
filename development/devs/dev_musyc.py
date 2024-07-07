@@ -28,9 +28,7 @@ truemodel = MuSyC(
 
 npoints = 8
 npoints2 = 8
-d1, d2 = make_dose_grid(
-    C1 / 1e2, C1 * 1e2, C2 / 1e2, C2 * 1e2, npoints, npoints2, include_zero=True
-)
+d1, d2 = make_dose_grid(C1 / 1e2, C1 * 1e2, C2 / 1e2, C2 * 1e2, npoints, npoints2, include_zero=True)
 
 E = truemodel.E(d1, d2)
 

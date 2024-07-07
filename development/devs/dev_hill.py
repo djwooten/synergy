@@ -1,8 +1,7 @@
-from matplotlib import pyplot as plt
 import numpy as np
-from synergy.single import Hill
-from synergy.single import Hill_2P
-from synergy.single import Hill_CI
+from matplotlib import pyplot as plt
+
+from synergy.single import Hill, Hill_2P, Hill_CI
 
 E0 = 1
 Emax = 0

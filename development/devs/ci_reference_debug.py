@@ -1,8 +1,9 @@
-from synergy.combination import MuSyC, CombinationIndex, BRAID, Zimmer
-from synergy.utils.dose_tools import make_dose_grid
-from synergy.utils import plots
-from matplotlib import pyplot as plt
 import numpy as np
+from matplotlib import pyplot as plt
+
+from synergy.combination import BRAID, CombinationIndex, MuSyC, Zimmer
+from synergy.utils import plots
+from synergy.utils.dose_tools import make_dose_grid
 
 mtrue = MuSyC(
     E0=1,

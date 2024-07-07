@@ -5,8 +5,8 @@ import numpy as np
 
 from synergy.testing_utils.synthetic_data_generators import (
     BraidDataGenerator,
-    MuSyCDataGenerator,
     EffectiveDoseModelDataGenerator,
+    MuSyCDataGenerator,
 )
 
 TEST_DATA_DIR = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))

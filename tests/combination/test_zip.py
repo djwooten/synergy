@@ -4,8 +4,8 @@ from unittest import TestCase
 
 import numpy as np
 
-from synergy.single import Hill
 from synergy.combination import ZIP
+from synergy.single import Hill
 from synergy.testing_utils.synthetic_data_generators import (
     MultiplicativeSurvivalReferenceDataGenerator,
     MuSyCDataGenerator,
