@@ -69,7 +69,9 @@ jobs:
       # Conditional step for installing Pandoc in the Docs task
       - name: Install Pandoc
         if: matrix.task.name == 'Docs'
-        uses: docker://pandoc/core:2.9
+        uses: pandoc/actions/setup@{main}
+        with:
+          version: 2.19
 
       - name: Restore mypy cache
         if: matrix.task.name == 'Type check'
