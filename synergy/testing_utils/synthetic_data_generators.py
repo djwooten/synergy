@@ -245,7 +245,6 @@ class DoseDependentReferenceDataGenerator:
 
 
 class MultiplicativeSurvivalReferenceDataGenerator(DoseDependentReferenceDataGenerator):
-
     MODEL: type[DoseDependentSynergyModel2D] = Bliss2D
     MODEL_ND: type[DoseDependentSynergyModelND] = BlissND
     MIN_E = 0
@@ -253,13 +252,11 @@ class MultiplicativeSurvivalReferenceDataGenerator(DoseDependentReferenceDataGen
 
 
 class HSAReferenceDataGenerator(DoseDependentReferenceDataGenerator):
-
     MODEL: type[DoseDependentSynergyModel2D] = Hsa2D
     MODEL_ND: type[DoseDependentSynergyModelND] = HsaND
 
 
 class SchindlerReferenceDataGenerator(DoseDependentReferenceDataGenerator):
-
     MODEL: type[DoseDependentSynergyModel2D] = Schindler2D
     MODEL_ND: type[DoseDependentSynergyModelND] = SchindlerND
 
