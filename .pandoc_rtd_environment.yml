@@ -1,0 +1,6 @@
+# This file is referenced by the .readthedocs.yaml file to install pandoc on the Read the Docs build environment.
+name: rtd-pandoc
+channels:
+  - conda-forge
+dependencies:
+  - conda-forge::pandoc
