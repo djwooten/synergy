@@ -4,3 +4,4 @@ channels:
   - conda-forge
 dependencies:
   - conda-forge::pandoc
+  - python=3.10
