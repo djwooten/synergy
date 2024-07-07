@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import Dict, List, Tuple
 
 import numpy as np
 
@@ -90,7 +90,7 @@ class MuSyC(ParametricSynergyModel2D):
         return ["E0", "E1", "E2", "E3", "h1", "h2", "C1", "C2", "alpha12", "alpha21"]
 
     @property
-    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
+    def _default_fit_bounds(self) -> Dict[str, Tuple[float, float]]:
         return {
             "h1": (0, np.inf),
             "h2": (0, np.inf),
@@ -559,7 +559,7 @@ class MuSyC(ParametricSynergyModel2D):
         pars = self.get_parameters()
 
         header = ["Parameter", "Value", "Comparison", "Synergy"]
-        ci: dict[str, tuple[float, float]] = {}
+        ci: Dict[str, Tuple[float, float]] = {}
         if self.bootstrap_parameters is not None:
             ci = self.get_confidence_intervals(confidence_interval=confidence_interval)
             header.insert(2, f"{confidence_interval:0.3g}% CI")

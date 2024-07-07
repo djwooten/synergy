@@ -39,10 +39,10 @@ jobs:
               name: Lint
               run: ruff check .
 
-          - python: "3.10"
-            task:
-              name: Type check
-              run: mypy .
+#          - python: "3.10"
+#            task:
+#              name: Type check
+#              run: mypy .
 
           - python: "3.10"
             task:

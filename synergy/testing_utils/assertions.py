@@ -1,4 +1,4 @@
-from typing import Any, Sequence
+from typing import Any, Dict, Sequence
 
 import numpy as np
 
@@ -15,8 +15,8 @@ Present in second only: {d2_only}"""
 
 
 def assert_dict_allclose(
-    actual: dict[Any, float],
-    desired: dict[Any, float],
+    actual: Dict[Any, float],
+    desired: Dict[Any, float],
     rtol: float = 1e-07,
     atol: float = 0.0,
     equal_nan: bool = True,

@@ -106,7 +106,7 @@ def _get_ax(**kwargs):
         aspect: str aspect ratio of the plot (default is "equal")
 
     Returns:
-        tuple[matplotlib axis, bool if the axis was created or already supplied]
+        Tuple[matplotlib axis, bool if the axis was created or already supplied]
     """
     ax = kwargs.pop("ax", None)
     created_ax = False

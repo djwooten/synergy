@@ -1,7 +1,7 @@
 """Methods used by both 2d and Nd synergy models."""
 
 import logging
-from typing import Callable, List, Sequence
+from typing import Callable, Dict, List, Sequence, Tuple
 
 import numpy as np
 from scipy.stats import norm
@@ -46,7 +46,7 @@ class ParametricModelMixins:
     def set_bounds(
         model,
         transform: Callable,
-        default_bounds: dict[str, tuple[float, float]],
+        default_bounds: Dict[str, Tuple[float, float]],
         parameter_names: Sequence[str],
         **kwargs,
     ):
@@ -157,7 +157,7 @@ class ParametricModelMixins:
         key: str,
         comp_val: int,
         val: float,
-        ci: dict[str, tuple[float, float]],
+        ci: Dict[str, Tuple[float, float]],
         tol: float,
         log: bool,
         gt_outcome: str,
@@ -169,7 +169,7 @@ class ParametricModelMixins:
         :param str key: The parameter name.
         :param int comp_val: The "additive" value that the synergy value will be compared against.
         :param float val: The synergy value.
-        :param dict[str, tuple[float, float]] ci: Confidence intervals keyed by parameter names.
+        :param Dict[str, Tuple[float, float]] ci: Confidence intervals keyed by parameter names.
         :param float tol: The tolerance for comparing the synergy value to the comparison value.
         :param bool log: Whether to log-transform the synergy and comp values before comparing, which may be appropriate
             if ```tol > 0```.
@@ -232,10 +232,10 @@ class ParametricModelMixins:
     @staticmethod
     def _get_bound(
         parameter: str,
-        generic_bounds: dict[str, tuple[float, float]],
-        default_bounds: dict[str, tuple[float, float]],
+        generic_bounds: Dict[str, Tuple[float, float]],
+        default_bounds: Dict[str, Tuple[float, float]],
         **kwargs,
-    ) -> tuple[float, float]:
+    ) -> Tuple[float, float]:
         """Get the default bounds for a parameter if it is not explicitly set."""
         generic_parameter = ParametricModelMixins._get_generic_parameter(generic_bounds, parameter)
         if generic_parameter:
@@ -245,7 +245,7 @@ class ParametricModelMixins:
         return kwargs.pop(f"{parameter}_bounds", defaults)
 
     @staticmethod
-    def _get_generic_parameter(generic_bounds: dict[str, tuple[float, float]], parameter: str) -> str:
+    def _get_generic_parameter(generic_bounds: Dict[str, Tuple[float, float]], parameter: str) -> str:
         """Match a parameter to the longest matching key in generic_bounds"""
         candidates = [key for key in generic_bounds if parameter.startswith(key)]
         if not candidates:

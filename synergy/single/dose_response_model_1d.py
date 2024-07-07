@@ -1,6 +1,6 @@
 import logging
 from abc import ABC, abstractmethod
-from typing import Any, Callable, List, Optional
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -74,7 +74,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
         self.bic: Optional[float]
         self.bootstrap_parameters = None
 
-    def get_parameters(self) -> dict[str, Any]:
+    def get_parameters(self) -> Dict[str, Any]:
         """Returns model's parameters"""
         return {
             param: self.__getattribute__(param) if hasattr(self, param) else None for param in self._parameter_names
@@ -91,7 +91,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
 
     @property
     @abstractmethod
-    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
+    def _default_fit_bounds(self) -> Dict[str, Tuple[float, float]]:
         """The default bounds for the parameters for this model."""
 
     def fit(self, d, E, **kwargs):
@@ -151,7 +151,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
             )
             # self._bootstrap_resample(d, E, use_jacobian, bootstrap_iterations, **kwargs)
 
-    def get_confidence_intervals(self, confidence_interval: float = 95) -> dict[str, tuple[float, float]]:
+    def get_confidence_intervals(self, confidence_interval: float = 95) -> Dict[str, Tuple[float, float]]:
         """Return the lower bound and upper bound estimate for each parameter, keyed by parameter name.
 
         Parameters
@@ -161,7 +161,7 @@ class ParametricDoseResponseModel1D(DoseResponseModel1D):
 
         Return
         ------
-        dict[str, Tuple[float, float]
+        Dict[str, Tuple[float, float]
             Lower and upper bounds for each parameter, keyed by parameter name
         """
         if not self.is_specified:

@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Optional, Sequence, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -136,7 +136,7 @@ class SynergyModelND(ABC):
         """True if the model has been fit to data."""
         return self._is_fit
 
-    def _get_default_single_drug_kwargs(self, drug_idx: int) -> dict[str, Any]:
+    def _get_default_single_drug_kwargs(self, drug_idx: int) -> Dict[str, Any]:
         """Default keyword arguments for single drug models.
 
         This is used for each single drug unless an already instantiated version is provided in __init__().
@@ -232,7 +232,7 @@ class ParametricSynergyModelND(SynergyModelND):
                 " or provide single_drug_models."
             )
 
-        self._bounds: tuple[Sequence[float], Sequence[float]]
+        self._bounds: Tuple[Sequence[float], Sequence[float]]
         ParametricModelMixins.set_init_parameters(self, self._parameter_names, **kwargs)
         ParametricModelMixins.set_bounds(
             self, self._transform_params_to_fit, self._default_fit_bounds, self._parameter_names, **kwargs
@@ -270,7 +270,7 @@ class ParametricSynergyModelND(SynergyModelND):
         params = self._transform_params_to_fit(self._get_parameters())
         return self.fit_function(d, *params)
 
-    def get_parameters(self) -> dict[str, Any]:
+    def get_parameters(self) -> Dict[str, Any]:
         """Return the model's parameter values keyed by parameter names."""
         return {
             param: self.__getattribute__(param) if hasattr(self, param) else None for param in self._parameter_names
@@ -283,7 +283,7 @@ class ParametricSynergyModelND(SynergyModelND):
 
     @property
     @abstractmethod
-    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
+    def _default_fit_bounds(self) -> Dict[str, Tuple[float, float]]:
         """Default bounds for each parameter, keyed by parameter name."""
 
     def fit(self, d, E, **kwargs):
@@ -331,7 +331,7 @@ class ParametricSynergyModelND(SynergyModelND):
                 self, E, use_jacobian, bootstrap_iterations, max_iterations, d, **kwargs
             )
 
-    def get_confidence_intervals(self, confidence_interval: float = 95) -> dict[str, tuple[float, float]]:
+    def get_confidence_intervals(self, confidence_interval: float = 95) -> Dict[str, Tuple[float, float]]:
         """Returns the lower bound and upper bound estimate for each parameter.
 
         Parameters
@@ -341,7 +341,7 @@ class ParametricSynergyModelND(SynergyModelND):
 
         Return
         ------
-        dict[str, tuple[float, float]]: The confidence interval for each parameter.
+        Dict[str, Tuple[float, float]]: The confidence interval for each parameter.
         """
         if not self.is_specified:
             raise ModelNotParameterizedError()

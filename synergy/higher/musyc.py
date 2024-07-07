@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Any, List, Optional, Sequence
+from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
@@ -96,7 +96,7 @@ class MuSyC(ParametricSynergyModelND):
         params[h_param_offset:] = np.exp(params[h_param_offset:])
         return params
 
-    def _get_default_single_drug_kwargs(self, drug_idx: int) -> dict[str, Any]:
+    def _get_default_single_drug_kwargs(self, drug_idx: int) -> Dict[str, Any]:
         """Default keyword arguments for single drug models.
 
         This is used for each single drug unless an already instantiated version is provided in __init__().
@@ -239,7 +239,7 @@ class MuSyC(ParametricSynergyModelND):
         return add_drugs, remove_drugs
 
     @staticmethod
-    def _get_edge_indices(n: int) -> dict[int, dict[int, int]]:
+    def _get_edge_indices(n: int) -> Dict[int, Dict[int, int]]:
         """Return a map of start state, end state, to index of associated alpha (gamma) parameter
 
         When evaluating the model, we need to know which alpha (gamma) parameter to use for a given edge. This method
@@ -249,9 +249,9 @@ class MuSyC(ParametricSynergyModelND):
         this map will indicate which parameter to use.
 
         :param int n: Number of drugs
-        :return dict[int, dict[int, int]]: Map of start state, end state, to index of associated alpha (gamma) parameter
+        :return Dict[int, Dict[int, int]]: Map of start state, end state, to index of associated alpha (gamma) parameter
         """
-        edge_index: dict[int, dict[int, int]] = dict()
+        edge_index: Dict[int, Dict[int, int]] = dict()
         count = 0
         for i in range(1, 2**n):
             add_d, _rem_d = MuSyC._get_neighbors(i, n)  # only map edges corresponding to adding drugs, so ignore rem_d.
@@ -286,7 +286,7 @@ class MuSyC(ParametricSynergyModelND):
         return param_names
 
     @property
-    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
+    def _default_fit_bounds(self) -> Dict[str, Tuple[float, float]]:
         return {
             param: (0, np.inf)
             for param in self._parameter_names
@@ -471,10 +471,10 @@ class MuSyC(ParametricSynergyModelND):
         )
 
     @property
-    def beta(self) -> dict[str, float]:
+    def beta(self) -> Dict[str, float]:
         """Synergistic efficacy, a synergy parameter derived from E parameters.
 
-        :return dict[str, float]: A map of which drugs are present in each state to the beta value for that state.
+        :return Dict[str, float]: A map of which drugs are present in each state to the beta value for that state.
         """
         if not self.is_specified:
             raise ModelNotParameterizedError("Cannot calculate beta if model is not specified.")
@@ -545,7 +545,7 @@ class MuSyC(ParametricSynergyModelND):
         ):
             return ModelNotParameterizedError()
 
-        parameters: dict[str, float] = {}
+        parameters: Dict[str, float] = {}
         strongest_E = np.inf
         E0 = 0
 
@@ -581,7 +581,7 @@ class MuSyC(ParametricSynergyModelND):
 
         return self._model(d, *self._transform_params_to_fit(parameters_list))
 
-    def get_confidence_intervals(self, confidence_interval: float = 95) -> dict[str, tuple[float, float]]:
+    def get_confidence_intervals(self, confidence_interval: float = 95) -> Dict[str, Tuple[float, float]]:
         """Returns the lower bound and upper bound estimate for each parameter.
 
         This also calculates confidence intervals for beta, which is derived from the E parameters.
@@ -593,7 +593,7 @@ class MuSyC(ParametricSynergyModelND):
 
         Return
         ------
-        dict[str, tuple[float, float]]
+        Dict[str, Tuple[float, float]]
             A dictionary of parameter names to a tuple of the lower and upper bounds of the confidence interval.
         """
         ci = super().get_confidence_intervals(confidence_interval=confidence_interval)
@@ -617,7 +617,7 @@ class MuSyC(ParametricSynergyModelND):
         pars = self.get_parameters()
 
         header = ["Parameter", "Value", "Comparison", "Synergy"]
-        ci: dict[str, tuple[float, float]] = {}
+        ci: Dict[str, Tuple[float, float]] = {}
         if self.bootstrap_parameters is not None:
             ci = self.get_confidence_intervals(confidence_interval=confidence_interval)
             header.insert(2, f"{confidence_interval:0.3g}% CI")

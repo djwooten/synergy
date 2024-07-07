@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import Dict, List, Tuple
 
 import numpy as np
 from scipy.stats import linregress
@@ -60,7 +60,7 @@ class Hill(ParametricDoseResponseModel1D):
         return ["E0", "Emax", "h", "C"]
 
     @property
-    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
+    def _default_fit_bounds(self) -> Dict[str, Tuple[float, float]]:
         return {"h": (0.0, np.inf), "C": (0.0, np.inf)}
 
     def _set_dose_scale(self, d):

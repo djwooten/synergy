@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
-from typing import Callable, Sequence
+from typing import Callable, Sequence, Tuple
 
 import numpy as np
 
@@ -85,7 +85,7 @@ def r_squared(E, sum_of_squares_residuals: float) -> float:
     return 1 - sum_of_squares_residuals / ss_tot
 
 
-def sanitize_initial_guess(p0, bounds: tuple[Sequence[float], Sequence[float]]):
+def sanitize_initial_guess(p0, bounds: Tuple[Sequence[float], Sequence[float]]):
     """Ensure sure p0 is within the bounds.
 
     :param p0: Initial guess for the parameters

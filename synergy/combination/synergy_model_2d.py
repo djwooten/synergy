@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -173,7 +173,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
 
     def __init__(self, drug1_model=None, drug2_model=None, **kwargs):
         """Ctor."""
-        self._bounds: tuple[Sequence[float], Sequence[float]]
+        self._bounds: Tuple[Sequence[float], Sequence[float]]
         ParametricModelMixins.set_init_parameters(self, self._parameter_names, **kwargs)
         ParametricModelMixins.set_bounds(
             self, self._transform_params_to_fit, self._default_fit_bounds, self._parameter_names, **kwargs
@@ -201,10 +201,10 @@ class ParametricSynergyModel2D(SynergyModel2D):
         :return ArrayLike: Expected effect of the combination of drugs at doses d1 and d2
         """
 
-    def get_parameters(self) -> dict[str, Any]:
+    def get_parameters(self) -> Dict[str, Any]:
         """Return the model's parameters as a dict keyed by parameter name.
 
-        :return dict[str, Any]: Model parameters
+        :return Dict[str, Any]: Model parameters
         """
         return {param: self.__getattribute__(param) for param in self._parameter_names}
 
@@ -219,7 +219,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
 
     @property
     @abstractmethod
-    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
+    def _default_fit_bounds(self) -> Dict[str, Tuple[float, float]]:
         """Default bounds for each parameter."""
 
     def fit(self, d1, d2, E, **kwargs):
@@ -273,7 +273,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
                 self, E, use_jacobian, bootstrap_iterations, max_iterations, d1, d2, **kwargs
             )
 
-    def get_confidence_intervals(self, confidence_interval: float = 95) -> dict[str, tuple[float, float]]:
+    def get_confidence_intervals(self, confidence_interval: float = 95) -> Dict[str, Tuple[float, float]]:
         """Return the lower bound and upper bound estimates for each parameter.
 
         Parameters
@@ -283,7 +283,7 @@ class ParametricSynergyModel2D(SynergyModel2D):
 
         Returns
         -------
-        dict[str, tuple[float, float]]
+        Dict[str, Tuple[float, float]]
             Lower and upper bounds for each parameter keyed by parameter name.
         """
         if not self.is_specified:

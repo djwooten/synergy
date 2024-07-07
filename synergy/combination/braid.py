@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Dict, Tuple
+
 import numpy as np
 
 from synergy.combination.synergy_model_2d import ParametricSynergyModel2D
@@ -76,8 +78,8 @@ class BRAID(ParametricSynergyModel2D):
         return params
 
     @property
-    def _default_fit_bounds(self) -> dict[str, tuple[float, float]]:
-        bounds: dict[str, tuple[float, float]] = {
+    def _default_fit_bounds(self) -> Dict[str, Tuple[float, float]]:
+        bounds: Dict[str, Tuple[float, float]] = {
             "h1": (0, np.inf),
             "h2": (0, np.inf),
             "C1": (0, np.inf),
@@ -331,7 +333,7 @@ class BRAID(ParametricSynergyModel2D):
         pars = self.get_parameters()
 
         header = ["Parameter", "Value", "Comparison", "Synergy"]
-        ci: dict[str, tuple[float, float]] = {}
+        ci: Dict[str, Tuple[float, float]] = {}
         if self.bootstrap_parameters is not None:
             ci = self.get_confidence_intervals(confidence_interval=confidence_interval)
             header.insert(2, f"{confidence_interval:0.3g}% CI")

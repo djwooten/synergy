@@ -15,7 +15,7 @@
 
 import logging
 from itertools import product
-from typing import Sequence
+from typing import Sequence, Tuple
 
 import numpy as np
 
@@ -183,37 +183,37 @@ def is_monotherapy_ND(d) -> bool:
     return drugs_present_count[0] == 1
 
 
-def get_monotherapy_mask_ND(d) -> tuple[np.ndarray]:
+def get_monotherapy_mask_ND(d) -> Tuple[np.ndarray]:
     """Return a mask of rows where no more than 1 drug is present in the given N-drug dose array.
 
     This helps to set synergy to the default value for monotherapy combinations.
 
     :param ArrayLike d: Dose array, shape (n_samples, n_drugs)
-    :return tuple[np.ndarray]: Mask of rows where no more than 1 drug is present
+    :return Tuple[np.ndarray]: Mask of rows where no more than 1 drug is present
     """
     return np.where(np.apply_along_axis(is_monotherapy_ND, 1, d))
 
 
-def get_drug_alone_mask_ND(d, drug_idx: int) -> tuple[np.ndarray]:
+def get_drug_alone_mask_ND(d, drug_idx: int) -> Tuple[np.ndarray]:
     """Return a mask of rows where only the requested drug is present.
 
     Note: other drugs are considered to be absent as long as they are at their minimum dose.
 
     :param ArrayLike d: Dose array, shape (n_samples, n_drugs)
     :param int drug_idx: Index of the drug to check for
-    :return tuple[np.ndarray]: Mask of rows where only the requested drug is present
+    :return Tuple[np.ndarray]: Mask of rows where only the requested drug is present
     """
     return get_drug_subset_mask_ND(d, [drug_idx])
 
 
-def get_drug_subset_mask_ND(d, drug_indices: Sequence[int]) -> tuple[np.ndarray]:
+def get_drug_subset_mask_ND(d, drug_indices: Sequence[int]) -> Tuple[np.ndarray]:
     """Return a mask of rows where only the requested drugs are present.
 
     Note: other drugs are considered to be absent as long as they are at their minimum dose.
 
     :param ArrayLike d: Dose array, shape (n_samples, n_drugs)
     :param Sequence[int] drug_indices: Indices of the drugs to check for
-    :return tuple[np.ndarray]: Mask of rows where only the requested drugs are present
+    :return Tuple[np.ndarray]: Mask of rows where only the requested drugs are present
     """
     N = d.shape[1]
     mask = d[:, drug_indices[0]] >= 0  # This inits it to "True"
