@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Type
+
 from synergy.higher.loewe import Loewe
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy.single.hill import Hill_CI
@@ -22,9 +24,9 @@ class CombinationIndex(Loewe):
     """The Combination Index (CI) synergy model."""
 
     @property
-    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _required_single_drug_class(self) -> Type[DoseResponseModel1D]:
         return Hill_CI
 
     @property
-    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _default_single_drug_class(self) -> Type[DoseResponseModel1D]:
         return Hill_CI

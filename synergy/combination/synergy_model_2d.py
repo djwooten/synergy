@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Tuple, Type
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -60,12 +60,12 @@ class SynergyModel2D(ABC):
 
     @property
     @abstractmethod
-    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _required_single_drug_class(self) -> Type[DoseResponseModel1D]:
         """The required type of single drug model for this synergy model."""
 
     @property
     @abstractmethod
-    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _default_single_drug_class(self) -> Type[DoseResponseModel1D]:
         """The default type of single drug model for this synergy model."""
 
     @property

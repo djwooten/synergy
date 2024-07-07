@@ -14,7 +14,7 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import sys
-from typing import Optional, Sequence, Union
+from typing import Optional, Sequence, Type, Union
 
 import numpy as np
 from scipy.stats import norm
@@ -174,8 +174,8 @@ class DoseDependentReferenceDataGenerator:
     Subclasses should define the MODEL and MODEL_ND class attributes, and may define MIN_E and MAX_E when appropriate.
     """
 
-    MODEL: Optional[type[DoseDependentSynergyModel2D]] = None
-    MODEL_ND: Optional[type[DoseDependentSynergyModelND]] = None
+    MODEL: Optional[Type[DoseDependentSynergyModel2D]] = None
+    MODEL_ND: Optional[Type[DoseDependentSynergyModelND]] = None
     MIN_E: float = np.nan
     MAX_E: float = np.nan
 
@@ -245,20 +245,20 @@ class DoseDependentReferenceDataGenerator:
 
 
 class MultiplicativeSurvivalReferenceDataGenerator(DoseDependentReferenceDataGenerator):
-    MODEL: type[DoseDependentSynergyModel2D] = Bliss2D
-    MODEL_ND: type[DoseDependentSynergyModelND] = BlissND
+    MODEL: Type[DoseDependentSynergyModel2D] = Bliss2D
+    MODEL_ND: Type[DoseDependentSynergyModelND] = BlissND
     MIN_E = 0
     MAX_E = 1
 
 
 class HSAReferenceDataGenerator(DoseDependentReferenceDataGenerator):
-    MODEL: type[DoseDependentSynergyModel2D] = Hsa2D
-    MODEL_ND: type[DoseDependentSynergyModelND] = HsaND
+    MODEL: Type[DoseDependentSynergyModel2D] = Hsa2D
+    MODEL_ND: Type[DoseDependentSynergyModelND] = HsaND
 
 
 class SchindlerReferenceDataGenerator(DoseDependentReferenceDataGenerator):
-    MODEL: type[DoseDependentSynergyModel2D] = Schindler2D
-    MODEL_ND: type[DoseDependentSynergyModelND] = SchindlerND
+    MODEL: Type[DoseDependentSynergyModel2D] = Schindler2D
+    MODEL_ND: Type[DoseDependentSynergyModelND] = SchindlerND
 
 
 class MuSyCDataGenerator:

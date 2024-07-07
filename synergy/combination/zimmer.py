@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Type
 
 import numpy as np
 
@@ -129,11 +129,11 @@ class Zimmer(ParametricSynergyModel2D):
         )
 
     @property
-    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _required_single_drug_class(self) -> Type[DoseResponseModel1D]:
         return Hill_2P
 
     @property
-    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _default_single_drug_class(self) -> Type[DoseResponseModel1D]:
         return Hill_2P
 
     @property

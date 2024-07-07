@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Type
+
 import numpy as np
 
 from synergy.combination.schindler import Schindler
@@ -48,11 +50,11 @@ class CombinationIndex(DoseDependentSynergyModel2D):
         return self._sanitize_synergy(d1, d2, synergy, 1.0)
 
     @property
-    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _default_single_drug_class(self) -> Type[DoseResponseModel1D]:
         """The default drug model to use"""
         return Hill_CI
 
     @property
-    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _required_single_drug_class(self) -> Type[DoseResponseModel1D]:
         """The required superclass of the models for the individual drugs, or None if any model is acceptable"""
         return Hill_CI

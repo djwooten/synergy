@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Type
+
 import numpy as np
 
 from synergy.exceptions import InvalidDrugModelError
@@ -69,9 +71,9 @@ class Schindler(DoseDependentSynergyModelND):
         return u_max * power / (1.0 + power)
 
     @property
-    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _required_single_drug_class(self) -> Type[DoseResponseModel1D]:
         return Hill
 
     @property
-    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _default_single_drug_class(self) -> Type[DoseResponseModel1D]:
         return Hill

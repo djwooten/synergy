@@ -13,9 +13,9 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-import numpy as np
+from typing import Type
 
-# Used for delta mode of Loewe
+import numpy as np
 from scipy.optimize import minimize_scalar
 
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
@@ -54,13 +54,13 @@ class Loewe(DoseDependentSynergyModel2D):
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
 
     @property
-    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _required_single_drug_class(self) -> Type[DoseResponseModel1D]:
         if self.mode == "ci":
             return DoseResponseModel1D
         return Hill
 
     @property
-    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _default_single_drug_class(self) -> Type[DoseResponseModel1D]:
         if self.mode == "ci":
             return LogLinear
         return Hill

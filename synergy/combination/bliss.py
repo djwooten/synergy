@@ -13,6 +13,8 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
+from typing import Type
+
 from synergy.combination.synergy_model_2d import DoseDependentSynergyModel2D
 from synergy.exceptions import InvalidDrugModelError
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
@@ -44,9 +46,9 @@ class Bliss(DoseDependentSynergyModel2D):
         return self._sanitize_synergy(d1, d2, synergy, 0)
 
     @property
-    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _required_single_drug_class(self) -> Type[DoseResponseModel1D]:
         return DoseResponseModel1D
 
     @property
-    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _default_single_drug_class(self) -> Type[DoseResponseModel1D]:
         return LogLinear

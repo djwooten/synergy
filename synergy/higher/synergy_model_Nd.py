@@ -3,7 +3,7 @@
 import logging
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, Type, Union
 
 import numpy as np
 from scipy.optimize import curve_fit
@@ -94,7 +94,7 @@ class SynergyModelND(ABC):
             self.N = N
 
         # Fit all non-specified single drug models
-        model: Union[DoseResponseModel1D, type[DoseResponseModel1D]]
+        model: Union[DoseResponseModel1D, Type[DoseResponseModel1D]]
         for single_idx, model in enumerate(self.single_drug_models):
             model = utils.sanitize_single_drug_model(
                 model, default_type, required_type, **self._get_default_single_drug_kwargs(single_idx)
@@ -118,12 +118,12 @@ class SynergyModelND(ABC):
 
     @property
     @abstractmethod
-    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _required_single_drug_class(self) -> Type[DoseResponseModel1D]:
         """The required type of single drug model for this synergy model."""
 
     @property
     @abstractmethod
-    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _default_single_drug_class(self) -> Type[DoseResponseModel1D]:
         """The default type of single drug model for this synergy model."""
 
     @property

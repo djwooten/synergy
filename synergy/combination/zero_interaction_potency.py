@@ -13,7 +13,7 @@
 #    You should have received a copy of the GNU General Public License
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-from typing import List
+from typing import List, Type
 
 import numpy as np
 
@@ -68,11 +68,11 @@ class ZIP(DoseDependentSynergyModel2D):
         self._Emax_12: List[float] = []  # Emax of drug 2, holding drug 1 fixed
 
     @property
-    def _required_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _required_single_drug_class(self) -> Type[DoseResponseModel1D]:
         return Hill
 
     @property
-    def _default_single_drug_class(self) -> type[DoseResponseModel1D]:
+    def _default_single_drug_class(self) -> Type[DoseResponseModel1D]:
         return Hill
 
     def _get_synergy(self, d1, d2, E):
