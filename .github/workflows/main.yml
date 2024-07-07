@@ -136,9 +136,9 @@ jobs:
         run: |
           python scripts/release_notes.py > ${{ github.workspace }}-RELEASE_NOTES.md
 
-      - name: Publish package to PyPI
-        run: |
-          twine upload -u '${{ secrets.PYPI_USERNAME }}' -p '${{ secrets.PYPI_PASSWORD }}' dist/*
+#      - name: Publish package to PyPI
+#        run: |
+#          twine upload -u '${{ secrets.PYPI_USERNAME }}' -p '${{ secrets.PYPI_PASSWORD }}' dist/*
 
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v1
