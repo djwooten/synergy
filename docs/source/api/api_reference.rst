@@ -5,5 +5,6 @@ API Reference
    :maxdepth: 2
 
    combination
-   utils
+   higher
    single
+   utils

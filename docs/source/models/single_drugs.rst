@@ -8,3 +8,6 @@ Single-Drug
 
    single/log_linear
    single/hill
+
+- :doc:`single/log_linear`
+- :doc:`single/hill`

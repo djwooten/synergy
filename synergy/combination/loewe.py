@@ -180,21 +180,3 @@ class Loewe(DoseDependentSynergyModel2D):
                     else:
                         E_ref[i] = min(E2_alone, E1_alone)
         return E_ref
-
-    def E_goose(self, d1, d2):
-        """Calculates a reference (null) model for Loewe for drug1 and drug2.
-
-        Credits: Mark Russo, David Wooten
-
-        Parameters
-        ----------
-        d1
-            Concentration of drug 1
-        d2
-            Concentration of drug 2
-
-        Returns
-        -------
-        ArrayLike
-            Reference model for Loewe
-        """

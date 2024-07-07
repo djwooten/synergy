@@ -155,6 +155,23 @@ class DoseDependentSynergyModelND(SynergyModelND):
         self.reference = None
 
     def fit(self, d, E, **kwargs):
+        """Fit the model to data.
+
+        Parameters
+        ----------
+        d : array_like
+            Array of doses measured
+
+        E : array_like
+            Array of effects measured at doses d
+
+        kwargs
+            Optional parameters to pass to scipy.optimize.curve_fit().
+
+        Returns
+        -------
+        ArrayLike: The synergy of the drug combination at doses d
+        """
         self.d = d
         self.synergy = E * np.nan
 
@@ -314,13 +331,17 @@ class ParametricSynergyModelND(SynergyModelND):
                 self, E, use_jacobian, bootstrap_iterations, max_iterations, d, **kwargs
             )
 
-    def get_confidence_intervals(self, confidence_interval: float = 95):
+    def get_confidence_intervals(self, confidence_interval: float = 95) -> dict[str, tuple[float, float]]:
         """Returns the lower bound and upper bound estimate for each parameter.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         confidence_interval : float, default=95
             % confidence interval to return. Must be between 0 and 100.
+
+        Return
+        ------
+        dict[str, tuple[float, float]]: The confidence interval for each parameter.
         """
         if not self.is_specified:
             raise ModelNotParameterizedError()

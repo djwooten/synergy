@@ -31,6 +31,7 @@ class MuSyC(ParametricSynergyModelND):
     In MuSyC, synergy is parametrically defined as shifts in potency (alpha), efficacy (beta), or cooperativity (gamma).
 
     Two modes are supported:
+
     - fit_gamma=False (default) - fits only alpha and beta, with gamma fixed to 1.0
     - fit_gamma=True - fits all synergy parameters (alpha, beta, and gamma)
 
@@ -580,15 +581,20 @@ class MuSyC(ParametricSynergyModelND):
 
         return self._model(d, *self._transform_params_to_fit(parameters_list))
 
-    def get_confidence_intervals(self, confidence_interval: float = 95):
+    def get_confidence_intervals(self, confidence_interval: float = 95) -> dict[str, tuple[float, float]]:
         """Returns the lower bound and upper bound estimate for each parameter.
 
         This also calculates confidence intervals for beta, which is derived from the E parameters.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         confidence_interval : float, default=95
             % confidence interval to return. Must be between 0 and 100.
+
+        Return
+        ------
+        dict[str, tuple[float, float]]
+            A dictionary of parameter names to a tuple of the lower and upper bounds of the confidence interval.
         """
         ci = super().get_confidence_intervals(confidence_interval=confidence_interval)
 
