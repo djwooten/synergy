@@ -7,13 +7,11 @@ from typing import Any, Callable, Optional, Sequence, Union
 
 
 import numpy as np
-from numpy import typing as npt
 from scipy.optimize import curve_fit
 
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
-from synergy.typing import DRModel1D
 from synergy import utils
 from synergy.utils import dose_utils
 from synergy.utils.model_mixins import ParametricModelMixins
@@ -24,7 +22,7 @@ _LOGGER = logging.Logger(__name__)
 class SynergyModelND(ABC):
     """Base class for all N-drug synergy models (N > 2)."""
 
-    def __init__(self, single_drug_models: Optional[Sequence[DRModel1D]] = None):
+    def __init__(self, single_drug_models: Optional[Sequence] = None):
         """-"""
         default_type = self._default_single_drug_class
         required_type = self._required_single_drug_class
@@ -46,10 +44,10 @@ class SynergyModelND(ABC):
             self.N = len(self.single_drug_models)
 
     @abstractmethod
-    def fit(self, d: npt.ArrayLike, E: npt.ArrayLike, **kwargs):
+    def fit(self, d, E, **kwargs):
         """-"""
 
-    def _fit_single_drugs(self, d: npt.ArrayLike, E: npt.ArrayLike, **kwargs):
+    def _fit_single_drugs(self, d, E, **kwargs):
         """-"""
         N = d.shape[-1]
 
@@ -79,7 +77,7 @@ class SynergyModelND(ABC):
             model.fit(d[mask, single_idx].flatten(), E[mask], **single_kwargs)
 
     @abstractmethod
-    def E_reference(self, d: npt.ArrayLike):
+    def E_reference(self, d):
         """-"""
 
     @property
@@ -113,7 +111,7 @@ class SynergyModelND(ABC):
 class DoseDependentSynergyModelND(SynergyModelND):
     """Base class for N-drug synergy models (N > 2) for which synergy varies based on dose."""
 
-    def __init__(self, single_drug_models: Sequence[DoseResponseModel1D] = None):
+    def __init__(self, single_drug_models: Optional[Sequence[DoseResponseModel1D]] = None):
         """-"""
         super().__init__(single_drug_models=single_drug_models)
         self.synergy = None
@@ -160,7 +158,7 @@ class DoseDependentSynergyModelND(SynergyModelND):
         if len(d.shape) == 2:
             synergy[dose_utils.get_monotherapy_mask_ND(d)] = default_val
         elif len(d.shape) == 1:
-            if dose_utils.is_monotherapy(d):
+            if dose_utils.is_monotherapy_ND(d):
                 synergy = default_val
         else:
             raise ValueError("d must be a 1 or 2 dimensional array")
@@ -181,6 +179,7 @@ class ParametricSynergyModelND(SynergyModelND):
             self.N = len(single_drug_models)
         else:
             self.N = num_drugs
+        self._bounds: tuple[Sequence[float], Sequence[float]]
         ParametricModelMixins.set_init_parameters(self, self._parameter_names, **kwargs)
         ParametricModelMixins.set_bounds(
             self, self._transform_params_to_fit, self._default_fit_bounds, self._parameter_names, **kwargs

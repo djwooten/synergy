@@ -2,11 +2,10 @@
 
 from abc import ABC, abstractmethod
 from copy import deepcopy
-from typing import Any, Callable, Optional, Union
+from typing import Any, Callable, Optional, Sequence
 import logging
 
 from scipy.optimize import curve_fit
-from numpy.typing import ArrayLike
 import numpy as np
 
 
@@ -14,7 +13,6 @@ from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedErro
 from synergy.single.dose_response_model_1d import DoseResponseModel1D
 from synergy import utils
 from synergy.utils.model_mixins import ParametricModelMixins
-from synergy.typing import DRModel1D
 
 _LOGGER = logging.Logger(__name__)
 
@@ -43,7 +41,7 @@ class SynergyModel2D(ABC):
         )
 
     @abstractmethod
-    def fit(self, d1, d2, E, **kwargs) -> Union[None, ArrayLike]:
+    def fit(self, d1, d2, E, **kwargs):
         """-"""
 
     @abstractmethod
@@ -95,7 +93,7 @@ class SynergyModel2D(ABC):
 class DoseDependentSynergyModel2D(SynergyModel2D):
     """Base class for 2-drug synergy models for which synergy varies based on dose."""
 
-    def __init__(self, drug1_model: Optional[DRModel1D] = None, drug2_model: Optional[DRModel1D] = None):
+    def __init__(self, drug1_model=None, drug2_model=None):
         """Ctor."""
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
         self.synergy = None
@@ -168,13 +166,9 @@ class DoseDependentSynergyModel2D(SynergyModel2D):
 class ParametricSynergyModel2D(SynergyModel2D):
     """Base class for parametric 2-drug synergy models."""
 
-    def __init__(
-        self,
-        drug1_model: Optional[DRModel1D] = None,
-        drug2_model: Optional[DRModel1D] = None,
-        **kwargs,
-    ):
+    def __init__(self, drug1_model=None, drug2_model=None, **kwargs):
         """Ctor."""
+        self._bounds: tuple[Sequence[float], Sequence[float]]
         ParametricModelMixins.set_init_parameters(self, self._parameter_names, **kwargs)
         ParametricModelMixins.set_bounds(
             self, self._transform_params_to_fit, self._default_fit_bounds, self._parameter_names, **kwargs

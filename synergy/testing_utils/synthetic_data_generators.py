@@ -84,7 +84,7 @@ class HillDataGenerator:
         if dmin < 0:
             raise ValueError(f"dmin ({dmin}) must be >= 0.")
         if dmin == 0:
-            dmin = np.nextafter(0.0)
+            dmin = np.nextafter(0.0, 1)
 
         if include_zero:
             n_points -= 1
@@ -145,9 +145,9 @@ class ShamDataGenerator:
     def get_ND_combination(
         drug_model,
         n_drugs: int,
-        dmin: Union[float, list[float]],
-        dmax: Union[float, list[float]],
-        n_points: Union[int, list[int]] = 6,
+        dmin: Union[float, Sequence[float]],
+        dmax: Union[float, Sequence[float]],
+        n_points: Union[int, Sequence[int]] = 6,
         logscale: bool = False,
         include_zero: bool = True,
         replicates: int = 1,
@@ -165,7 +165,7 @@ class ShamDataGenerator:
         if not hasattr(n_points, "__iter__"):
             n_points = [n_points] * n_drugs
         doses = dose_utils.make_dose_grid_multi(
-            dmin, dmax, n_points, logscale=logscale, replicates=replicates, include_zero=include_zero
+            list(dmin), list(dmax), list(n_points), logscale=logscale, replicates=replicates, include_zero=include_zero
         )
         E = drug_model.E(_noisify(doses.sum(axis=1), d_noise, 0))
         return doses, _noisify(E, E_noise, min_val=min_E, max_val=max_E)
@@ -216,9 +216,9 @@ class DoseDependentReferenceDataGenerator:
     def get_ND_combination(
         cls,
         drug_models: Sequence[DoseResponseModel1D],
-        dmin: Optional[Union[float, list[float]]] = None,
-        dmax: Optional[Union[float, list[float]]] = None,
-        n_points: Union[int, list[int]] = 6,
+        dmin: Optional[Union[float, Sequence[float]]] = None,
+        dmax: Optional[Union[float, Sequence[float]]] = None,
+        n_points: Union[int, Sequence[int]] = 6,
         replicates: int = 1,
         include_zero: bool = True,
         E_noise: float = 0.05,
@@ -239,7 +239,9 @@ class DoseDependentReferenceDataGenerator:
             dmax = [dmax] * len(drug_models)
         if not hasattr(n_points, "__iter__"):
             n_points = [n_points] * len(drug_models)
-        d = dose_utils.make_dose_grid_multi(dmin, dmax, n_points, replicates=replicates, include_zero=include_zero)
+        d = dose_utils.make_dose_grid_multi(
+            list(dmin), list(dmax), list(n_points), replicates=replicates, include_zero=include_zero  # type: ignore
+        )
 
         model = cls.MODEL_ND(single_drug_models=drug_models)
         E = model.E_reference(_noisify(d, d_noise, min_val=0))

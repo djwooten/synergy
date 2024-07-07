@@ -24,7 +24,8 @@ def jacobian(
     Returns:
     -----------
     jacobian : tuple
-        j_E0, j_E1, j_E2, j_E3, j_logh1, j_logh2, j_logC1, j_logC2, j_logalpha12, j_logalpha21, j_loggamma12, j_loggamma21
+        j_E0, j_E1, j_E2, j_E3, j_logh1, j_logh2, j_logC1, j_logC2, j_logalpha12, j_logalpha21, j_loggamma12,
+        j_loggamma21
     """
     h1 = np.exp(logh1)
     h2 = np.exp(logh2)

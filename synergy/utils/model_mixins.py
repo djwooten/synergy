@@ -1,10 +1,9 @@
 """Methods used by both 2d and Nd synergy models."""
 
 import logging
-from typing import Sequence
+from typing import Callable, Sequence
 
 import numpy as np
-from numpy.typing import ArrayLike
 from scipy.stats import norm
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
@@ -45,7 +44,7 @@ class ParametricModelMixins:
 
     @staticmethod
     def set_bounds(
-        model, transform: callable, default_bounds: dict[str, tuple[float]], parameter_names: list[str], **kwargs
+        model, transform: Callable, default_bounds: dict[str, tuple[float, float]], parameter_names: list[str], **kwargs
     ):
         """Set model._bounds for a model, which will be used when fitting the model.
 
@@ -59,7 +58,7 @@ class ParametricModelMixins:
         bounds (0.1, 10), and the transform function transforms EC50 to log10 space, then its bounds will be (-1, 1).
 
         :param model: The model to set bounds for.
-        :param callable transform: A function to transform the bounds into the space used for fitting.
+        :param Callable transform: A function to transform the bounds into the space used for fitting.
         :param dict default_bounds: Default bounds for each parameter.
         :param list[str] parameter_names: Names of the parameters to set bounds for.
         :param kwargs: Bounds for specific (e.g., E0_bounds=(-1, 1)) or generic parameters (e.g., E_bounds=(-1, 1)).

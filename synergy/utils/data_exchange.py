@@ -1,5 +1,3 @@
-from numpy.typing import ArrayLike
-
 try:
     import pandas as pd
 

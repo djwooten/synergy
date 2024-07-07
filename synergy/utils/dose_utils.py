@@ -15,9 +15,9 @@
 
 import logging
 from itertools import product
+from typing import Sequence
 
 import numpy as np
-from numpy.typing import ArrayLike
 
 
 _LOGGER = logging.getLogger(__name__)
@@ -32,7 +32,7 @@ def remove_zeros(d, min_buffer: float = 0.2, num_dilutions: int = 1):
 
     Parameters
     ----------
-    d 
+    d
         Doses to remove zeros from. Original array will not be changed.
 
     min_buffer : float , default=0.2
@@ -119,18 +119,18 @@ def make_dose_grid(
 
 
 def make_dose_grid_multi(
-    dmin: list[float],
-    dmax: list[float],
-    npoints: list[int],
+    dmin: Sequence[float],
+    dmax: Sequence[float],
+    npoints: Sequence[int],
     logscale: bool = True,
     include_zero: bool = False,
     replicates: int = 1,
 ) -> np.ndarray:
     """Create a grid of doses for N drugs.
 
-    :param list[float] dmin: List of minimum doses for each drug
-    :param list[float] dmax: List of maximum doses for each drug
-    :param list[int] npoints: List of number of distinct doses to include for each drug
+    :param Sequence[float] dmin: Sequence of minimum doses for each drug
+    :param Sequence[float] dmax: Sequence of maximum doses for each drug
+    :param Sequence[int] npoints: Sequence of number of distinct doses to include for each drug
     :param bool logscale: If True, doses will be uniform in log space. If False, doses will be uniform in linear space.
     :param bool include_zero: If True, will include a dose of 0
     :param int replicates: The number of replicates to include for each dose combination
@@ -233,7 +233,7 @@ def is_on_grid(d) -> bool:
 
     Parameters:
     -----------
-    d 
+    d
         Doses, shape (n_samples, n_drugs)
     """
     unique_doses = [np.unique(d[:, i]) for i in range(d.shape[1])]
@@ -249,18 +249,18 @@ def aggregate_replicates(d, E, aggfunc=np.median):
 
     Parameters
     ----------
-    d 
+    d
         Doses, shape (n_samples, n_drugs)
-    E 
+    E
         Responses, shape (n_samples,)
     aggfunc : Callable, optional
         Function to aggregate replicate values of E, default is np.median
 
     Returns
     -------
-    d 
+    d
         Unique doses, shape (n_unique_samples, n_drugs)
-    E 
+    E
         Aggregated responses, shape (n_unique_samples,)
     """
     d_unique, num_replicates = np.unique(d, axis=0, return_counts=True)

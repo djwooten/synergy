@@ -14,32 +14,31 @@
 #    along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 import inspect
-from typing import Sequence
+from typing import Callable, Sequence
 
 import numpy as np
 
 from synergy.exceptions import InvalidDrugModelError
-from synergy.single import DoseResponseModel1D
 
 
-def residual_ss(d1, d2, E, function: callable):
+def residual_ss(d1, d2, E, function: Callable):
     """Calculate the sum of squares of the residuals for a 2D dose response model.
 
     :param ArrayLike d1: The doses of drug 1
     :param ArrayLike d2: The doses of drug 2
     :param ArrayLike E: The observed values
-    :param callable function: The model to use
+    :param Callable function: The model to use
     """
     E_model = function(d1, d2)
     return np.sum((E - E_model) ** 2)
 
 
-def residual_ss_1d(d, E, function: callable):
+def residual_ss_1d(d, E, function: Callable):
     """Calculate the sum of squares of the residuals for a 1D dose response model.
 
     :param ArrayLike d: The doses
     :param ArrayLike E: The observed values
-    :param callable function: The model to use
+    :param Callable function: The model to use
     """
     E_model = function(d)
     return np.sum((E - E_model) ** 2)
@@ -126,7 +125,7 @@ def sanitize_initial_guess(p0, bounds: tuple[Sequence[float], Sequence[float]]):
     return p0
 
 
-def sanitize_single_drug_model(model, default_type: type, required_type: type, **kwargs) -> DoseResponseModel1D:
+def sanitize_single_drug_model(model, default_type: type, required_type: type, **kwargs):
     """Ensure the given single drug model is a class or object of a class that is permitted for the given synergy model.
 
     :param DoseResponseModel1D model: The single drug model

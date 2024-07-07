@@ -14,10 +14,10 @@ from synergy.testing_utils.synthetic_data_generators import (
 DEFAULT_DATA_MODULE = "synergy.datasets.data"
 
 
-def _load_data(fname: str) -> np.typing.ArrayLike:
+def _load_data(fname: str) -> np.typing.NDArray[np.float64]:
     lines = []
     path = resources.files(DEFAULT_DATA_MODULE).joinpath(fname)
-    with open(path) as infile:
+    with open(path) as infile:  # type: ignore
         infile.readline()  # Get rid of header
         for line in infile:
             line_split = line.strip().split(sep=",")
@@ -27,41 +27,41 @@ def _load_data(fname: str) -> np.typing.ArrayLike:
 
 def _write_data(fname: str, column_names: list[str], *args):
     path = resources.files(DEFAULT_DATA_MODULE).joinpath(fname)
-    with open(path, "w") as outfile:
+    with open(path, "w") as outfile:  # type: ignore
         outfile.write(",".join(column_names) + "\n")
         for row in zip(*args):
             outfile.write(",".join([f"{col:0.4g}" for col in row]) + "\n")
 
 
-def load_hill_example() -> str:
+def load_hill_example():
     """Load example data for a single drug."""
     data = _load_data("hill.csv")
     return data[:, 0], data[:, 1]
 
 
-def load_2d_sham_example() -> str:
+def load_2d_sham_example():
     """Load example data for a 2-drug sham combination."""
     return _load_data("sham_2d.csv")
 
 
-def load_3d_sham_example() -> str:
+def load_3d_sham_example():
     """Load example data for a 3-drug sham combination."""
     return _load_data("sham_3d.csv")
 
 
-def load_2d_example() -> str:
+def load_2d_example():
     """Load example data for 2-drug combination."""
     data = _load_data("2d.csv")
     return data[:, 0], data[:, 1], data[:, 2]
 
 
-def load_3d_example() -> str:
+def load_3d_example():
     """Load example data for 3-drug combination"""
     data = _load_data("3d.csv")
     return data[:, :-1], data[:, -1]
 
 
-def load_4d_example() -> str:
+def load_4d_example():
     """Load example data for 4-drug combination."""
     data = _load_data("4d.csv")
     return data[:, :-1], data[:, -1]

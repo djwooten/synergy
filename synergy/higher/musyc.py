@@ -470,7 +470,7 @@ class MuSyC(ParametricSynergyModelND):
         :return dict[str, float]: A map of which drugs are present in each state to the beta value for that state.
         """
         if not self.is_specified:
-            return ModelNotParameterizedError()
+            raise ModelNotParameterizedError("Cannot calculate beta if model is not specified.")
 
         parameters = [self.get_parameters()[param] for param in self._parameter_names]
         state_count = 2**self.N

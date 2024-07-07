@@ -3,7 +3,6 @@
 import logging
 
 import numpy as np
-from numpy.typing import ArrayLike
 
 from synergy.utils.dose_utils import aggregate_replicates, is_on_grid, remove_zeros
 
@@ -208,7 +207,7 @@ def plot_heatmap(
     :param str fname: filename to save the plot (if not empty)
     :param kwargs: additional keyword arguments to configure the plot
 
-        - aggfunc: callable function to aggregate replicates (default is np.median)
+        - aggfunc: Callable function to aggregate replicates (default is np.median)
         - aspect: str aspect ratio of the plot (default is "equal")
         - ax: matplotlib axis or None to generate a new figure
         - figsize: tuple of width and height for the figure
