@@ -114,6 +114,7 @@ exclude = [
     "_build",
     "venv",
     ".git",
+    "docs/source/models",
 ]
 
 [tool.ruff.lint]
