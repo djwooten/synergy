@@ -114,6 +114,7 @@ exclude = [
     "_build",
     "venv",
     ".git",
+    "docs/sources/models/**/*.ipynb",
 ]
 
 [tool.ruff.lint]

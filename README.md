@@ -91,7 +91,7 @@ gamma21    |  0.722  |  (0.487, 1.2)    |  ~= 1        |  additive
 
 Many utilities exist under `synergy.utils.plots` to create heatmaps, 3D interactive dose-response surfaces, and 3D
 interactive isosurfaces. These require intsalling `matplotlib` for the heatmaps, and `plotly`  for the 3d plots. Many
-exmaples can be seen at http://synergy.readthedocs.io/models/synergy_models.html/.
+exmaples can be seen at https://synergy.readthedocs.io/en/latest/models/synergy_models.html.
 
 The basic approach is
 
