@@ -92,6 +92,11 @@ class Hill(ParametricDoseResponseModel1D):
         super().fit(
             d / self._dose_scale, E, use_jacobian=use_jacobian, bootstrap_iterations=bootstrap_iterations, **kwargs
         )
+    
+    def _score(self, d_scaled, E):
+        # undo the internal scaling
+        d_original = d_scaled * self._dose_scale
+        super()._score(d_original, E)
 
     def _set_parameters(self, parameters):
         self.E0, self.Emax, self.h, self.C = parameters
