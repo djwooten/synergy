@@ -10,7 +10,7 @@ from synergy import utils
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 from synergy.utils.model_mixins import ParametricModelMixins
 
-_LOGGER = logging.Logger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class DoseResponseModel1D(ABC):

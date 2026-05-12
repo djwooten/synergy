@@ -8,7 +8,7 @@ from scipy.stats import norm
 
 from synergy.exceptions import ModelNotFitToDataError, ModelNotParameterizedError
 
-_LOGGER = logging.Logger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 
 class ParametricModelMixins:

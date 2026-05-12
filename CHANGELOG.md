@@ -7,7 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-Nothing
+### Fixed
+
+- Fixed some minor typos and fstrings.
+- Fixed broken logging.Logger() -> logging.getLogger().
 
 ## [v1.0.0] - 2024-07-7
 

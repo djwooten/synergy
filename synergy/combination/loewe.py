@@ -48,7 +48,7 @@ class Loewe(DoseDependentSynergyModel2D):
         """Ctor."""
         mode = mode.lower()
         if mode not in ["ci", "delta_weakest", "delta_hsa", "delta_nan"]:
-            raise ValueError("Unrecognized mode for Loewe ({mode})")
+            raise ValueError(f"Unrecognized mode for Loewe ({mode})")
         self.mode = mode
 
         super().__init__(drug1_model=drug1_model, drug2_model=drug2_model)
@@ -91,7 +91,7 @@ class Loewe(DoseDependentSynergyModel2D):
 
         drug1_model and drug2_model MUST be some form of Hill equation
 
-        Credsits: Mark Russo and David Wooten
+        Credits: Mark Russo and David Wooten
 
         Returns scipy.optimize.minimize_scalar object
         """

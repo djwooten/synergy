@@ -45,13 +45,13 @@ class Hill(ParametricDoseResponseModel1D):
 
     def E(self, d):
         if not self.is_specified:
-            raise ModelNotParameterizedError("Model mustbe specified before calling E().")
+            raise ModelNotParameterizedError("Model must be specified before calling E().")
 
         return self._model(d, self.E0, self.Emax, self.h, self.C)
 
     def E_inv(self, E):
         if not self.is_specified:
-            raise ModelNotParameterizedError("Model mustbe specified before calling E().")
+            raise ModelNotParameterizedError("Model must be specified before calling E().")
 
         return self._model_inv(E, self.E0, self.Emax, self.h, self.C)
 

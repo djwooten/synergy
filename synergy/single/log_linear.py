@@ -45,7 +45,7 @@ class LogLinear(DoseResponseModel1D):
 
         # These will be filled based on which regions are invertible
         self._logd_for_inverse = np.asarray([])  # This stores all the log(d)'s used to construct a monotonic inverse
-        self._E_for_inverse = np.asarray([])  # Thisi stores all the E's used to construct a monotonic inverse
+        self._E_for_inverse = np.asarray([])  # This stores all the E's used to construct a monotonic inverse
         self._uninvertible_domains = []
         self._ready_for_inverse = False
 
@@ -64,15 +64,15 @@ class LogLinear(DoseResponseModel1D):
 
         if len(d) > len(np.unique(d)):
             d_uniques = []
-            E_represntatives = []
+            E_representatives = []
 
             # Given repeated dose measurements, average E for each
             for val in np.unique(d):
                 d_uniques.append(val)
-                E_represntatives.append(self._aggregation_function(E[d == val]))
+                E_representatives.append(self._aggregation_function(E[d == val]))
 
             self._d = np.asarray(d_uniques)
-            self._E = np.asarray(E_represntatives)
+            self._E = np.asarray(E_representatives)
 
         else:
             self._d = np.array(d, copy=True)

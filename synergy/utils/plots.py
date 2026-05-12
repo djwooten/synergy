@@ -8,7 +8,7 @@ import numpy as np
 from synergy.utils.dose_utils import aggregate_replicates, is_on_grid, remove_zeros
 
 SUPPORTED_PLOTLY_EXTENSIONS = ["png", "jpeg", "jpg", "webp", "svg", "pdf", "eps"]
-_LOGGER = logging.Logger(__name__)
+_LOGGER = logging.getLogger(__name__)
 
 matplotlib_import = False
 try:
